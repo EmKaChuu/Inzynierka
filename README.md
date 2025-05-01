@@ -36,4 +36,4 @@ Aplikacja webowa do obliczeń związanych z badaniami operacyjnymi i statystyczn
 4. Uruchom obliczenia i przeanalizuj wyniki
 
 ## Autor
-EmKaChuu 
+Michał Kopeć
