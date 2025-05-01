@@ -1,0 +1,44 @@
+# Pliki systemu operacyjnego
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Pliki środowiska deweloperskiego
+.idea/
+.vscode/
+*.sublime*
+*.code-workspace
+
+# Pliki tymczasowe Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Pliki dziennika
+*.log
+gui_debug.log
+
+# Pliki środowiska wirtualnego
+venv/
+ENV/
+
+# Pliki specyficzne dla projektu
+BO-2-PL (1).pdf
+PL-Zadania-omawiane-na-zajeciach (1).pdf 
