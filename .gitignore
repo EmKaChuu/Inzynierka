@@ -1,11 +1,35 @@
-# Pliki systemu operacyjnego
+# System files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Pliki środowiska deweloperskiego
-.idea/
+# IDE files
 .vscode/
+.idea/
+*.iml
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.save
+*.swp
+
+# Logs
+*.log
+
+# Temporary files
+/tmp
+/temp
+*~
+
+# Specific project files
+node_modules/
+*.zip
+*.rar
+*.7z
+
+# Pliki środowiska deweloperskiego
 *.sublime*
 *.code-workspace
 
@@ -30,10 +54,6 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Pliki dziennika
-*.log
-gui_debug.log
 
 # Pliki środowiska wirtualnego
 venv/

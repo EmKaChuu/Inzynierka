@@ -1,39 +1,57 @@
 # Optymalizator Zasobów i Produkcji
 
-Aplikacja webowa do obliczeń związanych z badaniami operacyjnymi i statystyczną kontrolą jakości. Aplikacja zawiera trzy główne moduły:
+Aplikacja webowa do rozwiązywania problemów decyzyjnych i optymalizacyjnych w zarządzaniu produkcją.
 
-## Moduły aplikacji
+## Funkcjonalności
 
-### 1. Kalkulator AHP (Analityczny Proces Hierarchiczny)
-- Definiowanie kryteriów i opcji
-- Tworzenie macierzy porównań
-- Obliczanie priorytetów i wskaźnika spójności
-- Wizualizacja wyników
+Aplikacja zawiera trzy główne moduły:
 
-### 2. Problem Rozkroju
-- Optymalizacja cięcia materiałów
-- Minimalizacja odpadu
-- Generowanie schematów cięcia
-- Wizualizacja wyników
+1. **Kalkulator AHP** - narzędzie do podejmowania decyzji wielokryterialnych metodą Analitycznego Procesu Hierarchicznego (AHP)
+   - Definiowanie kryteriów i opcji decyzyjnych
+   - Porównywanie parami kryteriów i opcji
+   - Obliczanie wag i współczynników spójności (CR)
+   - Wizualizacja wyników za pomocą wykresów
 
-### 3. Optymalizacja Produkcji
-- Definiowanie funkcji celu (maksymalizacja/minimalizacja)
-- Ustawianie ograniczeń produkcyjnych
-- Rozwiązywanie problemów optymalizacyjnych
-- Graficzna reprezentacja wyników
+2. **Problem Rozkroju** - narzędzie do optymalizacji cięcia materiałów
+   - Definiowanie długości dostępnych materiałów
+   - Określanie zamówień (długości i ilości)
+   - Generowanie optymalnych wzorów cięcia
+   - Minimalizacja odpadów i ilości użytych materiałów
+
+3. **Optymalizacja Produkcji** - narzędzie wykorzystujące programowanie liniowe do:
+   - Maksymalizacji zysków lub minimalizacji kosztów
+   - Uwzględniania ograniczeń produkcyjnych
+   - Znajdowania optymalnego miksu produktów
+   - Analizy wrażliwości i wykorzystania zasobów
 
 ## Technologie
-- HTML, CSS, JavaScript
-- Biblioteki:
-  - math.js - obliczenia macierzowe
+
+- JavaScript (frontend)
+- HTML i CSS
+- Biblioteki zewnętrzne:
+  - math.js - operacje matematyczne
   - plotly.js - wizualizacja danych
-  - javascript-lp-solver - rozwiązywanie problemów optymalizacji
+  - javascript-lp-solver - rozwiązywanie problemów programowania liniowego
 
-## Instrukcja użytkowania
-1. Otwórz plik `index.html` w przeglądarce internetowej
-2. Wybierz jeden z trzech modułów (Kalkulator AHP, Problem Rozkroju, Optymalizacja Produkcji)
-3. Wprowadź dane według potrzeb
-4. Uruchom obliczenia i przeanalizuj wyniki
+## Struktura projektu
 
-## Autor
-EmKaChuu 
+```
+├── index.html       - główny plik HTML
+├── styles.css       - arkusz stylów
+├── script.js        - główny skrypt zarządzający aplikacją
+├── ahp.js           - moduł kalkulatora AHP
+├── cuttingStock.js  - moduł problemu rozkroju
+├── productionOpt.js - moduł optymalizacji produkcji
+└── solver.js        - biblioteka do rozwiązywania problemów optymalizacyjnych
+```
+
+## Instalacja i uruchamianie
+
+1. Sklonuj repozytorium
+2. Otwórz plik `index.html` w przeglądarce
+
+Aplikacja nie wymaga serwera i działa całkowicie po stronie klienta.
+
+## Autorzy
+
+Michał Kopeć, 2024/2025 

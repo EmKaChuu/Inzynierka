@@ -1,0 +1,447 @@
+# ROZDZIAŁ 4: IMPLEMENTACJA MODUŁÓW APLIKACJI
+
+## 4.1 Moduł kalkulatora AHP
+
+### 4.1.1 Algorytm metody AHP
+
+W implementacji metody AHP zastosowano klasyczny algorytm zaproponowany przez Saaty'ego, składający się z następujących kroków:
+
+1. **Definiowanie hierarchii problemu** - Implementacja umożliwia użytkownikowi zdefiniowanie do 6 kryteriów oraz do 6 opcji decyzyjnych. Liczba kryteriów jest konfigurowana przez użytkownika, co pozwala na elastyczne dostosowanie do różnych problemów decyzyjnych.
+
+2. **Porównania parami kryteriów** - Zaimplementowano mechanizm wprowadzania porównań parami za pomocą interaktywnej macierzy, gdzie użytkownik wybiera wartości z przedziału 1/9 do 9, zgodnie ze skalą Saaty'ego. Implementacja automatycznie uzupełnia wartości w symetrycznych komórkach macierzy jako odwrotności.
+
+```javascript
+updateCriteriaComparisonValue: (i, j) => {
+    const select = document.getElementById(`criteria-comp-${i}-${j}`);
+    const value = parseFloat(select.value);
+    const inverseCell = document.getElementById(`criteria-comp-value-${j}-${i}`);
+    
+    if (inverseCell) {
+        inverseCell.textContent = (1 / value).toFixed(4);
+    }
+}
+```
+
+3. **Porównania parami opcji względem każdego kryterium** - Podobnie jak w przypadku kryteriów, dla każdego kryterium tworzona jest macierz porównań opcji, co pozwala na określenie lokalnych priorytetów opcji.
+
+4. **Obliczanie priorytetów** - Implementacja wykorzystuje metodę średniej geometrycznej do obliczania priorytetów:
+
+```javascript
+calculatePriorities: (matrix) => {
+    // Metoda średniej geometrycznej (Saaty)
+    const size = matrix.length;
+    const priorities = Array(size).fill(0);
+    
+    // Obliczenie średniej geometrycznej dla każdego wiersza
+    for (let i = 0; i < size; i++) {
+        let product = 1;
+        for (let j = 0; j < size; j++) {
+            product *= matrix[i][j];
+        }
+        priorities[i] = Math.pow(product, 1/size);
+    }
+    
+    // Normalizacja
+    const sum = priorities.reduce((acc, val) => acc + val, 0);
+    for (let i = 0; i < size; i++) {
+        priorities[i] /= sum;
+    }
+    
+    return priorities;
+}
+```
+
+5. **Obliczanie współczynnika spójności (CR)** - Implementacja zawiera funkcję obliczającą współczynnik spójności, który informuje o jakości porównań parami. Zgodnie z teorią AHP, wartość CR < 0.1 wskazuje na akceptowalną spójność ocen.
+
+```javascript
+calculateConsistencyRatio: (matrix, weights) => {
+    const size = matrix.length;
+    if (size <= 2) return 0; // Dla 1 lub 2 elementów CR zawsze 0
+    
+    // Obliczenie λ max
+    const weightedSumVector = [];
+    for (let i = 0; i < size; i++) {
+        let sum = 0;
+        for (let j = 0; j < size; j++) {
+            sum += matrix[i][j] * weights[j];
+        }
+        weightedSumVector[i] = sum;
+    }
+    
+    const consistencyVector = Array(size);
+    
+    for (let i = 0; i < size; i++) {
+        consistencyVector[i] = weightedSumVector[i] / weights[i];
+    }
+    
+    const lambdaMax = consistencyVector.reduce((acc, val) => acc + val, 0) / size;
+    
+    // Obliczenie CI (Consistency Index)
+    const CI = (lambdaMax - size) / (size - 1);
+    
+    // Obliczenie CR (Consistency Ratio)
+    return CI / AHP.RI[size];
+}
+```
+
+6. **Obliczanie globalnych priorytetów opcji** - Ostateczny etap polega na obliczeniu globalnych priorytetów opcji poprzez sumowanie iloczynów lokalnych priorytetów opcji i odpowiadających im priorytetów kryteriów.
+
+### 4.1.2 Wizualizacja wyników
+
+Wizualizacja wyników AHP została zaimplementowana z wykorzystaniem biblioteki Plotly.js, oferując użytkownikowi różne perspektywy interpretacji wyników:
+
+1. **Wykres słupkowy priorytetów globalnych** - Prezentuje końcowe priorytety opcji decyzyjnych, umożliwiając łatwą identyfikację najlepszej opcji.
+
+2. **Wykres priorytetów kryteriów** - Pokazuje względną ważność poszczególnych kryteriów, co pozwala zrozumieć ich wpływ na ostateczną decyzję.
+
+3. **Tabelaryczna prezentacja wyników** - Szczegółowa prezentacja wyników w postaci tabel, obejmująca zarówno priorytety globalne, jak i lokalne dla każdego kryterium, wraz z informacjami o współczynniku spójności.
+
+Implementacja dynamicznie generuje wszystkie elementy wizualizacji w momencie zakończenia obliczeń:
+
+```javascript
+visualizeResults: () => {
+    const container = document.getElementById('ahpVisualization');
+    container.innerHTML = '';
+    
+    // Przygotuj dane do wykresu słupkowego
+    const sortedIndices = Array.from(Array(AHP.numOptions).keys())
+        .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a]);
+    
+    const sortedLabels = sortedIndices.map(idx => AHP.optionNames[idx]);
+    const sortedValues = sortedIndices.map(idx => AHP.globalOptionWeights[idx] * 100);
+    
+    // Kolorowanie słupków - najlepszy zielony, pozostałe niebieskie
+    const colors = sortedIndices.map((_, i) => 
+        i === 0 ? 'rgba(46, 139, 87, 0.8)' : 'rgba(70, 130, 180, 0.8)'
+    );
+    
+    // Wykres słupkowy wyników końcowych
+    const finalData = [{
+        x: sortedLabels,
+        y: sortedValues,
+        type: 'bar',
+        marker: {
+            color: colors
+        },
+        text: sortedValues.map(v => v.toFixed(2) + '%'),
+        textposition: 'auto',
+        hoverinfo: 'text',
+        hovertext: sortedIndices.map(idx => 
+            `${AHP.optionNames[idx]}: ${(AHP.globalOptionWeights[idx] * 100).toFixed(2)}%`
+        )
+    }];
+    
+    // [...] Pozostała część implementacji wizualizacji
+}
+```
+
+## 4.2 Moduł problemu rozkroju
+
+### 4.2.1 Algorytm generowania wzorów cięcia
+
+Kluczowym elementem modułu rozkroju jest algorytm generowania wszystkich możliwych wzorów cięcia dla zadanej długości kłody. Implementacja wykorzystuje algorytm rekurencyjny, który efektywnie przeszukuje przestrzeń rozwiązań:
+
+```javascript
+generateCuttingPatterns: () => {
+    console.log("Generowanie wzorów cięcia...");
+    try {
+        const stockLength = CuttingStock.currentLogLength;
+        console.log(`Długość kłody: ${stockLength}m`);
+        
+        const sizes = CuttingStock.orders.map(order => order.length);
+        console.log(`Dostępne rozmiary: ${sizes.join(', ')}m`);
+        
+        if (sizes.length === 0) {
+            console.error("Brak rozmiarów do wygenerowania wzorów");
+            return [];
+        }
+        
+        const patterns = [];
+        
+        // Funkcja pomocnicza do generowania wszystkich kombinacji cięcia
+        const generatePatterns = (remaining, currentPattern, currentCounts, index) => {
+            // Jeśli doszliśmy do końca listy rozmiarów, zapisujemy wzór
+            if (index >= sizes.length) {
+                if (currentPattern.length > 0) {
+                    // Oblicz efektywność wzoru (wykorzystanie materiału)
+                    const totalUsed = currentPattern.reduce((acc, size) => acc + size, 0);
+                    const waste = stockLength - totalUsed;
+                    const efficiency = totalUsed / stockLength;
+                    
+                    patterns.push({
+                        sizes: [...currentPattern],
+                        counts: [...currentCounts],
+                        waste: waste,
+                        efficiency: efficiency
+                    });
+                }
+                return;
+            }
+            
+            const currentSize = sizes[index];
+            const maxItems = Math.floor(remaining / currentSize);
+            
+            // Próbujemy dodać 0 do maxItems sztuk bieżącego rozmiaru
+            for (let i = 0; i <= maxItems; i++) {
+                const newPattern = [...currentPattern];
+                const newCounts = [...currentCounts];
+                
+                // Dodaj i sztuk bieżącego rozmiaru
+                for (let j = 0; j < i; j++) {
+                    newPattern.push(currentSize);
+                }
+                
+                newCounts[index] = i;
+                
+                // Przejdź do następnego rozmiaru
+                generatePatterns(remaining - i * currentSize, newPattern, newCounts, index + 1);
+                
+                // Optymalizacja: jeśli wykorzystaliśmy maksymalnie dostępną przestrzeń,
+                // nie ma potrzeby sprawdzać więcej kombinacji z tym rozmiarem
+                if (remaining - i * currentSize < Math.min(...sizes)) {
+                    break;
+                }
+            }
+        };
+        
+        // Inicjuj generowanie wzorów
+        console.log("Rozpoczynam generowanie wzorów...");
+        generatePatterns(stockLength, [], Array(sizes.length).fill(0), 0);
+        
+        // [...] Postprocessing wzorów
+    } catch (error) {
+        console.error("Błąd podczas generowania wzorów cięcia:", error);
+        return [];
+    }
+}
+```
+
+### 4.2.2 Modelowanie i rozwiązywanie problemu optymalizacyjnego
+
+Po wygenerowaniu wzorów cięcia, problem jest formułowany jako zadanie programowania liniowego całkowitoliczbowego i rozwiązywany przy użyciu biblioteki solver.js:
+
+```javascript
+solveCuttingStock: () => {
+    try {
+        // [...] Przygotowanie danych
+        
+        // Przygotowanie i rozwiązanie problemu cięcia
+        const exactCuts = document.getElementById('exactCuts').checked;
+        const stockLength = CuttingStock.currentLogLength;
+        
+        // Generowanie możliwych wzorów cięcia
+        const patterns = CuttingStock.generateCuttingPatterns();
+        
+        if (patterns.length === 0) {
+            throw new Error("Nie znaleziono żadnych możliwych wzorów cięcia dla podanych długości.");
+        }
+        
+        console.log("Wygenerowano wzory cięcia:", patterns);
+        
+        // Wybierz najlepsze wzory
+        const bestPatterns = exactCuts ? patterns : patterns.slice(0, 100);
+        
+        // Przygotowanie modelu programowania liniowego
+        let model;
+        
+        if (exactCuts) {
+            // Dokładna liczba sztuk - minimalizujemy tylko liczbę kłód
+            model = {
+                optimize: 'numLogs',
+                opType: 'min',
+                constraints: {},
+                variables: {}
+            };
+            
+            // Dla każdego rozmiaru, dodaj ograniczenie równości
+            for (let i = 0; i < CuttingStock.orders.length; i++) {
+                const order = CuttingStock.orders[i];
+                model.constraints[`demand${i}`] = { equal: order.quantity };
+            }
+            
+            // [...] Dodawanie zmiennych do modelu
+        } else {
+            // Minimalna liczba sztuk - optymalizujemy zarówno liczbę kłód jak i odpad
+            model = {
+                optimize: 'score',
+                opType: 'min',
+                constraints: {},
+                variables: {}
+            };
+            
+            // [...] Definicja ograniczeń i zmiennych
+        }
+        
+        console.log("Model optymalizacji:", model);
+        
+        // Rozwiąż problem programowania liniowego
+        console.log("Wywołuję solver.Solve z modelem...");
+        const solution = solver.Solve(model);
+        
+        // [...] Przygotowanie i zwrócenie wyników
+    } catch (error) {
+        console.error("Błąd w rozwiązywaniu problemu rozkroju:", error);
+        throw error;
+    }
+}
+```
+
+### 4.2.3 Wizualizacja schematów cięcia
+
+Implementacja obejmuje również moduł wizualizacji schematów cięcia, który prezentuje użytkownikowi graficzną reprezentację optymalnego rozwiązania:
+
+```javascript
+displayVisualization: (pattern) => {
+    const container = document.getElementById('cuttingStockVisualization');
+    container.innerHTML = '';
+    container.style.display = 'block';
+    
+    const logLength = CuttingStock.currentLogLength;
+    const totalWidth = 800;
+    const barHeight = 50;
+    const scale = totalWidth / logLength;
+    
+    // [...] Implementacja wizualizacji schematu cięcia
+}
+```
+
+## 4.3 Moduł optymalizacji produkcji
+
+### 4.3.1 Interfejs definiowania problemów optymalizacyjnych
+
+Interfejs modułu optymalizacji produkcji umożliwia użytkownikowi zdefiniowanie:
+- Liczby zmiennych decyzyjnych (produktów)
+- Funkcji celu (maksymalizacja zysku lub minimalizacja kosztów)
+- Współczynników funkcji celu
+- Ograniczeń zasobów (liniowych zależności między zmiennymi)
+
+Implementacja dynamicznie dostosowuje formularze do liczby zmiennych:
+
+```javascript
+updateObjectiveFunction: () => {
+    const numVars = parseInt(document.getElementById('numVars').value);
+    if (isNaN(numVars) || numVars < 1) {
+        Utils.displayResults('productionOptResults', 'Liczba zmiennych musi być większa od 0', true);
+        return;
+    }
+    
+    ProductionOpt.numVars = numVars;
+    
+    // Aktualizuj funkcję celu
+    const objFunctionContainer = document.getElementById('objectiveFunction');
+    objFunctionContainer.innerHTML = '';
+    
+    // [...] Dynamiczne generowanie pól formularza
+}
+```
+
+### 4.3.2 Implementacja algorytmu optymalizacji
+
+Model optymalizacji produkcji jest formułowany jako zadanie programowania liniowego i rozwiązywany przy użyciu biblioteki solver.js:
+
+```javascript
+calculate: () => {
+    try {
+        // Przygotuj model optymalizacji
+        const model = ProductionOpt.prepareModel();
+        
+        // Rozwiąż problem
+        const solution = solver.Solve(model);
+        
+        // Wyświetl wyniki
+        ProductionOpt.displayResults(solution);
+    } catch (error) {
+        console.error("Error in production optimization:", error);
+        Utils.displayResults('productionOptResults', `Błąd obliczenia: ${error.message}`, true);
+    }
+},
+
+prepareModel: () => {
+    // Odczytaj funkcję celu
+    const objective = {};
+    for (let i = 0; i < ProductionOpt.numVars; i++) {
+        const coeffInput = document.getElementById(`obj-coeff-${i}`);
+        const coeff = parseFloat(coeffInput.value);
+        
+        if (isNaN(coeff)) {
+            throw new Error(`Nieprawidłowy współczynnik dla zmiennej x${i+1} w funkcji celu.`);
+        }
+        
+        objective[`x${i+1}`] = coeff;
+    }
+    
+    // Typ optymalizacji
+    const optimizationType = document.getElementById('optimizationType').value;
+    
+    // Przygotuj model
+    const model = {
+        optimize: 'result',
+        opType: optimizationType,
+        constraints: {},
+        variables: {}
+    };
+    
+    // [...] Definicja zmiennych i ograniczeń
+    
+    return model;
+}
+```
+
+### 4.3.3 Wizualizacja wyników optymalizacji
+
+Dla problemów z dwoma zmiennymi decyzyjnymi, implementacja obejmuje wizualizację graficzną obszaru rozwiązań dopuszczalnych oraz optymalnego punktu:
+
+```javascript
+visualizeResults: (solution) => {
+    // Wizualizacja wyników tylko dla 2 zmiennych
+    if (ProductionOpt.numVars !== 2) {
+        return;
+    }
+    
+    const container = document.getElementById('productionOptVisualization');
+    container.innerHTML = '';
+    
+    // Przygotuj dane do wizualizacji
+    const optX = solution.x1 || 0;
+    const optY = solution.x2 || 0;
+    
+    // Utwórz odpowiedni zakres dla wykresu
+    const maxX = Math.max(optX * 1.5, 10);
+    const maxY = Math.max(optY * 1.5, 10);
+    
+    // Dane punktu optymalnego
+    const optimalPoint = {
+        x: [optX],
+        y: [optY],
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Rozwiązanie optymalne',
+        marker: {
+            size: 10,
+            color: 'rgba(255, 0, 0, 0.8)'
+        }
+    };
+    
+    // [...] Dodanie linii ograniczeń i funkcji celu
+    
+    // Przygotuj układ współrzędnych
+    const layout = {
+        title: 'Wizualizacja optymalizacji',
+        xaxis: {
+            title: 'x1',
+            range: [0, maxX]
+        },
+        yaxis: {
+            title: 'x2',
+            range: [0, maxY]
+        },
+        showlegend: true
+    };
+    
+    // Narysuj wykres
+    const data = [optimalPoint, ...constraintLines];
+    if (objX.length > 0) data.push(objectiveLine);
+    
+    Plotly.newPlot(container, data, layout);
+}
+``` 
