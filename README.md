@@ -52,6 +52,6 @@ Aplikacja zawiera trzy główne moduły:
 
 Aplikacja nie wymaga serwera i działa całkowicie po stronie klienta.
 
-## Autorzy
+## Autor
 
-Michał Kopeć, 2024/2025 
+Michał Kopeć, 2024/2025
