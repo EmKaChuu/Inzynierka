@@ -54,4 +54,5 @@ Aplikacja nie wymaga serwera i działa całkowicie po stronie klienta.
 
 ## Autor
 
-Michał Kopeć, 2024/2025
+Michał Kopeć
+
