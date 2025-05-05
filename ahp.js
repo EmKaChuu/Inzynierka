@@ -1480,9 +1480,29 @@ const AHP = {
         container.appendChild(downloadButtonsContainer);
     },
     
+    // Nowa właściwość do śledzenia czy wizualizacja powinna być uruchomiona po załadowaniu Plotly
+    shouldVisualizeResults: false,
+    
     visualizeResults: () => {
         const container = document.getElementById('ahpVisualization');
         container.innerHTML = '';
+        
+        // Sprawdź czy Plotly jest dostępny
+        if (typeof Plotly === 'undefined') {
+            console.log('Biblioteka Plotly nie jest dostępna. Oczekiwanie na załadowanie...');
+            // Ustawia flagę, że wizualizacja powinna być uruchomiona po załadowaniu Plotly
+            AHP.shouldVisualizeResults = true;
+            
+            // Dodanie informacji dla użytkownika
+            const loadingInfo = document.createElement('div');
+            loadingInfo.className = 'plotly-loading-info';
+            loadingInfo.innerHTML = `
+                <p><i class="fas fa-spinner fa-spin"></i> Ładowanie biblioteki wykresów...</p>
+                <p>Jeśli wykresy nie pojawiają się, odśwież stronę.</p>
+            `;
+            container.appendChild(loadingInfo);
+            return; // Wyjdź z funkcji i czekaj na załadowanie Plotly
+        }
         
         // 1. Wykres radarowy - porównanie opcji pod względem różnych kryteriów
         const radarContainer = document.createElement('div');
@@ -1491,41 +1511,49 @@ const AHP = {
         radarContainer.style.width = '100%';
         container.appendChild(radarContainer);
         
-        const radarData = [];
-        
-        for (let o = 0; o < AHP.numOptions; o++) {
-            const radarValues = [];
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                radarValues.push(AHP.localOptionWeights[c][o] * 100);
+        try {
+            const radarData = [];
+            
+            for (let o = 0; o < AHP.numOptions; o++) {
+                const radarValues = [];
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    radarValues.push(AHP.localOptionWeights[c][o] * 100);
+                }
+                
+                // Zamknięcie wielokąta - powtórzenie pierwszej wartości na końcu
+                radarValues.push(radarValues[0]);
+                const criteriaNames = [...AHP.criteriaNames];
+                criteriaNames.push(criteriaNames[0]);
+                
+                radarData.push({
+                    type: 'scatterpolar',
+                    r: radarValues,
+                    theta: criteriaNames,
+                    fill: 'toself',
+                    name: AHP.optionNames[o]
+                });
             }
             
-            // Zamknięcie wielokąta - powtórzenie pierwszej wartości na końcu
-            radarValues.push(radarValues[0]);
-            const criteriaNames = [...AHP.criteriaNames];
-            criteriaNames.push(criteriaNames[0]);
+            const radarLayout = {
+                title: 'Porównanie opcji pod względem poszczególnych kryteriów',
+                polar: {
+                    radialaxis: {
+                        visible: true,
+                        range: [0, 100]
+                    }
+                },
+                margin: { t: 50, b: 50 },
+                showlegend: true
+            };
             
-            radarData.push({
-                type: 'scatterpolar',
-                r: radarValues,
-                theta: criteriaNames,
-                fill: 'toself',
-                name: AHP.optionNames[o]
-            });
+            Plotly.newPlot('radarChart', radarData, radarLayout, { responsive: true });
+        } catch (error) {
+            console.error("Błąd podczas tworzenia wykresu radarowego:", error);
+            const errorInfo = document.createElement('div');
+            errorInfo.className = 'error-message';
+            errorInfo.textContent = "Nie udało się wygenerować wykresu radarowego. Błąd: " + error.message;
+            radarContainer.appendChild(errorInfo);
         }
-        
-        const radarLayout = {
-            title: 'Porównanie opcji pod względem poszczególnych kryteriów',
-            polar: {
-                radialaxis: {
-                    visible: true,
-                    range: [0, 100]
-                }
-            },
-            margin: { t: 50, b: 50 },
-            showlegend: true
-        };
-        
-        Plotly.newPlot('radarChart', radarData, radarLayout, { responsive: true });
         
         // 2. Wizualizacja wkładu każdego kryterium do wyniku końcowego
         const contributionContainer = document.createElement('div');
@@ -1534,31 +1562,81 @@ const AHP = {
         contributionContainer.style.width = '100%';
         container.appendChild(contributionContainer);
         
-        const contributionData = [];
-        
-        for (let o = 0; o < AHP.numOptions; o++) {
-            const contributions = [];
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                contributions.push(AHP.localOptionWeights[c][o] * AHP.criteriaPriorities[c] * 100);
+        try {
+            const contributionData = [];
+            
+            for (let o = 0; o < AHP.numOptions; o++) {
+                const contributions = [];
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    contributions.push(AHP.localOptionWeights[c][o] * AHP.criteriaPriorities[c] * 100);
+                }
+                
+                contributionData.push({
+                    x: contributions,
+                    y: AHP.criteriaNames,
+                    name: AHP.optionNames[o],
+                    type: 'bar',
+                    orientation: 'h'
+                });
             }
             
-            contributionData.push({
-                x: contributions,
-                y: AHP.criteriaNames,
-                name: AHP.optionNames[o],
-                type: 'bar',
-                orientation: 'h'
-            });
+            const contributionLayout = {
+                title: 'Wkład każdego kryterium do wyniku końcowego',
+                barmode: 'group',
+                margin: { l: 150, r: 50, t: 50, b: 50 },
+                showlegend: true
+            };
+            
+            Plotly.newPlot('contributionChart', contributionData, contributionLayout, { responsive: true });
+        } catch (error) {
+            console.error("Błąd podczas tworzenia wykresu wkładu kryteriów:", error);
+            const errorInfo = document.createElement('div');
+            errorInfo.className = 'error-message';
+            errorInfo.textContent = "Nie udało się wygenerować wykresu wkładu kryteriów. Błąd: " + error.message;
+            contributionContainer.appendChild(errorInfo);
         }
         
-        const contributionLayout = {
-            title: 'Wkład każdego kryterium do wyniku końcowego',
-            barmode: 'group',
-            margin: { l: 150, r: 50, t: 50, b: 50 },
-            showlegend: true
-        };
+        // Dodaj wykres słupkowy z wynikiem globalnym
+        const barContainer = document.createElement('div');
+        barContainer.id = 'barChart';
+        barContainer.style.height = '400px';
+        barContainer.style.width = '100%';
+        container.appendChild(barContainer);
         
-        Plotly.newPlot('contributionChart', contributionData, contributionLayout, { responsive: true });
+        try {
+            // Posortuj opcje według wyniku
+            const sortedIndices = Array.from({length: AHP.numOptions}, (_, i) => i)
+                .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a]);
+            
+            const optionNames = sortedIndices.map(idx => AHP.optionNames[idx]);
+            const optionScores = sortedIndices.map(idx => AHP.globalOptionWeights[idx] * 100);
+            
+            const barData = [{
+                x: optionNames,
+                y: optionScores,
+                type: 'bar',
+                marker: {
+                    color: 'rgba(120, 94, 69, 0.8)'
+                }
+            }];
+            
+            const barLayout = {
+                title: 'Wynik końcowy analizy AHP',
+                yaxis: {
+                    title: 'Waga globalna (%)',
+                    range: [0, Math.max(...optionScores) * 1.1]
+                },
+                margin: { t: 50, b: 100 }
+            };
+            
+            Plotly.newPlot('barChart', barData, barLayout, { responsive: true });
+        } catch (error) {
+            console.error("Błąd podczas tworzenia wykresu słupkowego:", error);
+            const errorInfo = document.createElement('div');
+            errorInfo.className = 'error-message';
+            errorInfo.textContent = "Nie udało się wygenerować wykresu słupkowego. Błąd: " + error.message;
+            barContainer.appendChild(errorInfo);
+        }
         
         // Dodaj przycisk do eksportu danych do formatu Python
         const exportContainer = document.createElement('div');
