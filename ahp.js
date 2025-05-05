@@ -11,15 +11,20 @@ const AHP = {
     globalOptionWeights: null,
     RI: { 2: 0, 3: 0.52, 4: 0.89, 5: 1.11, 6: 1.25, 7: 1.35, 8: 1.40, 9: 1.45, 10: 1.49 },
     interfaceMode: 'simplified', // Nowy parametr - tryb interfejsu: 'matrix' lub 'simplified'
+    comparisonValues: [9, 8, 7, 6, 5, 4, 3, 2, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9], // Tablica wartości porównań
 
     init: () => {
         console.log("Executing AHP.init()");
         Utils.hideElement('ahpResults');
-        document.getElementById('ahpNumCriteria').value = '3';
         
         // Inicjalizacja początkowa macierzy
-        AHP.numCriteria = 3;
-        AHP.numOptions = 2;
+        AHP.numCriteria = parseInt(document.getElementById('ahpNumCriteria').value) || 3;
+        
+        // Pobierz wartość numOptions z dodanego pola
+        const optionsInput = document.getElementById('ahpNumOptions');
+        AHP.numOptions = optionsInput ? parseInt(optionsInput.value) || 3 : 3; // Domyślna wartość 3
+        
+        // Inicjalizacja macierzy porównań
         AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
         AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
             Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
@@ -29,38 +34,38 @@ const AHP = {
         AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => `Kryterium ${i+1}`);
         AHP.optionNames = Array(AHP.numOptions).fill().map((_, i) => `Opcja ${i+1}`);
         
-        // Dodanie przełącznika trybu interfejsu
-        AHP.setupInterfaceSwitch();
+        // Ustawienie przycisków w interfejsie
+        AHP.setupInterfaceButtons();
+        
+        // Dodanie nasłuchiwania zmian w polach liczby kryteriów dla dynamicznej aktualizacji
+        const numCriteriaInput = document.getElementById('ahpNumCriteria');
+        
+        // Usuwamy istniejących listenerów, jeśli były dodane wcześniej
+        const oldCriteriaInput = numCriteriaInput.cloneNode(true);
+        numCriteriaInput.parentNode.replaceChild(oldCriteriaInput, numCriteriaInput);
+        
+        // Dodajemy nowe listenery do obu zdarzeń
+        oldCriteriaInput.addEventListener('input', function() {
+            AHP.setupInputs();
+        });
+        
+        oldCriteriaInput.addEventListener('change', function() {
+            AHP.setupInputs();
+        });
+        
+        // Również dodajemy listenery do pola liczby opcji, jeśli zostało już dodane przez App.initialize()
+        if (optionsInput) {
+            // Dodanie listenerów do pola numOptions odbywa się w script.js podczas tworzenia pola
+            // Jeśli mielibyśmy tworzyć je tutaj, byłoby to zduplikowane
+            console.log("NumOptions field already exists, skipping event listener setup (should be done in App.initialize)");
+        }
         
         // Automatyczne tworzenie interfejsu bez konieczności klikania przycisków
         AHP.setupInputs();
     },
     
-    setupInterfaceSwitch: () => {
-        // Sprawdź, czy przełącznik już istnieje
-        if (document.getElementById('ahp-interface-switch')) return;
-        
-        // Stwórz przełącznik trybu interfejsu
-        const toolContainer = document.getElementById('tool-ahp');
-        const h2Element = toolContainer.querySelector('h2');
-        
-        const switchContainer = document.createElement('div');
-        switchContainer.className = 'interface-switch-container';
-        switchContainer.id = 'ahp-interface-switch';
-        switchContainer.innerHTML = `
-            <div class="interface-switch">
-                <label>Wybierz tryb interfejsu:</label>
-                <div class="switch-options">
-                    <button id="matrix-interface" class="switch-option ${AHP.interfaceMode === 'matrix' ? 'active' : ''}">Macierz porównań</button>
-                    <button id="simplified-interface" class="switch-option ${AHP.interfaceMode === 'simplified' ? 'active' : ''}">Uproszczony</button>
-                </div>
-            </div>
-        `;
-        
-        // Wstaw przełącznik po elemencie h2
-        h2Element.parentNode.insertBefore(switchContainer, h2Element.nextSibling);
-        
-        // Dodaj obsługę zdarzeń
+    setupInterfaceButtons: () => {
+        // Ustawienie przełącznika trybu interfejsu
         document.getElementById('matrix-interface').addEventListener('click', () => {
             // Zapisz aktualny stan danych przed przełączeniem interfejsu
             AHP.saveCurrentComparisonData();
@@ -88,139 +93,46 @@ const AHP = {
             AHP.clearCurrentInterface();
             AHP.setupInputs();
         });
-    },
-    
-    saveCurrentComparisonData: () => {
-        console.log("Saving current comparison data from interface mode: " + AHP.interfaceMode);
         
-        // Zachowujemy nazwy kryteriów
-        AHP.criteriaNames = [];
-        for (let i = 0; i < AHP.numCriteria; i++) {
-            const input = document.getElementById(`criteria-name-${i}`);
-            if (input) {
-                AHP.criteriaNames.push(input.value || `Kryterium ${i+1}`);
-            }
-        }
-        
-        // Zachowujemy nazwy opcji
-        AHP.optionNames = [];
-        for (let i = 0; i < AHP.numOptions; i++) {
-            const input = document.getElementById(`option-name-${i}`);
-            if (input) {
-                AHP.optionNames.push(input.value || `Opcja ${i+1}`);
-            }
-        }
-        
-        // Inicjalizacja macierzy, jeśli nie istnieją
-        if (!AHP.criteriaComparisonMatrix) {
-            AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
-        }
-        
-        if (!AHP.optionComparisonMatrices) {
-            AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
-                Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
-            );
-        }
-        
-        // Zachowujemy dane porównań kryteriów w zależności od trybu interfejsu
-        if (AHP.interfaceMode === 'matrix') {
-            // Zapisz wartości z selektów
-            for (let i = 0; i < AHP.numCriteria; i++) {
-                for (let j = i + 1; j < AHP.numCriteria; j++) {
-                    const select = document.getElementById(`criteria-comp-${i}-${j}`);
-                    if (select) {
-                        const value = parseFloat(select.value);
-                        AHP.criteriaComparisonMatrix[i][j] = value;
-                        AHP.criteriaComparisonMatrix[j][i] = 1 / value;
-                    }
-                }
-            }
-            
-            // Zapisz wartości porównań opcji
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                if (!AHP.optionComparisonMatrices[c]) {
-                    AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
-                }
-                for (let i = 0; i < AHP.numOptions; i++) {
-                    for (let j = i + 1; j < AHP.numOptions; j++) {
-                        const select = document.getElementById(`options-comp-${c}-${i}-${j}`);
-                        if (select) {
-                            const value = parseFloat(select.value);
-                            AHP.optionComparisonMatrices[c][i][j] = value;
-                            AHP.optionComparisonMatrices[c][j][i] = 1 / value;
-                        }
-                    }
-                }
-            }
-        } else if (AHP.interfaceMode === 'simplified') {
-            // W trybie uproszczonym macierze są aktualizowane na bieżąco przez zdarzenia onchange
-            // ale sprawdzimy czy wszystkie pary kryteriów i opcji zostały wypełnione
-            
-            // Sprawdź wartości porównań kryteriów
-            for (let i = 0; i < AHP.numCriteria; i++) {
-                for (let j = i + 1; j < AHP.numCriteria; j++) {
-                    const radios = document.querySelectorAll(`input[name="criteria-comp-${i}-${j}"]:checked`);
-                    if (radios.length > 0) {
-                        const value = parseFloat(radios[0].value);
-                        AHP.criteriaComparisonMatrix[i][j] = value;
-                        AHP.criteriaComparisonMatrix[j][i] = 1 / value;
-                    }
-                }
-            }
-            
-            // Sprawdź wartości porównań opcji
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                if (!AHP.optionComparisonMatrices[c]) {
-                    AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
-                }
-                for (let i = 0; i < AHP.numOptions; i++) {
-                    for (let j = i + 1; j < AHP.numOptions; j++) {
-                        const radios = document.querySelectorAll(`input[name="options-comp-${c}-${i}-${j}"]:checked`);
-                        if (radios.length > 0) {
-                            const value = parseFloat(radios[0].value);
-                            AHP.optionComparisonMatrices[c][i][j] = value;
-                            AHP.optionComparisonMatrices[c][j][i] = 1 / value;
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Debug: Wypisz zapisane macierze
-        console.log("Criteria comparison matrix:", AHP.criteriaComparisonMatrix);
-        console.log("Option comparison matrices:", AHP.optionComparisonMatrices);
-    },
-    
-    clearCurrentInterface: () => {
-        Utils.clearElement('ahpCriteriaNames');
-        Utils.clearElement('ahpCriteriaComparisonMatrix');
-        Utils.clearElement('ahpOptionNames');
-        Utils.clearElement('ahpOptionsComparisonSection');
-        Utils.hideElement('ahpResults');
-        Utils.clearElement('ahpVisualization');
+        // Przycisk przykładowych danych jest ukryty, więc pomijamy dodawanie listenera
+        // document.getElementById('python-test-button').addEventListener('click', AHP.loadPythonExampleData);
     },
 
     setupInputs: () => {
         console.log("Setting up AHP inputs for mode: " + AHP.interfaceMode);
-        AHP.numCriteria = parseInt(document.getElementById('ahpNumCriteria').value) || 3;
+        const newNumCriteria = parseInt(document.getElementById('ahpNumCriteria').value) || 3;
         
-        if (AHP.numCriteria < 3 || AHP.numCriteria > 6) {
+        if (newNumCriteria < 3 || newNumCriteria > 6) {
             Utils.displayResults('ahpResults', 'Liczba kryteriów musi być między 3 a 6', true);
             return;
         }
         
+        // Zapisz bieżący stan danych przed zmianą liczby kryteriów
+        if (AHP.numCriteria !== newNumCriteria) {
+            AHP.saveCurrentComparisonData();
+        }
+        
+        // Aktualizuj liczbę kryteriów
+        AHP.numCriteria = newNumCriteria;
+        
         // Przygotuj pola na nazwy kryteriów
-        const criteriaContainer = document.getElementById('ahpCriteriaNames');
+        const criteriaContainer = document.querySelector('#ahpCriteriaNames .criteria-inputs-container');
         criteriaContainer.innerHTML = '';
-        criteriaContainer.className = 'input-group';
         
-        const criteriaHeader = document.createElement('h3');
-        criteriaHeader.textContent = 'Nazwy kryteriów';
-        criteriaContainer.appendChild(criteriaHeader);
-        
-        // Inicjalizacja macierzy kryteriów, jeśli zmieniła się liczba
+        // Zachowaj istniejące nazwy kryteriów i dodaj nowe, jeśli potrzeba
         if (!AHP.criteriaNames || AHP.criteriaNames.length !== AHP.numCriteria) {
-            AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => `Kryterium ${i+1}`);
+            // Tymczasowa kopia starych nazw
+            const oldNames = AHP.criteriaNames || [];
+            
+            // Inicjalizacja nowej tablicy nazw
+            AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => {
+                // Zachowaj istniejące nazwy, jeśli są dostępne
+                if (i < oldNames.length) {
+                    return oldNames[i];
+                } else {
+                    return `Kryterium ${i+1}`;
+                }
+            });
         }
         
         for (let i = 0; i < AHP.numCriteria; i++) {
@@ -252,48 +164,30 @@ const AHP = {
             criteriaContainer.appendChild(inputRow);
         }
         
-        // Dodaj przycisk do ustawienia liczby opcji
-        const inputRow = document.createElement('div');
-        inputRow.className = 'input-row';
-        
-        const label = document.createElement('label');
-        label.textContent = 'Liczba opcji (2-6):';
-        
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.id = 'ahpNumOptions';
-        input.min = 2;
-        input.max = 6;
-        input.value = AHP.numOptions || 2;
-        
-        // Dodaj obsługę zmiany wartości pola - natychmiastowa aktualizacja
-        input.onchange = () => {
-            AHP.setupOptions();
-        };
-        // Dodaj też obsługę zdarzenia input, aby reagować natychmiast na zmiany wprowadzone przez użytkownika
-        input.oninput = () => {
-            AHP.setupOptions();
-        };
-        
-        const button = document.createElement('button');
-        button.textContent = 'Ustaw opcje';
-        button.onclick = () => AHP.setupOptions();
-        
-        inputRow.appendChild(label);
-        inputRow.appendChild(input);
-        inputRow.appendChild(button);
-        criteriaContainer.appendChild(inputRow);
-        
         // Wyczyść matryce porównań i wyniki
         Utils.clearElement('ahpCriteriaComparisonMatrix');
-        Utils.clearElement('ahpOptionNames');
         Utils.clearElement('ahpOptionsComparisonSection');
         Utils.hideElement('ahpResults');
         Utils.clearElement('ahpVisualization');
         
-        // Inicjalizacja macierzy porównań kryteriów, jeśli nie istnieje
+        // Zachowaj istniejące wartości macierzy porównań kryteriów i dodaj nowe, jeśli potrzeba
         if (!AHP.criteriaComparisonMatrix || AHP.criteriaComparisonMatrix.length !== AHP.numCriteria) {
-            AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
+            // Tymczasowa kopia starej macierzy
+            const oldMatrix = AHP.criteriaComparisonMatrix || [];
+            
+            // Inicjalizacja nowej macierzy
+            const newMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
+            
+            // Kopiuj istniejące wartości
+            for (let i = 0; i < AHP.numCriteria && i < oldMatrix.length; i++) {
+                if (oldMatrix[i]) {
+                    for (let j = 0; j < AHP.numCriteria && j < oldMatrix[i].length; j++) {
+                        newMatrix[i][j] = oldMatrix[i][j];
+                    }
+                }
+            }
+            
+            AHP.criteriaComparisonMatrix = newMatrix;
         }
         
         // Od razu wyświetl sekcje porównań kryteriów
@@ -309,29 +203,57 @@ const AHP = {
     
     setupOptions: (skipComparisonSetup = false) => {
         console.log("Setting up AHP options");
-        AHP.numOptions = parseInt(document.getElementById('ahpNumOptions').value) || 2;
         
-        if (AHP.numOptions < 2 || AHP.numOptions > 6) {
+        // Pobierz wartość liczby opcji z pola, które jest teraz stałym elementem HTML
+        const optionsInput = document.getElementById('ahpNumOptions');
+        const newNumOptions = optionsInput ? parseInt(optionsInput.value) || 3 : 3;
+        
+        if (newNumOptions < 2 || newNumOptions > 6) {
             Utils.displayResults('ahpResults', 'Liczba opcji musi być między 2 a 6', true);
             return;
         }
+
+        // Zapisz bieżący stan danych przed zmianą liczby opcji
+        if (AHP.numOptions !== newNumOptions) {
+            AHP.saveCurrentComparisonData();
+        }
+        
+        // Aktualizuj liczbę opcji
+        AHP.numOptions = newNumOptions;
 
         // Zapisz nazwy kryteriów
         AHP.criteriaNames = [];
         for (let i = 0; i < AHP.numCriteria; i++) {
             const input = document.getElementById(`criteria-name-${i}`);
-            AHP.criteriaNames.push(input.value || `Kryterium ${i+1}`);
+            AHP.criteriaNames.push(input ? input.value || `Kryterium ${i+1}` : `Kryterium ${i+1}`);
         }
         
+        // Zachowaj istniejące nazwy opcji i dodaj nowe, jeśli potrzeba
+        // Upewnij się, że tablica optionNames istnieje
+        if (!AHP.optionNames) {
+            AHP.optionNames = [];
+        }
+        
+        const oldOptionNames = [...AHP.optionNames];
+        AHP.optionNames = Array(AHP.numOptions).fill().map((_, i) => {
+            // Zachowaj istniejące nazwy, jeśli są dostępne
+            if (i < oldOptionNames.length) {
+                return oldOptionNames[i];
+            } else {
+                return `Opcja ${i+1}`;
+            }
+        });
+        
         // Przygotuj pola na nazwy opcji
-        const optionsContainer = document.getElementById('ahpOptionNames');
+        const optionsContainer = document.querySelector('#ahpOptionNames .options-inputs-container');
+        if (!optionsContainer) {
+            console.error("Container for option names not found");
+            return;
+        }
+        
         optionsContainer.innerHTML = '';
-        optionsContainer.className = 'input-group';
         
-        const header = document.createElement('h3');
-        header.textContent = 'Nazwy opcji';
-        optionsContainer.appendChild(header);
-        
+        // Dodajemy pola nazw opcji BEZ dodawania ponownie pola liczbowego
         for (let i = 0; i < AHP.numOptions; i++) {
             const inputRow = document.createElement('div');
             inputRow.className = 'input-row';
@@ -358,17 +280,6 @@ const AHP = {
             inputRow.appendChild(label);
             inputRow.appendChild(input);
             optionsContainer.appendChild(inputRow);
-        }
-        
-        // Aktualizuj nazwy opcji, jeśli są dostępne
-        AHP.optionNames = [];
-        for (let i = 0; i < AHP.numOptions; i++) {
-            const input = document.getElementById(`option-name-${i}`);
-            if (input) {
-                AHP.optionNames.push(input.value || `Opcja ${i+1}`);
-            } else {
-                AHP.optionNames.push(`Opcja ${i+1}`);
-            }
         }
         
         // Inicjalizacja macierzy porównań opcji
@@ -409,6 +320,10 @@ const AHP = {
     
     createSimplifiedInterface: () => {
         console.log("Creating simplified interface for AHP");
+
+        console.log("Current options: numCriteria =", AHP.numCriteria, "numOptions =", AHP.numOptions);
+        console.log("Criteria names:", AHP.criteriaNames);
+        console.log("Option names:", AHP.optionNames);
         
         // Utwórz sekcję porównań kryteriów
         const criteriaContainer = document.getElementById('ahpCriteriaComparisonMatrix');
@@ -512,12 +427,39 @@ const AHP = {
         header.textContent = 'Porównanie opcji w kontekście każdego kryterium';
         container.appendChild(header);
         
-        // Sprawdź, czy mamy odpowiednie struktury danych
-        if (!AHP.optionComparisonMatrices || AHP.optionComparisonMatrices.length !== AHP.numCriteria) {
-            console.log("Initializing option comparison matrices");
+        const optionDescription = document.createElement('p');
+        optionDescription.className = 'comparison-description';
+        optionDescription.textContent = 'Zaznacz, która opcja jest lepsza i w jakim stopniu:';
+        container.appendChild(optionDescription);
+        
+        // Upewnij się, że mamy poprawnie zainicjalizowane struktury danych
+        if (!AHP.optionComparisonMatrices) {
+            console.log("Initializing option comparison matrices from scratch");
             AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
                 Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
             );
+        } else if (AHP.optionComparisonMatrices.length !== AHP.numCriteria) {
+            console.log("Adjusting option comparison matrices size for criteria", AHP.optionComparisonMatrices.length, "to", AHP.numCriteria);
+            // Tymczasowa kopia starych macierzy
+            const oldMatrices = [...AHP.optionComparisonMatrices];
+            
+            // Utwórz nowe macierze o właściwym rozmiarze
+            AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
+                Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
+            );
+            
+            // Skopiuj istniejące wartości
+            for (let c = 0; c < Math.min(AHP.numCriteria, oldMatrices.length); c++) {
+                if (oldMatrices[c]) {
+                    for (let i = 0; i < Math.min(AHP.numOptions, oldMatrices[c].length); i++) {
+                        if (oldMatrices[c][i]) {
+                            for (let j = 0; j < Math.min(AHP.numOptions, oldMatrices[c][i].length); j++) {
+                                AHP.optionComparisonMatrices[c][i][j] = oldMatrices[c][i][j];
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // Kontener dla wszystkich paneli opcji
@@ -529,7 +471,7 @@ const AHP = {
             const criteriaName = AHP.criteriaNames[c];
             
             const optionPanel = document.createElement('div');
-            optionPanel.className = 'unified-panel option-panel';
+            optionPanel.className = 'criterion-panel'; // Ta sama klasa dla paneli kryteriów i opcji
             
             const optionPanelHeader = document.createElement('h4');
             optionPanelHeader.textContent = `Porównanie opcji pod względem: ${criteriaName}`;
@@ -537,6 +479,7 @@ const AHP = {
             
             // Upewnij się, że mamy zainicjalizowaną macierz dla tego kryterium
             if (!AHP.optionComparisonMatrices[c] || AHP.optionComparisonMatrices[c].length !== AHP.numOptions) {
+                console.log(`Initializing option matrix for criterion ${c}`);
                 AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
             }
             
@@ -548,7 +491,7 @@ const AHP = {
                     
                     // Lewa opcja
                     const leftOption = document.createElement('div');
-                    leftOption.className = 'option left-option';
+                    leftOption.className = 'criterion left-criterion'; // Ta sama klasa dla spójności
                     leftOption.textContent = AHP.optionNames[i];
                     
                     // Skala porównania
@@ -578,7 +521,13 @@ const AHP = {
                         option.setAttribute('data-k', k);
                         
                         // Ustawienie domyślnej wartości na podstawie istniejącej macierzy
-                        const currentValue = AHP.optionComparisonMatrices[c][i][j];
+                        let currentValue = 1;
+                        if (AHP.optionComparisonMatrices[c] && 
+                            AHP.optionComparisonMatrices[c][i] && 
+                            AHP.optionComparisonMatrices[c][i][j] !== undefined) {
+                            currentValue = AHP.optionComparisonMatrices[c][i][j];
+                        }
+                        
                         if ((k === 8 && currentValue === 1) || // Środkowa wartość (1)
                             (k < 8 && Math.abs(values[k] - currentValue) < 0.001) || // Lewe wartości 
                             (k > 8 && Math.abs(values[k] - currentValue) < 0.001)) { // Prawe wartości
@@ -602,7 +551,7 @@ const AHP = {
                     
                     // Prawa opcja
                     const rightOption = document.createElement('div');
-                    rightOption.className = 'option right-option';
+                    rightOption.className = 'criterion right-criterion'; // Ta sama klasa dla spójności
                     rightOption.textContent = AHP.optionNames[j];
                     
                     // Dodaj elementy do wiersza
@@ -623,13 +572,6 @@ const AHP = {
         }
         
         container.appendChild(optionsContainer);
-        
-        // Dodaj przycisk do obliczania wyników
-        const calculateButton = document.createElement('button');
-        calculateButton.textContent = 'Oblicz wyniki AHP';
-        calculateButton.onclick = AHP.calculate;
-        calculateButton.className = 'calculate-button';
-        container.appendChild(calculateButton);
     },
     
     createCriteriaComparisonMatrix: () => {
@@ -720,6 +662,8 @@ const AHP = {
         const select = document.getElementById(`criteria-comp-${i}-${j}`);
         const value = parseFloat(select.value);
         
+        console.log(`Updating criteria comparison ${i},${j} to ${value}`);
+        
         // Inicjalizacja macierzy porównań, jeśli nie istnieje
         if (!AHP.criteriaComparisonMatrix) {
             AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
@@ -732,6 +676,9 @@ const AHP = {
         // Ustaw odwrotność w komórce symetrycznej
         const reciprocalCell = document.getElementById(`criteria-comp-value-${j}-${i}`);
         reciprocalCell.textContent = (1 / value).toFixed(4);
+        
+        // Dla debugowania
+        console.log("Updated criteria matrix:", AHP.criteriaComparisonMatrix);
         
         // Synchronizuj z uproszczonym interfejsem, jeśli istnieje
         if (AHP.interfaceMode === 'simplified') {
@@ -776,23 +723,20 @@ const AHP = {
         header.textContent = 'Porównanie opcji w kontekście każdego kryterium';
         container.appendChild(header);
         
-        // Utwórz zakładki dla kryteriów
-        const tabs = document.createElement('div');
-        tabs.className = 'comparison-tabs';
-        container.appendChild(tabs);
+        // Kontener dla wszystkich paneli opcji
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'options-panels-container';
         
+        // Dla każdego kryterium tworzymy panel porównań opcji
         for (let c = 0; c < AHP.numCriteria; c++) {
             const criteriaName = AHP.criteriaNames[c];
             
-            // Kontener dla porównań opcji dla danego kryterium
-            const criteriaContainer = document.createElement('div');
-            criteriaContainer.id = `comparison-for-criteria-${c}`;
-            criteriaContainer.className = 'criteria-comparison-container';
-            criteriaContainer.style.display = c === 0 ? 'block' : 'none';
+            const optionPanel = document.createElement('div');
+            optionPanel.className = 'unified-panel option-panel';
             
             const criteriaHeader = document.createElement('h4');
             criteriaHeader.textContent = `Porównanie opcji pod względem: ${criteriaName}`;
-            criteriaContainer.appendChild(criteriaHeader);
+            optionPanel.appendChild(criteriaHeader);
             
             // Tabela porównań dla opcji
             const table = document.createElement('table');
@@ -845,7 +789,8 @@ const AHP = {
                             option.value = values[k];
                             option.textContent = labels[k];
                             
-                            if (values[k] === 1) {
+                            // Ustaw aktualną wartość z macierzy porównań
+                            if (Math.abs(values[k] - AHP.optionComparisonMatrices[c][i][j]) < 0.001) {
                                 option.selected = true;
                             }
                             
@@ -856,7 +801,7 @@ const AHP = {
                     } else {
                         // Dolna część macierzy - odwrotność
                         td.id = `options-comp-value-${c}-${i}-${j}`;
-                        td.textContent = '1';
+                        td.textContent = (1 / AHP.optionComparisonMatrices[c][j][i]).toFixed(4);
                     }
                     
                     row.appendChild(td);
@@ -866,38 +811,11 @@ const AHP = {
             }
             
             table.appendChild(tbody);
-            criteriaContainer.appendChild(table);
-            container.appendChild(criteriaContainer);
-            
-            // Przycisk zakładki
-            const tabButton = document.createElement('button');
-            tabButton.textContent = criteriaName;
-            tabButton.onclick = () => {
-                for (let i = 0; i < AHP.numCriteria; i++) {
-                    const cont = document.getElementById(`comparison-for-criteria-${i}`);
-                    cont.style.display = i === c ? 'block' : 'none';
-                }
-                 
-                // Podświetlenie aktywnej zakładki
-                const allTabs = tabs.querySelectorAll('button');
-                allTabs.forEach(tab => tab.classList.remove('active'));
-                tabButton.classList.add('active');
-            };
-            
-            // Aktywuj pierwszą zakładkę
-            if (c === 0) {
-                tabButton.classList.add('active');
-            }
-            
-            tabs.appendChild(tabButton);
+            optionPanel.appendChild(table);
+            optionsContainer.appendChild(optionPanel);
         }
         
-        // Dodaj przycisk do obliczania wyników
-        const calculateButton = document.createElement('button');
-        calculateButton.textContent = 'Oblicz wyniki AHP';
-        calculateButton.onclick = AHP.calculate;
-        calculateButton.className = 'calculate-button';
-        container.appendChild(calculateButton);
+        container.appendChild(optionsContainer);
     },
     
     updateOptionComparisonValue: (c, i, j) => {
@@ -905,14 +823,19 @@ const AHP = {
         const select = document.getElementById(`options-comp-${c}-${i}-${j}`);
         const value = parseFloat(select.value);
         
+        console.log(`Updating option comparison for criterion ${c}, options ${i},${j} to ${value}`);
+        
         // Zapisz wartość w macierzy porównań
         AHP.optionComparisonMatrices[c][i][j] = value;
         AHP.optionComparisonMatrices[c][j][i] = 1 / value;
         
+        // Dla debugowania
+        console.log(`Updated option matrix for criterion ${c}:`, AHP.optionComparisonMatrices[c]);
+        
         // Aktualizuj wyświetlaną odwrotność
         const reciprocalCell = document.getElementById(`options-comp-value-${c}-${j}-${i}`);
         if (reciprocalCell) {
-            reciprocalCell.textContent = (1 / value).toFixed(4);
+        reciprocalCell.textContent = (1 / value).toFixed(4);
         }
         
         // Synchronizuj z uproszczonym interfejsem, jeśli istnieje
@@ -929,9 +852,26 @@ const AHP = {
     },
     
     updateSimplifiedOptionComparisonValue: (c, i, j, value) => {
+        console.log(`Updating simplified option comparison for criterion ${c}, options ${i},${j} to ${value}`);
+        
+        // Upewnij się, że macierz istnieje
+        if (!AHP.optionComparisonMatrices) {
+            AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
+                Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
+            );
+        }
+        
+        // Upewnij się, że macierz dla danego kryterium istnieje
+        if (!AHP.optionComparisonMatrices[c]) {
+            AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
+        }
+        
         // Zapisz wartość w macierzy porównań
         AHP.optionComparisonMatrices[c][i][j] = value;
         AHP.optionComparisonMatrices[c][j][i] = 1 / value;
+        
+        // Dla debugowania
+        console.log(`Updated option matrix for criterion ${c}:`, AHP.optionComparisonMatrices[c]);
         
         // Synchronizuj z macierzowym interfejsem, jeśli jest otwarty w innej karcie
         if (AHP.interfaceMode === 'matrix') {
@@ -941,6 +881,169 @@ const AHP = {
                 select.value = value;
                 // Aktualizuj wyświetlaną odwrotność
                 const reciprocalCell = document.getElementById(`options-comp-value-${c}-${j}-${i}`);
+                if (reciprocalCell) {
+        reciprocalCell.textContent = (1 / value).toFixed(4);
+                }
+            }
+        }
+        
+        // Automatycznie przelicz wyniki przy zmianie wartości
+        // Ustawienie opóźnienia, aby nie przeliczać zbyt często przy wielu zmianach
+        if (AHP.calculationTimeout) {
+            clearTimeout(AHP.calculationTimeout);
+        }
+        
+        AHP.calculationTimeout = setTimeout(() => {
+            AHP.calculate();
+        }, 500);
+    },
+    
+    saveCurrentComparisonData: () => {
+        console.log("Saving current comparison data");
+        try {
+            // Zapisz porównania kryteriów
+            if (AHP.interfaceMode === 'matrix') {
+                // Zapisz z interfejsu macierzowego
+            for (let i = 0; i < AHP.numCriteria; i++) {
+                    for (let j = i + 1; j < AHP.numCriteria; j++) {
+                        const select = document.getElementById(`criteria-comp-${i}-${j}`);
+                        if (select) {
+                            const value = parseFloat(select.value);
+                            AHP.criteriaComparisonMatrix[i][j] = value;
+                            AHP.criteriaComparisonMatrix[j][i] = 1 / value;
+                        }
+                    }
+                }
+            } else if (AHP.interfaceMode === 'simplified') {
+                // Zapisz z uproszczonego interfejsu (przyciski radio)
+                for (let i = 0; i < AHP.numCriteria; i++) {
+                    for (let j = i + 1; j < AHP.numCriteria; j++) {
+                        const values = [9, 8, 7, 6, 5, 4, 3, 2, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9];
+                        let found = false;
+                        
+                        for (let k = 0; k < values.length; k++) {
+                            const radio = document.getElementById(`criteria-comp-${i}-${j}-${k}`);
+                            if (radio && radio.checked) {
+                                AHP.criteriaComparisonMatrix[i][j] = values[k];
+                                AHP.criteriaComparisonMatrix[j][i] = 1 / values[k];
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!found) {
+                            // Ustaw wartość domyślną, jeśli nic nie jest zaznaczone
+                            AHP.criteriaComparisonMatrix[i][j] = 1;
+                            AHP.criteriaComparisonMatrix[j][i] = 1;
+                        }
+                    }
+                }
+            }
+            
+            // Zapisz porównania opcji
+            if (!AHP.optionComparisonMatrices || AHP.optionComparisonMatrices.length !== AHP.numCriteria) {
+                AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
+                    Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
+                );
+            }
+            
+            if (AHP.interfaceMode === 'matrix') {
+                // Zapisz z interfejsu macierzowego
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    for (let i = 0; i < AHP.numOptions; i++) {
+                        for (let j = i + 1; j < AHP.numOptions; j++) {
+                            const select = document.getElementById(`options-comp-${c}-${i}-${j}`);
+                            if (select) {
+                                const value = parseFloat(select.value);
+                                
+                                // Sprawdź czy macierz istnieje
+                                if (!AHP.optionComparisonMatrices[c]) {
+                                    AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
+                                }
+                                
+                                AHP.optionComparisonMatrices[c][i][j] = value;
+                                AHP.optionComparisonMatrices[c][j][i] = 1 / value;
+                            }
+                        }
+                    }
+                }
+            } else if (AHP.interfaceMode === 'simplified') {
+                // Zapisz z uproszczonego interfejsu (przyciski radio)
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    for (let i = 0; i < AHP.numOptions; i++) {
+                        for (let j = i + 1; j < AHP.numOptions; j++) {
+                            const values = [9, 8, 7, 6, 5, 4, 3, 2, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9];
+                            let found = false;
+                            
+                            for (let k = 0; k < values.length; k++) {
+                                const radio = document.getElementById(`options-comp-${c}-${i}-${j}-${k}`);
+                                if (radio && radio.checked) {
+                                    // Sprawdź czy macierz istnieje
+                                    if (!AHP.optionComparisonMatrices[c]) {
+                                        AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
+                                    }
+                                    
+                                    AHP.optionComparisonMatrices[c][i][j] = values[k];
+                                    AHP.optionComparisonMatrices[c][j][i] = 1 / values[k];
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!found) {
+                                // Ustaw wartość domyślną, jeśli nic nie jest zaznaczone
+                                AHP.optionComparisonMatrices[c][i][j] = 1;
+                                AHP.optionComparisonMatrices[c][j][i] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            console.log("Saved criteria matrix:", AHP.criteriaComparisonMatrix);
+            console.log("Saved option matrices:", AHP.optionComparisonMatrices);
+        } catch (error) {
+            console.error("Błąd podczas zapisywania danych porównań:", error);
+        }
+    },
+    
+    clearCurrentInterface: () => {
+        // Wyczyść kontener porównań kryteriów
+        Utils.clearElement('ahpCriteriaComparisonMatrix');
+        
+        // Wyczyść kontener porównań opcji
+        Utils.clearElement('ahpOptionsComparisonSection');
+        
+        // Ukryj wyniki
+        Utils.hideElement('ahpResults');
+        
+        // Wyczyść wizualizację
+        Utils.clearElement('ahpVisualization');
+    },
+    
+    updateSimplifiedComparisonValue: (i, j, value) => {
+        console.log(`Updating simplified criteria comparison for criteria ${i},${j} to ${value}`);
+        
+        // Upewnij się, że macierz istnieje
+        if (!AHP.criteriaComparisonMatrix || AHP.criteriaComparisonMatrix.length !== AHP.numCriteria) {
+            AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
+        }
+        
+        // Zapisz wartość w macierzy porównań
+        AHP.criteriaComparisonMatrix[i][j] = value;
+        AHP.criteriaComparisonMatrix[j][i] = 1 / value;
+        
+        // Dla debugowania
+        console.log(`Updated criteria matrix:`, AHP.criteriaComparisonMatrix);
+        
+        // Synchronizuj z macierzowym interfejsem, jeśli jest otwarty w innej karcie
+        if (AHP.interfaceMode === 'matrix') {
+            // Znajdź select i ustaw mu wartość
+            const select = document.getElementById(`criteria-comp-${i}-${j}`);
+            if (select) {
+                select.value = value;
+                // Aktualizuj wyświetlaną odwrotność
+                const reciprocalCell = document.getElementById(`criteria-comp-value-${j}-${i}`);
                 if (reciprocalCell) {
                     reciprocalCell.textContent = (1 / value).toFixed(4);
                 }
@@ -958,145 +1061,81 @@ const AHP = {
         }, 500);
     },
     
-    getMatrixFromInputs: (type, criteriaIdx = null) => {
-        if (type === 'criteria') {
-            return AHP.criteriaComparisonMatrix;
-        } else if (type === 'options' && criteriaIdx !== null) {
-            return AHP.optionComparisonMatrices[criteriaIdx];
+    // Funkcja wykonująca obliczenia AHP
+    calculate: () => {
+        console.log("Performing AHP calculations...");
+        
+        // Zapisz aktualny stan danych przed obliczeniami
+        AHP.saveCurrentComparisonData();
+        
+        try {
+            // Sprawdź czy wszystkie dane są gotowe
+            if (!AHP.criteriaComparisonMatrix || !AHP.optionComparisonMatrices) {
+                Utils.displayResults('ahpResults', 'Błąd: Brak danych do obliczeń. Proszę wprowadzić wszystkie porównania.', true);
+                return;
             }
-        return null;
+            
+            // Oblicz priorytety dla kryteriów
+            AHP.criteriaPriorities = AHP.calculatePriorities(AHP.criteriaComparisonMatrix);
+            
+            console.log("Criteria priorities:", AHP.criteriaPriorities);
+            
+            // Oblicz lokalne wagi dla opcji dla każdego kryterium
+            AHP.localOptionWeights = [];
+            for (let c = 0; c < AHP.numCriteria; c++) {
+                if (AHP.optionComparisonMatrices[c]) {
+                    AHP.localOptionWeights[c] = AHP.calculatePriorities(AHP.optionComparisonMatrices[c]);
+                } else {
+                    // Jeśli brakuje macierzy dla kryterium, utwórz równe wagi
+                    AHP.localOptionWeights[c] = Array(AHP.numOptions).fill(1 / AHP.numOptions);
+                }
+            }
+            
+            console.log("Local option weights:", AHP.localOptionWeights);
+            
+            // Oblicz globalne wagi opcji
+            AHP.globalOptionWeights = Array(AHP.numOptions).fill(0);
+            
+            for (let o = 0; o < AHP.numOptions; o++) {
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    AHP.globalOptionWeights[o] += AHP.criteriaPriorities[c] * AHP.localOptionWeights[c][o];
+                }
+            }
+            
+            console.log("Global option weights:", AHP.globalOptionWeights);
+            
+            // Przygotuj wyniki do wyświetlenia
+            AHP.displayResults();
+        } catch (error) {
+            console.error("Error during AHP calculation:", error);
+            Utils.displayResults('ahpResults', `Błąd podczas obliczeń: ${error.message}`, true);
+        }
     },
     
-    calculateEigenvector: (matrix) => {
+    // Funkcja obliczająca priorytety na podstawie macierzy porównań
+    calculatePriorities: (matrix) => {
         const n = matrix.length;
+        const priorities = Array(n).fill(0);
         
-        // Metoda przybliżona - mnożenie każdego wiersza i obliczenie pierwiastka n-tego stopnia
-        let eigenvalues = [];
-        
-        // Obliczanie iloczynu elementów w każdym wierszu
+        // Metoda średniej geometrycznej
         for (let i = 0; i < n; i++) {
             let product = 1;
             for (let j = 0; j < n; j++) {
                 product *= matrix[i][j];
             }
-            eigenvalues.push(Math.pow(product, 1/n));
+            priorities[i] = Math.pow(product, 1/n);
         }
         
-        // Normalizacja wektora własnego
-        const sum = eigenvalues.reduce((a, b) => a + b, 0);
-        const normalizedEigenvalues = eigenvalues.map(value => value / sum);
-        
-        // Obliczanie współczynnika spójności (CR)
-        // Obliczamy wektor preferencji ważonej (weighted preference vector)
-        let weightedPreferenceVector = Array(n).fill(0);
+        // Normalizacja
+        const sum = priorities.reduce((a, b) => a + b, 0);
         for (let i = 0; i < n; i++) {
-            for (let j = 0; j < n; j++) {
-                weightedPreferenceVector[i] += matrix[i][j] * normalizedEigenvalues[j];
-        }
+            priorities[i] /= sum;
         }
         
-        // Dzielimy przez odpowiednie wartości z wektora własnego
-        const consistencyVector = weightedPreferenceVector.map((val, idx) => 
-            val / normalizedEigenvalues[idx]
-        );
-        
-        // Obliczamy lambda_max jako średnią elementów wektora spójności
-        const lambda_max = consistencyVector.reduce((a, b) => a + b, 0) / n;
-        
-        // Następnie obliczamy indeks spójności (CI)
-        const CI = (lambda_max - n) / (n - 1);
-        
-        // Obliczamy współczynnik spójności (CR)
-        const RI = AHP.RI[n] || 1.98;  // Używamy znanej wartości RI dla danego n
-        const CR = CI / RI;
-        
-        return {
-            eigenvalues: normalizedEigenvalues,
-            lambda_max: lambda_max,
-            CI: CI,
-            CR: CR
-        };
+        return priorities;
     },
     
-    calculate: () => {
-        try {
-            // 1. Pobierz i zwaliduj macierz porównań kryteriów
-            const criteriaMatrix = AHP.getMatrixFromInputs('criteria');
-            const criteriaResult = AHP.calculateEigenvector(criteriaMatrix);
-            AHP.criteriaPriorities = criteriaResult.eigenvalues;
-            
-            // Sprawdź CR dla kryteriów i wyświetl ostrzeżenie, ale nie przerywaj obliczeń
-            let warningMessages = [];
-            if (criteriaResult.CR > 0.1) {
-                warningMessages.push(`<div class="cr-warning">Uwaga: Współczynnik spójności (CR) dla porównań kryteriów wynosi ${criteriaResult.CR.toFixed(4)}, 
-                    co przekracza zalecaną wartość 0.1. Rozważ ponowną ocenę porównań.</div>`);
-            }
-            
-            // 2. Dla każdego kryterium, pobierz macierz porównań opcji
-            AHP.localOptionWeights = [];  // Wagi lokalne opcji dla każdego kryterium
-            
-            let inconsistentCriteria = [];
-            
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                const optionMatrix = AHP.getMatrixFromInputs('options', c);
-                const optionResult = AHP.calculateEigenvector(optionMatrix);
-                
-                AHP.localOptionWeights.push(optionResult.eigenvalues);
-                
-                // Sprawdź CR dla opcji
-                if (optionResult.CR > 0.1) {
-                    inconsistentCriteria.push({
-                        name: AHP.criteriaNames[c],
-                        cr: optionResult.CR
-                    });
-                }
-            }
-            
-            // Jeśli którekolwiek z porównań jest niespójne, pokaż ostrzeżenie, ale nie przerywaj obliczeń
-            if (inconsistentCriteria.length > 0) {
-                let warningHtml = `<div class="cr-warning">Uwaga: Współczynnik spójności (CR) dla porównań opcji 
-                    przekracza zalecaną wartość 0.1 dla następujących kryteriów:<ul>`;
-                
-                for (const item of inconsistentCriteria) {
-                    warningHtml += `<li>${item.name}: CR = ${item.cr.toFixed(4)}</li>`;
-                }
-                
-                warningHtml += `</ul>Rozważ ponowną ocenę porównań.</div>`;
-                warningMessages.push(warningHtml);
-            }
-            
-            // 3. Oblicz wagi globalne dla opcji
-            AHP.globalOptionWeights = Array(AHP.numOptions).fill(0);
-            
-            for (let o = 0; o < AHP.numOptions; o++) {
-                for (let c = 0; c < AHP.numCriteria; c++) {
-                    AHP.globalOptionWeights[o] += AHP.localOptionWeights[c][o] * AHP.criteriaPriorities[c];
-                }
-            }
-            
-            // 4. Wyświetl wyniki
-            AHP.displayResults();
-            
-            // 5. Wizualizuj wyniki
-            AHP.visualizeResults();
-            
-            // 6. Wyświetl ostrzeżenia (jeśli istnieją)
-            if (warningMessages.length > 0) {
-                const warningsContainer = document.createElement('div');
-                warningsContainer.className = 'warnings-container';
-                warningsContainer.innerHTML = warningMessages.join('');
-                
-                // Dodaj ostrzeżenia na górze wyników
-                const resultsContainer = document.getElementById('ahpResults');
-                resultsContainer.insertBefore(warningsContainer, resultsContainer.firstChild);
-            }
-            
-        } catch (error) {
-            console.error("Błąd w obliczeniach AHP:", error);
-            Utils.displayResults('ahpResults', `Błąd w obliczeniach: ${error.message}`, true);
-        }
-    },
-    
+    // Funkcja wyświetlająca wyniki
     displayResults: () => {
         const container = document.getElementById('ahpResults');
         container.innerHTML = '';
@@ -1406,34 +1445,7 @@ const AHP = {
         const container = document.getElementById('ahpVisualization');
         container.innerHTML = '';
         
-        // 1. Wykres słupkowy z wynikami końcowymi
-        const overallData = [{
-            x: AHP.optionNames,
-            y: AHP.globalOptionWeights.map(v => v * 100),
-            type: 'bar',
-            marker: {
-                color: AHP.optionNames.map((_, i) => {
-                    const maxValue = Math.max(...AHP.globalOptionWeights);
-                    return AHP.globalOptionWeights[i] === maxValue ? 'rgba(46, 139, 87, 0.8)' : 'rgba(70, 130, 180, 0.8)';
-                })
-            },
-            text: AHP.globalOptionWeights.map(v => v.toFixed(4)),
-            textposition: 'auto',
-            hoverinfo: 'y+text',
-            name: 'Wynik końcowy'
-        }];
-        
-        const overallLayout = {
-            title: 'Wyniki końcowe AHP',
-            xaxis: { title: 'Opcje' },
-            yaxis: { title: 'Wynik (%)' },
-            margin: { t: 50, b: 100 },
-            height: 400
-        };
-        
-        Plotly.newPlot('ahpVisualization', overallData, overallLayout, { responsive: true });
-        
-        // 2. Wykres radarowy - porównanie opcji pod względem różnych kryteriów
+        // 1. Wykres radarowy - porównanie opcji pod względem różnych kryteriów
         const radarContainer = document.createElement('div');
         radarContainer.id = 'radarChart';
         radarContainer.style.height = '500px';
@@ -1476,7 +1488,7 @@ const AHP = {
         
         Plotly.newPlot('radarChart', radarData, radarLayout, { responsive: true });
         
-        // 3. Wizualizacja wkładu każdego kryterium do wyniku końcowego
+        // 2. Wizualizacja wkładu każdego kryterium do wyniku końcowego
         const contributionContainer = document.createElement('div');
         contributionContainer.id = 'contributionChart';
         contributionContainer.style.height = '500px';
@@ -1525,508 +1537,94 @@ const AHP = {
         document.dispatchEvent(new Event('calculation-complete'));
     },
     
-    // Nowa funkcja do eksportu danych dla porównania z aplikacją referencyjną
-    exportToPython: () => {
-        // Tworzymy kod Pythona reprezentujący bieżące dane
-        let pythonCode = `# Kod Pythona do analizy AHP z używając biblioteki ahpy lub innej\n\n`;
-        pythonCode += `import numpy as np\nimport pandas as pd\n`;
-        pythonCode += `# Możesz użyć biblioteki ahpy lub innej implementacji AHP\n\n`;
-        
-        // Nazwy kryteriów i opcji
-        pythonCode += `# Nazwy kryteriów i opcji\n`;
-        pythonCode += `criteria_names = ${JSON.stringify(AHP.criteriaNames)}\n`;
-        pythonCode += `option_names = ${JSON.stringify(AHP.optionNames)}\n\n`;
-        
-        // Macierz porównań kryteriów
-        pythonCode += `# Macierz porównań kryteriów\n`;
-        pythonCode += `criteria_comparison_matrix = np.array([\n`;
-        for (let i = 0; i < AHP.numCriteria; i++) {
-            pythonCode += `    [${AHP.criteriaComparisonMatrix[i].join(', ')}],\n`;
-        }
-        pythonCode += `])\n\n`;
-        
-        // Macierze porównań opcji
-        pythonCode += `# Macierze porównań opcji dla każdego kryterium\n`;
-        pythonCode += `option_comparison_matrices = []\n`;
-        
-        for (let c = 0; c < AHP.numCriteria; c++) {
-            pythonCode += `\n# Porównania opcji dla kryterium: ${AHP.criteriaNames[c]}\n`;
-            pythonCode += `matrix_${c} = np.array([\n`;
-            
-            for (let i = 0; i < AHP.numOptions; i++) {
-                pythonCode += `    [${AHP.optionComparisonMatrices[c][i].join(', ')}],\n`;
-            }
-            
-            pythonCode += `])\n`;
-            pythonCode += `option_comparison_matrices.append(matrix_${c})\n`;
-        }
-        
-        // Wyniki obliczeń
-        pythonCode += `\n# Wyliczone wartości\n`;
-        pythonCode += `# Wagi kryteriów:\n`;
-        pythonCode += `expected_criteria_weights = [${AHP.criteriaPriorities.join(', ')}]\n\n`;
-        
-        pythonCode += `# Lokalne wagi opcji dla każdego kryterium:\n`;
-        for (let c = 0; c < AHP.numCriteria; c++) {
-            pythonCode += `# Dla kryterium ${AHP.criteriaNames[c]}\n`;
-            pythonCode += `expected_local_weights_${c} = [${AHP.localOptionWeights[c].join(', ')}]\n`;
-        }
-        
-        pythonCode += `\n# Globalne wagi opcji (wynik końcowy):\n`;
-        pythonCode += `expected_global_weights = [${AHP.globalOptionWeights.join(', ')}]\n\n`;
-        
-        // Najlepsza opcja
-        let bestOptionIndex = 0;
-        for (let i = 1; i < AHP.numOptions; i++) {
-            if (AHP.globalOptionWeights[i] > AHP.globalOptionWeights[bestOptionIndex]) {
-                bestOptionIndex = i;
-            }
-        }
-        
-        pythonCode += `# Najlepsza opcja: "${AHP.optionNames[bestOptionIndex]}" z wynikiem ${AHP.globalOptionWeights[bestOptionIndex]}\n`;
-        
-        // Stwórz element textarea z kodem
-        const exportModal = document.createElement('div');
-        exportModal.className = 'export-modal';
-        
-        const modalContent = document.createElement('div');
-        modalContent.className = 'export-modal-content';
-        
-        const closeButton = document.createElement('span');
-        closeButton.className = 'close-modal';
-        closeButton.innerHTML = '&times;';
-        closeButton.onclick = () => {
-            document.body.removeChild(exportModal);
-        };
-        
-        const modalHeader = document.createElement('h4');
-        modalHeader.textContent = 'Kod Pythona dla analizy porównawczej';
-        
-        const modalDescription = document.createElement('p');
-        modalDescription.textContent = 'Skopiuj poniższy kod do skryptu Pythona, aby porównać wyniki z aplikacją referencyjną:';
-        
-        const codeArea = document.createElement('textarea');
-        codeArea.className = 'python-code-area';
-        codeArea.value = pythonCode;
-        codeArea.readOnly = true;
-        
-        const copyButton = document.createElement('button');
-        copyButton.textContent = 'Kopiuj kod';
-        copyButton.className = 'copy-code-button';
-        copyButton.onclick = () => {
-            codeArea.select();
-            document.execCommand('copy');
-            copyButton.textContent = 'Skopiowano!';
-            setTimeout(() => {
-                copyButton.textContent = 'Kopiuj kod';
-            }, 2000);
-        };
-        
-        modalContent.appendChild(closeButton);
-        modalContent.appendChild(modalHeader);
-        modalContent.appendChild(modalDescription);
-        modalContent.appendChild(codeArea);
-        modalContent.appendChild(copyButton);
-        
-        exportModal.appendChild(modalContent);
-        document.body.appendChild(exportModal);
-    },
-    
-    updateSimplifiedComparisonValue: (i, j, value) => {
-        // W przypadku uproszczonego interfejsu wartości są od razu aktualizowane
-        if (!AHP.criteriaComparisonMatrix) {
-            AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
-        }
-        
-        AHP.criteriaComparisonMatrix[i][j] = value;
-        AHP.criteriaComparisonMatrix[j][i] = 1 / value;
-        
-        // Synchronizuj z macierzowym interfejsem, jeśli jest otwarty w innej karcie
-        if (AHP.interfaceMode === 'matrix') {
-            // Znajdź select i ustaw mu wartość
-            const select = document.getElementById(`criteria-comp-${i}-${j}`);
-            if (select) {
-                select.value = value;
-                // Aktualizuj wyświetlaną odwrotność
-                const reciprocalCell = document.getElementById(`criteria-comp-value-${j}-${i}`);
-                if (reciprocalCell) {
-                    reciprocalCell.textContent = (1 / value).toFixed(4);
-                }
-            }
-        }
-        
-        // Automatycznie przelicz wyniki przy zmianie wartości
-        // Ustawienie opóźnienia, aby nie przeliczać zbyt często przy wielu zmianach
-        if (AHP.calculationTimeout) {
-            clearTimeout(AHP.calculationTimeout);
-        }
-        
-        AHP.calculationTimeout = setTimeout(() => {
-            AHP.calculate();
-        }, 500);
-    },
-
-    // Funkcja obliczająca wyniki AHP
-    calculate: () => {
+    // Funkcja eksportująca wyniki do TXT
+    downloadResultsTXT: () => {
         try {
-            // 1. Pobierz i zwaliduj macierz porównań kryteriów
-            const criteriaMatrix = AHP.getMatrixFromInputs('criteria');
-            const criteriaResult = AHP.calculateEigenvector(criteriaMatrix);
-            AHP.criteriaPriorities = criteriaResult.eigenvalues;
+            // Przygotuj zawartość pliku TXT
+            let content = `WYNIKI ANALIZY AHP\n`;
+            content += `=====================\n\n`;
             
-            // Sprawdź CR dla kryteriów i wyświetl ostrzeżenie, ale nie przerywaj obliczeń
-            let warningMessages = [];
-            if (criteriaResult.CR > 0.1) {
-                warningMessages.push(`<div class="cr-warning">Uwaga: Współczynnik spójności (CR) dla porównań kryteriów wynosi ${criteriaResult.CR.toFixed(4)}, 
-                    co przekracza zalecaną wartość 0.1. Rozważ ponowną ocenę porównań.</div>`);
+            // Najlepsza opcja
+            let bestOptionIndex = 0;
+            for (let i = 1; i < AHP.numOptions; i++) {
+                if (AHP.globalOptionWeights[i] > AHP.globalOptionWeights[bestOptionIndex]) {
+                    bestOptionIndex = i;
+                }
             }
             
-            // 2. Dla każdego kryterium, pobierz macierz porównań opcji
-            AHP.localOptionWeights = [];  // Wagi lokalne opcji dla każdego kryterium
+            content += `NAJLEPSZA OPCJA: ${AHP.optionNames[bestOptionIndex]} (${(AHP.globalOptionWeights[bestOptionIndex] * 100).toFixed(2)}%)\n\n`;
             
-            let inconsistentCriteria = [];
+            // Wagi kryteriów
+            content += `WAGI KRYTERIÓW:\n`;
+            content += `---------------\n`;
             
+            for (let i = 0; i < AHP.numCriteria; i++) {
+                content += `${AHP.criteriaNames[i]}: ${(AHP.criteriaPriorities[i] * 100).toFixed(2)}%\n`;
+            }
+            
+            content += `\n`;
+            
+            // Ranking opcji
+            content += `RANKING OPCJI:\n`;
+            content += `-------------\n`;
+            
+            // Posortuj opcje według wyniku
+            const sortedIndices = Array.from({length: AHP.numOptions}, (_, i) => i)
+                .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a]);
+            
+            for (let i = 0; i < sortedIndices.length; i++) {
+                const idx = sortedIndices[i];
+                content += `${i+1}. ${AHP.optionNames[idx]}: ${(AHP.globalOptionWeights[idx] * 100).toFixed(2)}%\n`;
+            }
+            
+            content += `\n`;
+            
+            // Rozbicie wyników według kryteriów
+            content += `ROZBICIE WYNIKÓW WEDŁUG KRYTERIÓW:\n`;
+            content += `--------------------------------\n`;
+            
+            // Nagłówek z nazwami kryteriów
+            content += `Opcja\t`;
             for (let c = 0; c < AHP.numCriteria; c++) {
-                const optionMatrix = AHP.getMatrixFromInputs('options', c);
-                const optionResult = AHP.calculateEigenvector(optionMatrix);
-                
-                AHP.localOptionWeights.push(optionResult.eigenvalues);
-                
-                // Sprawdź CR dla opcji
-                if (optionResult.CR > 0.1) {
-                    inconsistentCriteria.push({
-                        name: AHP.criteriaNames[c],
-                        cr: optionResult.CR
-                    });
-                }
+                content += `${AHP.criteriaNames[c]}\t`;
             }
+            content += `Wynik całkowity\n`;
             
-            // Jeśli którekolwiek z porównań jest niespójne, pokaż ostrzeżenie, ale nie przerywaj obliczeń
-            if (inconsistentCriteria.length > 0) {
-                let warningHtml = `<div class="cr-warning">Uwaga: Współczynnik spójności (CR) dla porównań opcji 
-                    przekracza zalecaną wartość 0.1 dla następujących kryteriów:<ul>`;
-                
-                for (const item of inconsistentCriteria) {
-                    warningHtml += `<li>${item.name}: CR = ${item.cr.toFixed(4)}</li>`;
-                }
-                
-                warningHtml += `</ul>Rozważ ponowną ocenę porównań.</div>`;
-                warningMessages.push(warningHtml);
-            }
-            
-            // 3. Oblicz wagi globalne dla opcji
-            AHP.globalOptionWeights = Array(AHP.numOptions).fill(0);
-            
+            // Dane dla każdej opcji
             for (let o = 0; o < AHP.numOptions; o++) {
-                for (let c = 0; c < AHP.numCriteria; c++) {
-                    AHP.globalOptionWeights[o] += AHP.localOptionWeights[c][o] * AHP.criteriaPriorities[c];
-                }
-            }
-            
-            // 4. Wyświetl wyniki
-            AHP.displayResults();
-            
-            // 5. Wizualizuj wyniki
-            AHP.visualizeResults();
-            
-            // 6. Wyświetl ostrzeżenia (jeśli istnieją)
-            if (warningMessages.length > 0) {
-                const warningsContainer = document.createElement('div');
-                warningsContainer.className = 'warnings-container';
-                warningsContainer.innerHTML = warningMessages.join('');
+                content += `${AHP.optionNames[o]}\t`;
                 
-                // Dodaj ostrzeżenia na górze wyników
-                const resultsContainer = document.getElementById('ahpResults');
-                resultsContainer.insertBefore(warningsContainer, resultsContainer.firstChild);
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    const localScore = AHP.localOptionWeights[c][o];
+                    const weightedScore = localScore * AHP.criteriaPriorities[c];
+                    content += `${(weightedScore * 100).toFixed(2)}%\t`;
+                }
+                
+                content += `${(AHP.globalOptionWeights[o] * 100).toFixed(2)}%\n`;
             }
+            
+            content += `\n`;
+            content += `Wygenerowano: ${new Date().toLocaleString()}\n`;
+            
+            // Stwórz plik do pobrania
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `wyniki_ahp_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Wyczyść po sobie
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
             
         } catch (error) {
-            console.error("Błąd w obliczeniach AHP:", error);
-            Utils.displayResults('ahpResults', `Błąd w obliczeniach: ${error.message}`, true);
+            console.error("Błąd podczas eksportu do TXT:", error);
+            alert("Wystąpił błąd podczas eksportu wyników do pliku TXT.");
         }
-    },
-    
-    // Funkcja do pobierania wyników w formacie CSV
-    downloadResultsCSV: () => {
-        // Przygotuj dane
-        let csvContent = "data:text/csv;charset=utf-8,";
-        
-        // Dodaj nagłówek z informacjami o analizie
-        csvContent += "Wyniki analizy AHP\r\n\r\n";
-        
-        // Ranking opcji
-        csvContent += "Ranking opcji (wynik końcowy)\r\n";
-        csvContent += "Ranking,Opcja,Wynik,Wynik (%)\r\n";
-        
-        // Posortowane indeksy opcji według wyniku
-        const sortedIndices = Array.from({length: AHP.numOptions}, (_, i) => i)
-            .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a]);
-        
-        // Wiersze z wynikami opcji
-        for (let i = 0; i < sortedIndices.length; i++) {
-            const optionIndex = sortedIndices[i];
-            const option = AHP.optionNames[optionIndex];
-            const score = AHP.globalOptionWeights[optionIndex];
-            
-            csvContent += `${i+1},${option},${score.toFixed(6)},${(score * 100).toFixed(4)}%\r\n`;
-        }
-        
-        // Dodaj pustą linię dla oddzielenia sekcji
-        csvContent += "\r\n";
-        
-        // Wagi kryteriów
-        csvContent += "Wagi kryteriów\r\n";
-        csvContent += "Kryterium,Waga,Waga (%)\r\n";
-        
-        for (let i = 0; i < AHP.numCriteria; i++) {
-            const criteria = AHP.criteriaNames[i];
-            const weight = AHP.criteriaPriorities[i];
-            
-            csvContent += `${criteria},${weight.toFixed(6)},${(weight * 100).toFixed(4)}%\r\n`;
-        }
-        
-        // Dodaj pustą linię dla oddzielenia sekcji
-        csvContent += "\r\n";
-        
-        // Rozbicie wyników według kryteriów
-        csvContent += "Rozbicie wyników według kryteriów\r\n";
-        csvContent += "Opcja";
-        
-        for (let c = 0; c < AHP.numCriteria; c++) {
-            csvContent += `,${AHP.criteriaNames[c]}`;
-        }
-        
-        csvContent += ",Wynik całkowity\r\n";
-        
-        for (let o = 0; o < AHP.numOptions; o++) {
-            csvContent += `${AHP.optionNames[o]}`;
-            
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                const localScore = AHP.localOptionWeights[c][o];
-                const weightedScore = localScore * AHP.criteriaPriorities[c];
-                csvContent += `,${(weightedScore * 100).toFixed(4)}%`;
-            }
-            
-            csvContent += `,${(AHP.globalOptionWeights[o] * 100).toFixed(4)}%\r\n`;
-        }
-        
-        // Utwórz link do pobrania pliku
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "wyniki_ahp.csv");
-        document.body.appendChild(link);
-        
-        // Kliknij link, aby rozpocząć pobieranie
-        link.click();
-        
-        // Usuń link
-        document.body.removeChild(link);
-    },
-    
-    // Funkcja do pobierania wyników w formacie JSON
-    downloadResultsJSON: () => {
-        // Przygotuj obiekt z wynikami
-        const results = {
-            data: {
-                criteria: {
-                    names: AHP.criteriaNames,
-                    priorities: AHP.criteriaPriorities.map(p => parseFloat(p.toFixed(6)))
-                },
-                options: {
-                    names: AHP.optionNames,
-                    globalWeights: AHP.globalOptionWeights.map(w => parseFloat(w.toFixed(6)))
-                },
-                localWeights: AHP.localOptionWeights.map(weights => 
-                    weights.map(w => parseFloat(w.toFixed(6)))
-                ),
-                ranking: Array.from({length: AHP.numOptions}, (_, i) => i)
-                    .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a])
-                    .map(idx => ({
-                        rankPosition: Array.from({length: AHP.numOptions}, (_, i) => i)
-                            .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a])
-                            .indexOf(idx) + 1,
-                        optionIndex: idx,
-                        optionName: AHP.optionNames[idx],
-                        score: parseFloat(AHP.globalOptionWeights[idx].toFixed(6)),
-                        scorePercent: parseFloat((AHP.globalOptionWeights[idx] * 100).toFixed(4))
-                    }))
-            },
-            diagnostics: {
-                criteriaMatrix: AHP.criteriaComparisonMatrix.map(row => 
-                    row.map(v => parseFloat(v.toFixed(6)))
-                ),
-                optionMatrices: AHP.optionComparisonMatrices.map(matrix => 
-                    matrix.map(row => row.map(v => parseFloat(v.toFixed(6))))
-                )
-            }
-        };
-        
-        // Konwertuj obiekt na format JSON
-        const jsonContent = "data:text/json;charset=utf-8," + 
-            encodeURIComponent(JSON.stringify(results, null, 2));
-        
-        // Utwórz link do pobrania pliku
-        const link = document.createElement("a");
-        link.setAttribute("href", jsonContent);
-        link.setAttribute("download", "wyniki_ahp.json");
-        document.body.appendChild(link);
-        
-        // Kliknij link, aby rozpocząć pobieranie
-        link.click();
-        
-        // Usuń link
-        document.body.removeChild(link);
-    },
-    
-    // Funkcja do pobierania wyników w formacie TXT
-    downloadResultsTXT: () => {
-        // Przygotuj zawartość pliku TXT
-        let txtContent = "WYNIKI ANALIZY AHP\n";
-        txtContent += "=================\n\n";
-        
-        // Najlepsza opcja
-        let bestOptionIndex = 0;
-        for (let i = 1; i < AHP.numOptions; i++) {
-            if (AHP.globalOptionWeights[i] > AHP.globalOptionWeights[bestOptionIndex]) {
-                bestOptionIndex = i;
-            }
-        }
-        
-        txtContent += "NAJLEPSZA OPCJA: " + AHP.optionNames[bestOptionIndex] + "\n";
-        txtContent += "WYNIK: " + (AHP.globalOptionWeights[bestOptionIndex] * 100).toFixed(4) + "%\n\n";
-        
-        // Ranking opcji
-        txtContent += "RANKING OPCJI (WYNIK KOŃCOWY)\n";
-        txtContent += "-----------------------------\n";
-        txtContent += "Ranking | Opcja | Wynik | Wynik (%)\n";
-        
-        // Posortowane indeksy opcji według wyniku
-        const sortedIndices = Array.from({length: AHP.numOptions}, (_, i) => i)
-            .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a]);
-        
-        // Wiersze z wynikami opcji
-        for (let i = 0; i < sortedIndices.length; i++) {
-            const optionIndex = sortedIndices[i];
-            const option = AHP.optionNames[optionIndex];
-            const score = AHP.globalOptionWeights[optionIndex];
-            
-            txtContent += `${i+1} | ${option} | ${score.toFixed(6)} | ${(score * 100).toFixed(4)}%\n`;
-        }
-        
-        txtContent += "\n";
-        
-        // Wagi kryteriów
-        txtContent += "WAGI KRYTERIÓW\n";
-        txtContent += "--------------\n";
-        txtContent += "Kryterium | Waga | Waga (%)\n";
-        
-        for (let i = 0; i < AHP.numCriteria; i++) {
-            const criteria = AHP.criteriaNames[i];
-            const weight = AHP.criteriaPriorities[i];
-            
-            txtContent += `${criteria} | ${weight.toFixed(6)} | ${(weight * 100).toFixed(4)}%\n`;
-        }
-        
-        txtContent += "\n";
-        
-        // Rozbicie wyników według kryteriów
-        txtContent += "ROZBICIE WYNIKÓW WEDŁUG KRYTERIÓW\n";
-        txtContent += "---------------------------------\n";
-        txtContent += "Opcja";
-        
-        for (let c = 0; c < AHP.numCriteria; c++) {
-            txtContent += ` | ${AHP.criteriaNames[c]}`;
-        }
-        
-        txtContent += " | Wynik całkowity\n";
-        
-        for (let o = 0; o < AHP.numOptions; o++) {
-            txtContent += `${AHP.optionNames[o]}`;
-            
-            for (let c = 0; c < AHP.numCriteria; c++) {
-                const localScore = AHP.localOptionWeights[c][o];
-                const weightedScore = localScore * AHP.criteriaPriorities[c];
-                txtContent += ` | ${(weightedScore * 100).toFixed(4)}%`;
-            }
-            
-            txtContent += ` | ${(AHP.globalOptionWeights[o] * 100).toFixed(4)}%\n`;
-        }
-        
-        // Utwórz link do pobrania pliku
-        const txtBlob = new Blob([txtContent], { type: 'text/plain' });
-        const txtUrl = URL.createObjectURL(txtBlob);
-        
-        const link = document.createElement("a");
-        link.setAttribute("href", txtUrl);
-        link.setAttribute("download", "wyniki_ahp.txt");
-        document.body.appendChild(link);
-        
-        // Kliknij link, aby rozpocząć pobieranie
-        link.click();
-        
-        // Usuń link i zwolnij URL
-        document.body.removeChild(link);
-        URL.revokeObjectURL(txtUrl);
-    },
-    
-    // Funkcja pomocnicza do pokazywania kodu
-    showCodeModal: (codeTitle, code) => {
-        // Zamknij wcześniejsze modalne, jeśli istnieją
-        const existingModal = document.getElementById('ahp-export-modal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-        
-        // Stwórz element modalny
-        const exportModal = document.createElement('div');
-        exportModal.id = 'ahp-export-modal';
-        exportModal.className = 'modal-overlay';
-        
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        
-        const closeButton = document.createElement('span');
-        closeButton.innerHTML = '&times;';
-        closeButton.className = 'close-button';
-        closeButton.onclick = () => {
-            exportModal.remove();
-        };
-        
-        const modalTitle = document.createElement('h3');
-        modalTitle.textContent = codeTitle;
-        
-        const modalDescription = document.createElement('p');
-        modalDescription.textContent = 'Poniższy kod zawiera wyniki analizy AHP:';
-        
-        const codeArea = document.createElement('pre');
-        codeArea.className = 'code-area';
-        codeArea.textContent = code;
-        
-        const copyButton = document.createElement('button');
-        copyButton.className = 'copy-code-button';
-        copyButton.textContent = 'Kopiuj do schowka';
-        copyButton.onclick = () => {
-            navigator.clipboard.writeText(code)
-                .then(() => {
-                    copyButton.textContent = 'Skopiowano!';
-                    setTimeout(() => {
-                        copyButton.textContent = 'Kopiuj do schowka';
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error('Błąd podczas kopiowania: ', err);
-                    copyButton.textContent = 'Błąd kopiowania';
-                });
-        };
-        
-        modalContent.appendChild(closeButton);
-        modalContent.appendChild(modalTitle);
-        modalContent.appendChild(modalDescription);
-        modalContent.appendChild(codeArea);
-        modalContent.appendChild(copyButton);
-        
-        exportModal.appendChild(modalContent);
-        document.body.appendChild(exportModal);
     }
 } 
