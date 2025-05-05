@@ -1209,7 +1209,7 @@ const AHP = {
         
         const bestOptionScore = document.createElement('div');
         bestOptionScore.className = 'best-option-score';
-        bestOptionScore.textContent = (AHP.globalOptionWeights[bestOptionIndex] * 100).toFixed(4) + '%';
+        bestOptionScore.textContent = (AHP.globalOptionWeights[bestOptionIndex] * 100).toFixed(2) + '%';
         
         bestOptionDisplay.appendChild(bestOptionLabel);
         bestOptionDisplay.appendChild(bestOptionName);
@@ -1218,7 +1218,7 @@ const AHP = {
         mainResult.appendChild(bestOptionDisplay);
         container.appendChild(mainResult);
         
-        // Diagnostyka macierzy - współczynniki spójności
+        // Diagnostyka macierzy - współczynniki spójności (przeniesiona i uproszczona)
         const diagnosticsSection = document.createElement('div');
         diagnosticsSection.className = 'diagnostics-section';
         
@@ -1232,32 +1232,55 @@ const AHP = {
         const diagnosticsInfo = document.createElement('div');
         diagnosticsInfo.className = 'diagnostics-info';
         
+        // Główna informacja o ogólnej spójności - tylko status
+        let allConsistent = true;
+        
         // Informacja o współczynniku spójności kryteriów
         const criteriaCR = document.createElement('div');
         criteriaCR.className = criteriaResult.CR <= 0.1 ? 'cr-ok' : 'cr-warning';
-        criteriaCR.innerHTML = `<strong>Współczynnik spójności (CR) dla kryteriów:</strong> ${criteriaResult.CR.toFixed(4)} 
-            ${criteriaResult.CR <= 0.1 ? '✓' : '⚠️'} 
-            <br><small>λ<sub>max</sub> = ${criteriaResult.lambda_max.toFixed(4)}, 
-            CI = ${criteriaResult.CI.toFixed(4)}, 
-            RI = ${AHP.RI[AHP.numCriteria]}</small>`;
+        
+        let criteriaStatusText = criteriaResult.CR <= 0.1 ? 
+            `<strong>Kryteria:</strong> Spójne ✓` : 
+            `<strong>Kryteria:</strong> Niespójne ⚠️`;
+        
+        criteriaCR.innerHTML = criteriaStatusText;
+        
+        if (criteriaResult.CR > 0.1) {
+            allConsistent = false;
+        }
         
         diagnosticsInfo.appendChild(criteriaCR);
         
-        // Informacje o współczynnikach spójności opcji
+        // Informacje o współczynnikach spójności opcji - tylko status
         for (let c = 0; c < AHP.numCriteria; c++) {
             const optionMatrix = AHP.getMatrixFromInputs('options', c);
             const optionResult = AHP.calculateEigenvector(optionMatrix);
             
             const optionCR = document.createElement('div');
             optionCR.className = optionResult.CR <= 0.1 ? 'cr-ok' : 'cr-warning';
-            optionCR.innerHTML = `<strong>CR dla opcji względem "${AHP.criteriaNames[c]}":</strong> ${optionResult.CR.toFixed(4)} 
-                ${optionResult.CR <= 0.1 ? '✓' : '⚠️'} 
-                <br><small>λ<sub>max</sub> = ${optionResult.lambda_max.toFixed(4)}, 
-                CI = ${optionResult.CI.toFixed(4)}, 
-                RI = ${AHP.RI[AHP.numOptions]}</small>`;
+            
+            let optionStatus = optionResult.CR <= 0.1 ? 
+                `<strong>Opcje dla "${AHP.criteriaNames[c]}":</strong> Spójne ✓` : 
+                `<strong>Opcje dla "${AHP.criteriaNames[c]}":</strong> Niespójne ⚠️`;
+            
+            optionCR.innerHTML = optionStatus;
+            
+            if (optionResult.CR > 0.1) {
+                allConsistent = false;
+            }
             
             diagnosticsInfo.appendChild(optionCR);
         }
+        
+        // Dodaj ogólną informację o spójności na górze
+        const overallConsistency = document.createElement('div');
+        overallConsistency.className = allConsistent ? 'cr-ok' : 'cr-warning';
+        overallConsistency.innerHTML = allConsistent ? 
+            '<strong>Wszystkie macierze są spójne.</strong> Wyniki są wiarygodne.' : 
+            '<strong>Niektóre macierze są niespójne.</strong> Wyniki mogą być mniej wiarygodne.';
+        
+        // Wstaw ogólną informację na samej górze
+        diagnosticsInfo.insertBefore(overallConsistency, diagnosticsInfo.firstChild);
         
         diagnosticsSection.appendChild(diagnosticsInfo);
         container.appendChild(diagnosticsSection);
@@ -1285,8 +1308,8 @@ const AHP = {
             const weight = AHP.criteriaPriorities[i];
             
             row.innerHTML = `<td>${criteria}</td>
-                            <td>${weight.toFixed(6)}</td>
-                            <td>${(weight * 100).toFixed(4)}%</td>`;
+                            <td>${weight.toFixed(4)}</td>
+                            <td>${(weight * 100).toFixed(2)}%</td>`;
             criteriaTable.appendChild(row);
         }
         
@@ -1324,8 +1347,8 @@ const AHP = {
             
             row.innerHTML = `<td>${i+1}</td>
                             <td>${option}</td>
-                            <td>${score.toFixed(6)}</td>
-                            <td class="final-score">${(score * 100).toFixed(4)}%</td>`;
+                            <td>${score.toFixed(4)}</td>
+                            <td class="final-score">${(score * 100).toFixed(2)}%</td>`;
             finalTable.appendChild(row);
         }
         
@@ -1348,7 +1371,7 @@ const AHP = {
         breakdownHeader.innerHTML = '<th>Opcja</th>';
         
         for (let c = 0; c < AHP.numCriteria; c++) {
-            breakdownHeader.innerHTML += `<th title="Waga: ${(AHP.criteriaPriorities[c] * 100).toFixed(4)}%">${AHP.criteriaNames[c]}</th>`;
+            breakdownHeader.innerHTML += `<th title="Waga: ${(AHP.criteriaPriorities[c] * 100).toFixed(2)}%">${AHP.criteriaNames[c]}</th>`;
         }
         
         breakdownHeader.innerHTML += '<th>Wynik całkowity</th>';
@@ -1359,22 +1382,29 @@ const AHP = {
             const row = document.createElement('tr');
             row.className = o === bestOptionIndex ? 'best-option' : '';
             
-            let rowHtml = `<td>${AHP.optionNames[o]}</td>`;
+            row.innerHTML = `<td>${AHP.optionNames[o]}</td>`;
             
             for (let c = 0; c < AHP.numCriteria; c++) {
                 const localScore = AHP.localOptionWeights[c][o];
                 const weightedScore = localScore * AHP.criteriaPriorities[c];
                 const isLocalBest = AHP.localOptionWeights[c].indexOf(Math.max(...AHP.localOptionWeights[c])) === o;
                 
-                rowHtml += `<td class="${isLocalBest ? 'best-option-local' : ''}" 
-                    title="Wynik lokalny: ${(localScore * 100).toFixed(4)}%, 
-                    Po zważeniu: ${(weightedScore * 100).toFixed(4)}%">
-                    ${(weightedScore * 100).toFixed(4)}%</td>`;
+                const cellClass = isLocalBest ? 'best-option-local' : '';
+                const cellTitle = `Wynik lokalny: ${(localScore * 100).toFixed(2)}%, Po zważeniu: ${(weightedScore * 100).toFixed(2)}%`;
+                
+                const cell = document.createElement('td');
+                cell.className = cellClass;
+                cell.title = cellTitle;
+                cell.textContent = (weightedScore * 100).toFixed(2) + '%';
+                
+                row.appendChild(cell);
             }
             
-            rowHtml += `<td class="final-score">${(AHP.globalOptionWeights[o] * 100).toFixed(4)}%</td>`;
+            const finalScoreCell = document.createElement('td');
+            finalScoreCell.className = 'final-score';
+            finalScoreCell.textContent = (AHP.globalOptionWeights[o] * 100).toFixed(2) + '%';
+            row.appendChild(finalScoreCell);
             
-            row.innerHTML = rowHtml;
             breakdownTable.appendChild(row);
         }
         
@@ -1412,7 +1442,49 @@ const AHP = {
         detailedData.id = 'detailed-data';
         detailedData.style.display = 'none';
         
-        let detailedHTML = '<h4>Macierz porównań kryteriów</h4>';
+        // Dodanie szczegółowych danych o spójności
+        let detailedDiagnosticsHTML = '<h4>Szczegółowe parametry spójności</h4>';
+        detailedDiagnosticsHTML += '<table class="results-table">';
+        detailedDiagnosticsHTML += `<tr>
+            <th>Macierz</th>
+            <th>λ<sub>max</sub></th>
+            <th>CI</th>
+            <th>RI</th>
+            <th>CR</th>
+            <th>Status</th>
+        </tr>`;
+        
+        // Dodaj wiersz dla kryteriów
+        let criteriaStatus = criteriaResult.CR <= 0.1 ? 'Spójne ✓' : 'Niespójne ⚠️';
+        detailedDiagnosticsHTML += `<tr>
+            <td>Kryteria</td>
+            <td>${criteriaResult.lambda_max.toFixed(4)}</td>
+            <td>${criteriaResult.CI.toFixed(4)}</td>
+            <td>${AHP.RI[AHP.numCriteria] || 0}</td>
+            <td>${criteriaResult.CR.toFixed(4)}</td>
+            <td class="${criteriaResult.CR <= 0.1 ? 'cr-ok' : 'cr-warning'}">${criteriaStatus}</td>
+        </tr>`;
+        
+        // Dodaj wiersze dla opcji
+        for (let c = 0; c < AHP.numCriteria; c++) {
+            const optionMatrix = AHP.getMatrixFromInputs('options', c);
+            const optionResult = AHP.calculateEigenvector(optionMatrix);
+            
+            let optionStatus = optionResult.CR <= 0.1 ? 'Spójne ✓' : 'Niespójne ⚠️';
+            detailedDiagnosticsHTML += `<tr>
+                <td>Opcje dla "${AHP.criteriaNames[c]}"</td>
+                <td>${optionResult.lambda_max.toFixed(4)}</td>
+                <td>${optionResult.CI.toFixed(4)}</td>
+                <td>${AHP.RI[AHP.numOptions] || 0}</td>
+                <td>${optionResult.CR.toFixed(4)}</td>
+                <td class="${optionResult.CR <= 0.1 ? 'cr-ok' : 'cr-warning'}">${optionStatus}</td>
+            </tr>`;
+        }
+        
+        detailedDiagnosticsHTML += '</table>';
+        
+        // Macierz porównań kryteriów
+        let detailedHTML = detailedDiagnosticsHTML + '<h4>Macierz porównań kryteriów</h4>';
         detailedHTML += '<table class="results-table">';
         detailedHTML += '<tr><th></th>';
         
@@ -1424,9 +1496,9 @@ const AHP = {
         for (let i = 0; i < AHP.numCriteria; i++) {
             detailedHTML += `<tr><th>${AHP.criteriaNames[i]}</th>`;
             for (let j = 0; j < AHP.numCriteria; j++) {
-                detailedHTML += `<td>${AHP.criteriaComparisonMatrix[i][j].toFixed(6)}</td>`;
+                detailedHTML += `<td>${AHP.criteriaComparisonMatrix[i][j].toFixed(4)}</td>`;
             }
-            detailedHTML += `<td>${AHP.criteriaPriorities[i].toFixed(6)}</td></tr>`;
+            detailedHTML += `<td>${AHP.criteriaPriorities[i].toFixed(4)}</td></tr>`;
         }
         detailedHTML += '</table>';
         
@@ -1443,9 +1515,9 @@ const AHP = {
             for (let i = 0; i < AHP.numOptions; i++) {
                 detailedHTML += `<tr><th>${AHP.optionNames[i]}</th>`;
                 for (let j = 0; j < AHP.numOptions; j++) {
-                    detailedHTML += `<td>${AHP.optionComparisonMatrices[c][i][j].toFixed(6)}</td>`;
+                    detailedHTML += `<td>${AHP.optionComparisonMatrices[c][i][j].toFixed(4)}</td>`;
                 }
-                detailedHTML += `<td>${AHP.localOptionWeights[c][i].toFixed(6)}</td></tr>`;
+                detailedHTML += `<td>${AHP.localOptionWeights[c][i].toFixed(4)}</td></tr>`;
             }
             detailedHTML += '</table>';
         }
@@ -1478,6 +1550,9 @@ const AHP = {
         downloadButtonsContainer.appendChild(downloadJSONButton);
         downloadButtonsContainer.appendChild(downloadTXTButton);
         container.appendChild(downloadButtonsContainer);
+        
+        // Teraz wywołaj automatycznie wizualizację po przygotowaniu wyników
+        AHP.visualizeResults();
     },
     
     // Nowa właściwość do śledzenia czy wizualizacja powinna być uruchomiona po załadowaniu Plotly
@@ -1512,41 +1587,41 @@ const AHP = {
         container.appendChild(radarContainer);
         
         try {
-            const radarData = [];
-            
-            for (let o = 0; o < AHP.numOptions; o++) {
-                const radarValues = [];
-                for (let c = 0; c < AHP.numCriteria; c++) {
-                    radarValues.push(AHP.localOptionWeights[c][o] * 100);
-                }
-                
-                // Zamknięcie wielokąta - powtórzenie pierwszej wartości na końcu
-                radarValues.push(radarValues[0]);
-                const criteriaNames = [...AHP.criteriaNames];
-                criteriaNames.push(criteriaNames[0]);
-                
-                radarData.push({
-                    type: 'scatterpolar',
-                    r: radarValues,
-                    theta: criteriaNames,
-                    fill: 'toself',
-                    name: AHP.optionNames[o]
-                });
+        const radarData = [];
+        
+        for (let o = 0; o < AHP.numOptions; o++) {
+            const radarValues = [];
+            for (let c = 0; c < AHP.numCriteria; c++) {
+                radarValues.push(AHP.localOptionWeights[c][o] * 100);
             }
             
-            const radarLayout = {
-                title: 'Porównanie opcji pod względem poszczególnych kryteriów',
-                polar: {
-                    radialaxis: {
-                        visible: true,
-                        range: [0, 100]
-                    }
-                },
-                margin: { t: 50, b: 50 },
-                showlegend: true
-            };
+            // Zamknięcie wielokąta - powtórzenie pierwszej wartości na końcu
+            radarValues.push(radarValues[0]);
+            const criteriaNames = [...AHP.criteriaNames];
+            criteriaNames.push(criteriaNames[0]);
             
-            Plotly.newPlot('radarChart', radarData, radarLayout, { responsive: true });
+            radarData.push({
+                type: 'scatterpolar',
+                r: radarValues,
+                theta: criteriaNames,
+                fill: 'toself',
+                name: AHP.optionNames[o]
+            });
+        }
+        
+        const radarLayout = {
+            title: 'Porównanie opcji pod względem poszczególnych kryteriów',
+            polar: {
+                radialaxis: {
+                    visible: true,
+                    range: [0, 100]
+                }
+            },
+            margin: { t: 50, b: 50 },
+            showlegend: true
+        };
+        
+        Plotly.newPlot('radarChart', radarData, radarLayout, { responsive: true });
         } catch (error) {
             console.error("Błąd podczas tworzenia wykresu radarowego:", error);
             const errorInfo = document.createElement('div');
@@ -1563,31 +1638,31 @@ const AHP = {
         container.appendChild(contributionContainer);
         
         try {
-            const contributionData = [];
-            
-            for (let o = 0; o < AHP.numOptions; o++) {
-                const contributions = [];
-                for (let c = 0; c < AHP.numCriteria; c++) {
-                    contributions.push(AHP.localOptionWeights[c][o] * AHP.criteriaPriorities[c] * 100);
-                }
-                
-                contributionData.push({
-                    x: contributions,
-                    y: AHP.criteriaNames,
-                    name: AHP.optionNames[o],
-                    type: 'bar',
-                    orientation: 'h'
-                });
+        const contributionData = [];
+        
+        for (let o = 0; o < AHP.numOptions; o++) {
+            const contributions = [];
+            for (let c = 0; c < AHP.numCriteria; c++) {
+                contributions.push(AHP.localOptionWeights[c][o] * AHP.criteriaPriorities[c] * 100);
             }
             
-            const contributionLayout = {
-                title: 'Wkład każdego kryterium do wyniku końcowego',
-                barmode: 'group',
-                margin: { l: 150, r: 50, t: 50, b: 50 },
-                showlegend: true
-            };
-            
-            Plotly.newPlot('contributionChart', contributionData, contributionLayout, { responsive: true });
+            contributionData.push({
+                x: contributions,
+                y: AHP.criteriaNames,
+                name: AHP.optionNames[o],
+                type: 'bar',
+                orientation: 'h'
+            });
+        }
+        
+        const contributionLayout = {
+            title: 'Wkład każdego kryterium do wyniku końcowego',
+            barmode: 'group',
+            margin: { l: 150, r: 50, t: 50, b: 50 },
+            showlegend: true
+        };
+        
+        Plotly.newPlot('contributionChart', contributionData, contributionLayout, { responsive: true });
         } catch (error) {
             console.error("Błąd podczas tworzenia wykresu wkładu kryteriów:", error);
             const errorInfo = document.createElement('div');
