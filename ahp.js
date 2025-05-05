@@ -1135,6 +1135,45 @@ const AHP = {
         return priorities;
     },
     
+    // Funkcja obliczająca główną wartość własną, indeks spójności (CI) i współczynnik spójności (CR)
+    calculateEigenvector: (matrix) => {
+        const n = matrix.length;
+        
+        // Oblicz wektor priorytetów
+        const priorities = AHP.calculatePriorities(matrix);
+        
+        // Oblicz λ_max (główną wartość własną)
+        let lambda_max = 0;
+        
+        for (let i = 0; i < n; i++) {
+            let sum = 0;
+            for (let j = 0; j < n; j++) {
+                sum += matrix[i][j] * priorities[j];
+            }
+            lambda_max += sum / priorities[i];
+        }
+        lambda_max /= n;
+        
+        // Oblicz indeks spójności (CI)
+        const CI = (lambda_max - n) / (n - 1);
+        
+        // Oblicz współczynnik spójności (CR)
+        const RI = AHP.RI[n] || 0;
+        const CR = RI === 0 ? 0 : CI / RI;
+        
+        return { lambda_max, CI, CR, priorities };
+    },
+    
+    // Funkcja pobierająca macierz z interfejsu
+    getMatrixFromInputs: (type, criterionIndex) => {
+        if (type === 'criteria') {
+            return AHP.criteriaComparisonMatrix;
+        } else if (type === 'options') {
+            return AHP.optionComparisonMatrices[criterionIndex];
+        }
+        return null;
+    },
+    
     // Funkcja wyświetlająca wyniki
     displayResults: () => {
         const container = document.getElementById('ahpResults');
