@@ -1665,5 +1665,248 @@ const AHP = {
             console.error("Błąd podczas eksportu do TXT:", error);
             alert("Wystąpił błąd podczas eksportu wyników do pliku TXT.");
         }
+    },
+    
+    // Funkcja eksportująca wyniki do CSV
+    downloadResultsCSV: () => {
+        try {
+            // Przygotuj zawartość CSV
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Nagłówek z informacjami o analizie
+            csvContent += "Wyniki analizy AHP\r\n\r\n";
+            
+            // Ranking opcji
+            csvContent += "Ranking opcji (wynik końcowy)\r\n";
+            csvContent += "Ranking,Opcja,Wynik,Wynik (%)\r\n";
+            
+            // Posortowane indeksy opcji według wyniku
+            const sortedIndices = Array.from({length: AHP.numOptions}, (_, i) => i)
+                .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a]);
+            
+            // Wiersze z wynikami opcji
+            for (let i = 0; i < sortedIndices.length; i++) {
+                const optionIndex = sortedIndices[i];
+                const option = AHP.optionNames[optionIndex];
+                const score = AHP.globalOptionWeights[optionIndex];
+                
+                csvContent += `${i+1},${option},${score.toFixed(6)},${(score * 100).toFixed(2)}%\r\n`;
+            }
+            
+            // Dodaj pustą linię dla oddzielenia sekcji
+            csvContent += "\r\n";
+            
+            // Wagi kryteriów
+            csvContent += "Wagi kryteriów\r\n";
+            csvContent += "Kryterium,Waga,Waga (%)\r\n";
+            
+            for (let i = 0; i < AHP.numCriteria; i++) {
+                const criteria = AHP.criteriaNames[i];
+                const weight = AHP.criteriaPriorities[i];
+                
+                csvContent += `${criteria},${weight.toFixed(6)},${(weight * 100).toFixed(2)}%\r\n`;
+            }
+            
+            // Dodaj pustą linię dla oddzielenia sekcji
+            csvContent += "\r\n";
+            
+            // Rozbicie wyników według kryteriów
+            csvContent += "Rozbicie wyników według kryteriów\r\n";
+            csvContent += "Opcja";
+            
+            for (let c = 0; c < AHP.numCriteria; c++) {
+                csvContent += `,${AHP.criteriaNames[c]}`;
+            }
+            
+            csvContent += ",Wynik całkowity\r\n";
+            
+            for (let o = 0; o < AHP.numOptions; o++) {
+                csvContent += `${AHP.optionNames[o]}`;
+                
+                for (let c = 0; c < AHP.numCriteria; c++) {
+                    const localScore = AHP.localOptionWeights[c][o];
+                    const weightedScore = localScore * AHP.criteriaPriorities[c];
+                    csvContent += `,${(weightedScore * 100).toFixed(2)}%`;
+                }
+                
+                csvContent += `,${(AHP.globalOptionWeights[o] * 100).toFixed(2)}%\r\n`;
+            }
+            
+            // Stwórz plik do pobrania
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `wyniki_ahp_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            
+            // Wyczyść po sobie
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 0);
+            
+        } catch (error) {
+            console.error("Błąd podczas eksportu do CSV:", error);
+            alert("Wystąpił błąd podczas eksportu wyników do pliku CSV.");
+        }
+    },
+    
+    // Funkcja eksportująca wyniki do JSON
+    downloadResultsJSON: () => {
+        try {
+            // Przygotuj obiekt JSON
+            const results = {
+                metadata: {
+                    date: new Date().toISOString(),
+                    numCriteria: AHP.numCriteria,
+                    numOptions: AHP.numOptions
+                },
+                criteriaNames: AHP.criteriaNames,
+                optionNames: AHP.optionNames,
+                criteriaComparisonMatrix: AHP.criteriaComparisonMatrix,
+                optionComparisonMatrices: AHP.optionComparisonMatrices,
+                criteriaPriorities: AHP.criteriaPriorities,
+                localOptionWeights: AHP.localOptionWeights,
+                globalOptionWeights: AHP.globalOptionWeights,
+                results: {
+                    ranking: Array.from({length: AHP.numOptions}, (_, i) => i)
+                        .sort((a, b) => AHP.globalOptionWeights[b] - AHP.globalOptionWeights[a])
+                        .map((idx, rank) => ({
+                            rank: rank + 1,
+                            optionName: AHP.optionNames[idx],
+                            optionIndex: idx,
+                            score: AHP.globalOptionWeights[idx],
+                            scorePercent: (AHP.globalOptionWeights[idx] * 100).toFixed(2)
+                        }))
+                }
+            };
+            
+            // Stwórz plik do pobrania
+            const blob = new Blob([JSON.stringify(results, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `wyniki_ahp_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Wyczyść po sobie
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+            
+        } catch (error) {
+            console.error("Błąd podczas eksportu do JSON:", error);
+            alert("Wystąpił błąd podczas eksportu wyników do pliku JSON.");
+        }
+    },
+    
+    // Funkcja do eksportu danych do formatu Python
+    exportToPython: () => {
+        // Tworzymy kod Pythona reprezentujący bieżące dane
+        let pythonCode = `# Kod Pythona do analizy AHP z używając biblioteki ahpy lub innej\n\n`;
+        pythonCode += `import numpy as np\nimport pandas as pd\n`;
+        pythonCode += `# Możesz użyć biblioteki ahpy lub innej implementacji AHP\n\n`;
+        
+        // Nazwy kryteriów i opcji
+        pythonCode += `# Nazwy kryteriów i opcji\n`;
+        pythonCode += `criteria_names = ${JSON.stringify(AHP.criteriaNames)}\n`;
+        pythonCode += `option_names = ${JSON.stringify(AHP.optionNames)}\n\n`;
+        
+        // Macierz porównań kryteriów
+        pythonCode += `# Macierz porównań kryteriów\n`;
+        pythonCode += `criteria_comparison_matrix = np.array([\n`;
+        for (let i = 0; i < AHP.numCriteria; i++) {
+            pythonCode += `    [${AHP.criteriaComparisonMatrix[i].join(', ')}],\n`;
+        }
+        pythonCode += `])\n\n`;
+        
+        // Macierze porównań opcji
+        pythonCode += `# Macierze porównań opcji dla każdego kryterium\n`;
+        pythonCode += `option_comparison_matrices = []\n`;
+        
+        for (let c = 0; c < AHP.numCriteria; c++) {
+            pythonCode += `\n# Porównania opcji dla kryterium: ${AHP.criteriaNames[c]}\n`;
+            pythonCode += `matrix_${c} = np.array([\n`;
+            
+            for (let i = 0; i < AHP.numOptions; i++) {
+                pythonCode += `    [${AHP.optionComparisonMatrices[c][i].join(', ')}],\n`;
+            }
+            
+            pythonCode += `])\n`;
+            pythonCode += `option_comparison_matrices.append(matrix_${c})\n`;
+        }
+        
+        // Wyniki obliczeń
+        pythonCode += `\n# Wyliczone wartości\n`;
+        pythonCode += `# Wagi kryteriów:\n`;
+        pythonCode += `expected_criteria_weights = [${AHP.criteriaPriorities.join(', ')}]\n\n`;
+        
+        pythonCode += `# Lokalne wagi opcji dla każdego kryterium:\n`;
+        for (let c = 0; c < AHP.numCriteria; c++) {
+            pythonCode += `# Dla kryterium ${AHP.criteriaNames[c]}\n`;
+            pythonCode += `expected_local_weights_${c} = [${AHP.localOptionWeights[c].join(', ')}]\n`;
+        }
+        
+        pythonCode += `\n# Globalne wagi opcji (wynik końcowy):\n`;
+        pythonCode += `expected_global_weights = [${AHP.globalOptionWeights.join(', ')}]\n\n`;
+        
+        // Najlepsza opcja
+        let bestOptionIndex = 0;
+        for (let i = 1; i < AHP.numOptions; i++) {
+            if (AHP.globalOptionWeights[i] > AHP.globalOptionWeights[bestOptionIndex]) {
+                bestOptionIndex = i;
+            }
+        }
+        
+        pythonCode += `# Najlepsza opcja: "${AHP.optionNames[bestOptionIndex]}" z wynikiem ${AHP.globalOptionWeights[bestOptionIndex]}\n`;
+        
+        // Stwórz element textarea z kodem
+        const exportModal = document.createElement('div');
+        exportModal.className = 'export-modal';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'export-modal-content';
+        
+        const closeButton = document.createElement('span');
+        closeButton.className = 'close-modal';
+        closeButton.innerHTML = '&times;';
+        closeButton.onclick = () => {
+            document.body.removeChild(exportModal);
+        };
+        
+        const modalHeader = document.createElement('h4');
+        modalHeader.textContent = 'Kod Pythona dla analizy porównawczej';
+        
+        const modalDescription = document.createElement('p');
+        modalDescription.textContent = 'Skopiuj poniższy kod do skryptu Pythona, aby porównać wyniki z aplikacją referencyjną:';
+        
+        const codeArea = document.createElement('textarea');
+        codeArea.className = 'python-code-area';
+        codeArea.value = pythonCode;
+        codeArea.readOnly = true;
+        
+        const copyButton = document.createElement('button');
+        copyButton.textContent = 'Kopiuj kod';
+        copyButton.className = 'copy-code-button';
+        copyButton.onclick = () => {
+            codeArea.select();
+            document.execCommand('copy');
+            copyButton.textContent = 'Skopiowano!';
+            setTimeout(() => {
+                copyButton.textContent = 'Kopiuj kod';
+            }, 2000);
+        };
+        
+        modalContent.appendChild(closeButton);
+        modalContent.appendChild(modalHeader);
+        modalContent.appendChild(modalDescription);
+        modalContent.appendChild(codeArea);
+        modalContent.appendChild(copyButton);
+        
+        exportModal.appendChild(modalContent);
+        document.body.appendChild(exportModal);
     }
 } 
