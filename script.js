@@ -196,6 +196,13 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.remove('active');
     }
     
+    // Funkcja dodająca animację wjazdu do przycisku pomocy
+    function addSlideInEffect(button) {
+        if (button) {
+            button.classList.add('slide-in');
+        }
+    }
+    
     // Funkcja dodająca pulsowanie do przycisku pomocy
     function addPulseEffect(button) {
         if (button) {
@@ -211,43 +218,111 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Zmienna do śledzenia, czy przycisk pomocy został już kliknięty
-    let helpButtonClicked = false;
+    let helpButtonClicked = localStorage.getItem('helpButtonClicked') === 'true';
+    
+    // Funkcja zarządzająca animacjami przycisku pomocy
+    function manageHelpButtonAnimation(button) {
+        if (!button || helpButtonClicked) return;
+        
+        // Dodaj animację wjazdu od prawej strony
+        addSlideInEffect(button);
+        
+        // Dodaj pulsowanie
+        addPulseEffect(button);
+        
+        // Zatrzymaj pulsowanie po 3 sekundach
+        setTimeout(() => {
+            removePulseEffect(button);
+        }, 3000);
+        
+        // Ustawienie interwału dla powtarzającego się pulsowania co minutę
+        const pulseInterval = setInterval(() => {
+            if (helpButtonClicked) {
+                clearInterval(pulseInterval);
+                return;
+            }
+            
+            // Dodaj pulsowanie
+            addPulseEffect(button);
+            
+            // Zatrzymaj pulsowanie po 3 sekundach
+            setTimeout(() => {
+                removePulseEffect(button);
+            }, 3000);
+        }, 60000); // Co minutę
+    }
     
     // Obsługa kliknięcia przycisków pomocy
     if (helpAhpBtn) {
         helpAhpBtn.addEventListener('click', function() {
             openHelpModal(helpModalAhp);
             helpButtonClicked = true;
+            localStorage.setItem('helpButtonClicked', 'true');
             removePulseEffect(helpAhpBtn);
+            
+            // Wyczyść wszystkie interwały
+            const highestId = window.setTimeout(() => {}, 0);
+            for (let i = highestId; i >= 0; i--) {
+                window.clearInterval(i);
+            }
         });
         
-        // Dodaj pulsowanie po załadowaniu strony
-        addPulseEffect(helpAhpBtn);
+        // Uruchom animacje dla aktywnego przycisku pomocy
+        if (App.currentTool === 'ahp') {
+            manageHelpButtonAnimation(helpAhpBtn);
+        }
     }
     
     if (helpCuttingStockBtn) {
         helpCuttingStockBtn.addEventListener('click', function() {
             openHelpModal(helpModalCuttingStock);
             helpButtonClicked = true;
+            localStorage.setItem('helpButtonClicked', 'true');
             removePulseEffect(helpCuttingStockBtn);
+            
+            // Wyczyść wszystkie interwały
+            const highestId = window.setTimeout(() => {}, 0);
+            for (let i = highestId; i >= 0; i--) {
+                window.clearInterval(i);
+            }
         });
+        
+        // Uruchom animacje dla aktywnego przycisku pomocy
+        if (App.currentTool === 'cutting-stock') {
+            manageHelpButtonAnimation(helpCuttingStockBtn);
+        }
     }
     
     if (helpProductionOptBtn) {
         helpProductionOptBtn.addEventListener('click', function() {
             openHelpModal(helpModalProductionOpt);
             helpButtonClicked = true;
+            localStorage.setItem('helpButtonClicked', 'true');
             removePulseEffect(helpProductionOptBtn);
+            
+            // Wyczyść wszystkie interwały
+            const highestId = window.setTimeout(() => {}, 0);
+            for (let i = highestId; i >= 0; i--) {
+                window.clearInterval(i);
+            }
         });
+        
+        // Uruchom animacje dla aktywnego przycisku pomocy
+        if (App.currentTool === 'production-opt') {
+            manageHelpButtonAnimation(helpProductionOptBtn);
+        }
     }
     
-    // Dodaj pulsowanie ponownie po 30 sekundach, jeśli przycisk nie został kliknięty
-    setTimeout(function() {
+    // Obsługa przełączania między narzędziami - aktualizacja animacji przycisku pomocy
+    const originalSwitchToTool = App.switchToTool;
+    App.switchToTool = function(tool) {
+        originalSwitchToTool(tool);
+        
+        // Jeśli przycisk pomocy nie został jeszcze kliknięty, pokaż animacje dla nowego narzędzia
         if (!helpButtonClicked) {
-            const activeToolId = App.currentTool;
             let activeHelpButton;
             
-            switch(activeToolId) {
+            switch(tool) {
                 case 'ahp':
                     activeHelpButton = helpAhpBtn;
                     break;
@@ -260,10 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (activeHelpButton) {
-                addPulseEffect(activeHelpButton);
+                manageHelpButtonAnimation(activeHelpButton);
             }
         }
-    }, 30000); // 30 sekund
+    };
     
     // Obsługa zamykania okienek
     closeButtons.forEach(function(button) {
