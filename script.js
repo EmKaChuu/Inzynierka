@@ -181,6 +181,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const helpCuttingStockBtn = document.getElementById('help-cutting-stock');
     const helpProductionOptBtn = document.getElementById('help-production-opt');
     
+    // Natychmiast ukryj wszystkie oryginalne przyciski
+    [helpAhpBtn, helpCuttingStockBtn, helpProductionOptBtn].forEach(btn => {
+        if (btn) {
+            btn.style.opacity = '0';
+            btn.style.display = 'none';
+        }
+    });
+    
     // Okienka modalne
     const helpModalAhp = document.getElementById('help-modal-ahp');
     const helpModalCuttingStock = document.getElementById('help-modal-cutting-stock');
@@ -390,15 +398,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
             
-            // Usuń wszystkie istniejące przyciski
-            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
-                btn.style.opacity = '0';
-                btn.style.visibility = 'hidden'; // Natychmiast ukryj
-                setTimeout(() => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                }, 300);
+            // Ukryj wszystkie oryginalne przyciski
+            [helpAhpBtn, helpCuttingStockBtn, helpProductionOptBtn].forEach(btn => {
+                if (btn) {
+                    btn.style.opacity = '0';
+                    btn.style.display = 'none';
+                }
             });
             
             if (activeHelpButton) {
