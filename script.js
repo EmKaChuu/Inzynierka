@@ -180,8 +180,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const helpCuttingStockBtn = document.getElementById('help-cutting-stock');
     const helpProductionOptBtn = document.getElementById('help-production-opt');
     
-    console.log("Przyciski pomocy:", helpAhpBtn, helpCuttingStockBtn, helpProductionOptBtn);
-    
     // Okienka modalne
     const helpModalAhp = document.getElementById('help-modal-ahp');
     const helpModalCuttingStock = document.getElementById('help-modal-cutting-stock');
@@ -211,70 +209,71 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Zmienna do śledzenia, czy przycisk pomocy został już kliknięty
     let helpButtonClicked = localStorage.getItem('helpButtonClicked') === 'true';
-    console.log("Stan przycisku pomocy (kliknięty):", helpButtonClicked);
     
-    // UPROSZCZONA funkcja animacji przycisku pomocy
-    function animateHelpButton(button) {
-        if (!button) {
-            console.error("Brak przycisku do animacji");
-            return;
-        }
+    // Funkcja tworząca zduplikowany przycisk do animacji
+    function createDuplicateButton(originalButton, toolName) {
+        if (!originalButton) return;
         
-        if (helpButtonClicked) {
-            console.log("Pomijam animacje - przycisk już kliknięty");
-            return;
-        }
+        // Ukryj oryginalny przycisk
+        originalButton.style.opacity = '0';
         
-        console.log("Rozpoczynam animację przycisku pomocy");
+        // Stwórz duplikat przycisku
+        const duplicateBtn = document.createElement('button');
+        duplicateBtn.className = 'help-button duplicate-help-button';
+        duplicateBtn.innerHTML = '?';
+        duplicateBtn.id = `help-${toolName}-duplicate`;
         
-        // Resetujemy style i klasy
-        button.classList.remove('slide-in', 'pulse');
-        button.style.transform = '';
-        button.style.opacity = '';
+        // Dodaj duplikat do body
+        document.body.appendChild(duplicateBtn);
         
-        // Krok 1: Animacja wjazdu
-        button.style.transform = 'translateX(100px)';
-        button.style.opacity = '0';
+        // Pozycjonuj duplikat dokładnie nad oryginalnym przyciskiem
+        const rect = originalButton.getBoundingClientRect();
+        duplicateBtn.style.top = rect.top + 'px';
+        duplicateBtn.style.right = (window.innerWidth - rect.right) + 'px';
         
-        // Wymuszenie przepływu
-        button.offsetHeight;
+        // Dodaj animację wjazdu
+        duplicateBtn.style.transform = 'translateX(100px)';
+        duplicateBtn.style.opacity = '0';
+        duplicateBtn.offsetHeight; // Wymuszenie przepływu
+        duplicateBtn.classList.add('slide-in');
         
-        // Dodaj klasę slide-in
-        button.classList.add('slide-in');
-        
-        // Krok 2: Po wjeździe dodaj pulsowanie
-        setTimeout(function() {
-            console.log("Dodaję pulsowanie");
-            button.classList.add('pulse');
+        // Po zakończeniu animacji wjazdu, pokaż oryginalny przycisk i usuń duplikat
+        setTimeout(() => {
+            // Pokaż oryginalny przycisk
+            originalButton.style.opacity = '1';
             
-            // Krok 3: Zatrzymaj pulsowanie po 3 sekundach
-            setTimeout(function() {
-                console.log("Zatrzymuję pulsowanie");
-                button.classList.remove('pulse');
+            // Dodaj pulsowanie do oryginalnego przycisku
+            originalButton.classList.add('pulse');
+            
+            // Zatrzymaj pulsowanie po 3 sekundach
+            setTimeout(() => {
+                originalButton.classList.remove('pulse');
                 
-                // Krok 4: Ustaw interwał ponownego pulsowania co minutę
-                const pulseInterval = setInterval(function() {
+                // Ustaw interwał ponownego pulsowania co minutę
+                const pulseInterval = setInterval(() => {
                     if (helpButtonClicked) {
                         clearInterval(pulseInterval);
                         return;
                     }
                     
-                    console.log("Ponowne pulsowanie");
-                    button.classList.add('pulse');
+                    originalButton.classList.add('pulse');
                     
-                    setTimeout(function() {
-                        button.classList.remove('pulse');
+                    setTimeout(() => {
+                        originalButton.classList.remove('pulse');
                     }, 3000);
                 }, 60000);
-                
             }, 3000);
+            
+            // Usuń duplikat
+            document.body.removeChild(duplicateBtn);
         }, 800);
+        
+        return duplicateBtn;
     }
     
     // Obsługa kliknięcia przycisków pomocy
     if (helpAhpBtn) {
         helpAhpBtn.addEventListener('click', function() {
-            console.log("Kliknięto przycisk pomocy AHP");
             openHelpModal(helpModalAhp);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
@@ -289,19 +288,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Uruchom animacje dla aktywnego przycisku pomocy
         if (App.currentTool === 'ahp' || App.currentTool === null) {
-            console.log("Uruchamiam animację dla przycisku AHP");
-            // Daj chwilę na załadowanie DOM
             setTimeout(() => {
-                animateHelpButton(helpAhpBtn);
-            }, 300);
+                createDuplicateButton(helpAhpBtn, 'ahp');
+            }, 500);
         }
-    } else {
-        console.error("Nie znaleziono przycisku pomocy AHP");
     }
     
     if (helpCuttingStockBtn) {
         helpCuttingStockBtn.addEventListener('click', function() {
-            console.log("Kliknięto przycisk pomocy Cutting Stock");
             openHelpModal(helpModalCuttingStock);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
@@ -317,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (helpProductionOptBtn) {
         helpProductionOptBtn.addEventListener('click', function() {
-            console.log("Kliknięto przycisk pomocy Production Opt");
             openHelpModal(helpModalProductionOpt);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
@@ -334,28 +327,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Obsługa przełączania między narzędziami - aktualizacja animacji przycisku pomocy
     const originalSwitchToTool = App.switchToTool;
     App.switchToTool = function(tool) {
-        console.log("Przełączanie narzędzia na:", tool);
         originalSwitchToTool(tool);
         
         // Jeśli przycisk pomocy nie został jeszcze kliknięty, pokaż animacje dla nowego narzędzia
         if (!helpButtonClicked) {
             let activeHelpButton;
+            let toolName;
             
             switch(tool) {
                 case 'ahp':
                     activeHelpButton = helpAhpBtn;
+                    toolName = 'ahp';
                     break;
                 case 'cutting-stock':
                     activeHelpButton = helpCuttingStockBtn;
+                    toolName = 'cutting-stock';
                     break;
                 case 'production-opt':
                     activeHelpButton = helpProductionOptBtn;
+                    toolName = 'production-opt';
                     break;
             }
             
             if (activeHelpButton) {
-                console.log("Uruchamiam animację dla przycisku:", tool);
-                animateHelpButton(activeHelpButton);
+                setTimeout(() => {
+                    createDuplicateButton(activeHelpButton, toolName);
+                }, 500);
             }
         }
     };
