@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Dodaj przycisk do body, ale ustaw go jako całkowicie niewidoczny
         pulseButton.style.opacity = '0';
-        pulseButton.style.visibility = 'hidden'; // Dodatkowe ukrycie
+        pulseButton.style.display = 'none'; // Całkowicie ukryty
         document.body.appendChild(pulseButton);
         
         // Pozycjonuj przycisk dokładnie w miejscu oryginalnego
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             // Przygotuj przycisk pulsujący do pokazania
             pulseButton.style.transition = 'opacity 0.3s ease-in';
-            pulseButton.style.visibility = 'visible'; // Teraz można go pokazać
+            pulseButton.style.display = 'flex'; // Używamy display zamiast visibility
             
             // Płynne pojawienie się pulsującego przycisku
             setTimeout(() => {
@@ -281,17 +281,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     setTimeout(() => {
                         pulseButton.classList.remove('pulse');
-                        pulseButton.style.visibility = 'hidden'; // Ukryj całkowicie
+                        pulseButton.style.display = 'none'; // Całkowicie ukryj
                         
-                        // Ustaw interwał ponownego pulsowania co minutę
-                        const pulseInterval = setInterval(() => {
-                            if (helpButtonClicked) {
-                                clearInterval(pulseInterval);
-                                return;
-                            }
+                        // Pokaż przycisk ponownie po 10 sekundach
+                        setTimeout(() => {
+                            if (helpButtonClicked) return;
                             
                             // Przygotuj przycisk do pokazania
-                            pulseButton.style.visibility = 'visible';
+                            pulseButton.style.display = 'flex';
                             
                             // Płynne pojawienie się pulsującego przycisku
                             setTimeout(() => {
@@ -305,11 +302,39 @@ document.addEventListener('DOMContentLoaded', function() {
                                     
                                     setTimeout(() => {
                                         pulseButton.classList.remove('pulse');
-                                        pulseButton.style.visibility = 'hidden'; // Ukryj całkowicie
+                                        pulseButton.style.display = 'none'; // Całkowicie ukryj
+                                        
+                                        // Teraz ustaw interwał ponownego pulsowania co minutę
+                                        const pulseInterval = setInterval(() => {
+                                            if (helpButtonClicked) {
+                                                clearInterval(pulseInterval);
+                                                return;
+                                            }
+                                            
+                                            // Przygotuj przycisk do pokazania
+                                            pulseButton.style.display = 'flex';
+                                            
+                                            // Płynne pojawienie się pulsującego przycisku
+                                            setTimeout(() => {
+                                                pulseButton.style.opacity = '1';
+                                                pulseButton.classList.add('pulse');
+                                                
+                                                // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
+                                                setTimeout(() => {
+                                                    // Płynne ukrycie pulsującego przycisku
+                                                    pulseButton.style.opacity = '0';
+                                                    
+                                                    setTimeout(() => {
+                                                        pulseButton.classList.remove('pulse');
+                                                        pulseButton.style.display = 'none'; // Całkowicie ukryj
+                                                    }, 300);
+                                                }, 1500);
+                                            }, 10);
+                                        }, 60000); // Interwał co minutę
                                     }, 300);
                                 }, 1500);
                             }, 10);
-                        }, 60000);
+                        }, 10000); // Pokaż ponownie po 10 sekundach
                     }, 300);
                 }, 1500);
             }, 10);
@@ -347,16 +372,35 @@ document.addEventListener('DOMContentLoaded', function() {
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
             
-            // Usuń wszystkie dodatkowe przyciski
+            // Zatrzymaj wszystkie animacje i ukryj dodatkowe przyciski
             document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
+                // Zatrzymaj animacje
+                btn.style.animation = 'none';
+                btn.classList.remove('pulse', 'slide-in');
+                
+                // Ukryj przyciski (ale nie usuwaj ich)
                 btn.style.opacity = '0';
-                btn.style.visibility = 'hidden'; // Natychmiast ukryj
-                setTimeout(() => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                }, 300);
+                btn.style.display = 'none';
             });
+            
+            // Pokaż oryginalny przycisk (przywróć zarówno widoczność jak i display)
+            let originalBtn;
+            switch(toolName) {
+                case 'ahp':
+                    originalBtn = helpAhpBtn;
+                    break;
+                case 'cutting-stock':
+                    originalBtn = helpCuttingStockBtn;
+                    break;
+                case 'production-opt':
+                    originalBtn = helpProductionOptBtn;
+                    break;
+            }
+            
+            if (originalBtn) {
+                originalBtn.style.opacity = '1';
+                originalBtn.style.display = 'flex';
+            }
             
             // Wyczyść wszystkie interwały
             const highestId = window.setTimeout(() => {}, 0);
