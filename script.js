@@ -240,11 +240,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupHelpButtonAnimation(originalButton, toolName) {
         if (!originalButton) return;
         
-        // Ukryj oryginalny przycisk całkowicie (nie tylko przezroczystość)
+        // Ukryj oryginalny przycisk całkowicie
         originalButton.style.opacity = '0';
         originalButton.style.display = 'none';
         
-        // 1. Stwórz pierwszy przycisk (ten, który wjeżdża)
+        // 1. Stwórz pierwszy przycisk (ten, który wjeżdża) - ZAWSZE WIDOCZNY po wjechaniu
         const slideInButton = document.createElement('button');
         slideInButton.className = 'help-button slide-in-button';
         slideInButton.innerHTML = '?';
@@ -260,7 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Ustaw początkową pozycję poza ekranem
         slideInButton.style.transform = 'translateX(100px)';
-        slideInButton.style.opacity = '0';
         
         // Wymuszenie przepływu
         slideInButton.offsetHeight;
@@ -273,6 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         pulseButton.className = 'help-button pulse-button';
         pulseButton.innerHTML = '?';
         pulseButton.id = `help-${toolName}-pulse`;
+        pulseButton.style.zIndex = '1003'; // Wyższy z-index niż slide-in-button
         
         // Dodaj przycisk do body, ale ustaw go jako całkowicie niewidoczny
         pulseButton.style.opacity = '0';
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             // Przygotuj przycisk pulsujący do pokazania
             pulseButton.style.transition = 'opacity 0.3s ease-in';
-            pulseButton.style.display = 'flex'; // Używamy display zamiast visibility
+            pulseButton.style.display = 'flex';
             
             // Płynne pojawienie się pulsującego przycisku
             setTimeout(() => {
@@ -406,22 +406,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
             
-            // Zatrzymaj wszystkie animacje i ukryj TYLKO dodatkowe przyciski
-            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
+            // Zatrzymaj animacje i ukryj TYLKO pulsujący przycisk
+            document.querySelectorAll('.pulse-button').forEach(btn => {
                 // Zatrzymaj animacje
                 btn.style.animation = 'none';
-                btn.classList.remove('pulse', 'slide-in');
+                btn.classList.remove('pulse');
                 
-                // Ukryj przyciski (ale nie usuwaj ich)
+                // Ukryj przycisk
                 btn.style.opacity = '0';
                 btn.style.display = 'none';
             });
-            
-            // Pokaż oryginalny przycisk (przywróć zarówno widoczność jak i display)
-            if (originalBtn) {
-                originalBtn.style.opacity = '1';
-                originalBtn.style.display = 'flex';
-            }
             
             // Wyczyść wszystkie interwały
             const highestId = window.setTimeout(() => {}, 0);
@@ -468,6 +462,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (btn) {
                     btn.style.opacity = '0';
                     btn.style.display = 'none';
+                }
+            });
+            
+            // Usuń wszystkie istniejące przyciski animowane
+            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
+                if (btn.parentNode) {
+                    btn.parentNode.removeChild(btn);
                 }
             });
             
