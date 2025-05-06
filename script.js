@@ -224,18 +224,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function manageHelpButtonAnimation(button) {
         if (!button || helpButtonClicked) return;
         
-        // Dodaj animację wjazdu od prawej strony
+        // 1. Najpierw dodaj animację wjazdu od prawej strony
         addSlideInEffect(button);
         
-        // Dodaj pulsowanie
-        addPulseEffect(button);
-        
-        // Zatrzymaj pulsowanie po 3 sekundach
+        // 2. Po zakończeniu animacji wjazdu, dodaj pulsowanie
         setTimeout(() => {
-            removePulseEffect(button);
-        }, 3000);
+            // Dodaj pulsowanie
+            addPulseEffect(button);
+            
+            // 3. Zatrzymaj pulsowanie po 3 sekundach
+            setTimeout(() => {
+                removePulseEffect(button);
+            }, 3000);
+        }, 800); // Czas trwania animacji wjazdu
         
-        // Ustawienie interwału dla powtarzającego się pulsowania co minutę
+        // 4. Ustawienie interwału dla powtarzającego się pulsowania co minutę
         const pulseInterval = setInterval(() => {
             if (helpButtonClicked) {
                 clearInterval(pulseInterval);
