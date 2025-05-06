@@ -364,7 +364,8 @@ button:hover {
 /* Media queries dla responsywności */
 @media (max-width: 992px) {
     .app-sidebar:not(.sidebar-minimized) {
-        width: 240px;
+        width: 75%; /* Zwiększona szerokość nawy na urządzeniach mobilnych */
+        max-width: 350px; /* Maksymalna szerokość dla większych tabletów */
     }
     
     .sidebar-toggle {
@@ -428,6 +429,10 @@ button:hover {
     pre {
         white-space: pre-wrap;
         word-wrap: break-word;
+    }
+
+    .app-sidebar:not(.sidebar-minimized) {
+        width: 80%; /* Jeszcze większa szerokość nawy na mniejszych urządzeniach */
     }
 }
 
