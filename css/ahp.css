@@ -10,26 +10,6 @@
     flex-grow: 1;
 }
 
-/* Informacja o istotności nawy bocznej */
-.sidebar-info {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-left: 4px solid var(--dark-brown);
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar-info p {
-    margin: 0;
-    line-height: 1.4;
-}
-
-.sidebar-info strong {
-    color: var(--dark-brown);
-}
-
 .sidebar-main-section {
     margin-bottom: 20px;
 }
@@ -99,13 +79,19 @@
 }
 
 .switch-option {
-    padding: 5px 10px;
-    font-size: 0.85em;
+    padding: 8px 12px;
+    font-size: 1em;
     background: none;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.2s;
+    margin: 0 2px;
+    min-width: 40px;
+}
+
+.switch-option i {
+    font-size: 1.2em;
 }
 
 .switch-option.active {
@@ -712,7 +698,6 @@
 @media (max-width: 768px) {
     .simplified-comparison-row {
         flex-direction: column;
-        align-items: stretch;
         gap: 10px;
     }
     
@@ -721,9 +706,28 @@
     }
     
     .scale-container {
-        margin: 10px 0;
         width: 100%;
-        max-width: 100%;
+        margin: 10px 0;
+    }
+    
+    .interface-switch-container {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-top: 10px !important;
+    }
+    
+    .interface-switch {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .interface-switch label {
+        display: none;
+    }
+    
+    #tool-ahp .tool-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
     
     .best-option-display {
