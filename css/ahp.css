@@ -57,12 +57,12 @@
 
 /* Style dla przełącznika interfejsu AHP */
 .interface-switch-container {
-    display: inline-flex;
-    justify-content: center;
-    margin-bottom: 0;
-    margin-left: 20px;
-    margin-right: 60px;
-    vertical-align: middle;
+    display: inline-flex !important;
+    justify-content: center !important;
+    margin-bottom: 0 !important;
+    margin-left: 20px !important;
+    margin-right: 60px !important;
+    vertical-align: middle !important;
 }
 
 .interface-switch {

@@ -151,7 +151,7 @@ body {
 .sidebar-toggle {
     position: fixed;
     left: 280px;
-    top: 20px;
+    top: 70px;
     width: 30px;
     height: 30px;
     background-color: var(--dark-brown);
@@ -452,24 +452,24 @@ button:hover {
 
 /* Style dla przycisku pomocy */
 .help-button {
-    position: fixed;
-    right: 20px;
-    top: 120px;
-    width: 40px;
-    height: 40px;
-    background-color: var(--dark-brown);
-    color: var(--white);
-    border: none;
-    border-radius: 50%;
-    font-size: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
+    position: fixed !important;
+    right: 20px !important;
+    top: 120px !important;
+    width: 40px !important;
+    height: 40px !important;
+    background-color: var(--dark-brown) !important;
+    color: var(--white) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
 }
 
 .help-button:hover {
