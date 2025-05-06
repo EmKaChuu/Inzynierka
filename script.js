@@ -1,4 +1,5 @@
 // --- Global Namespace ---
+// Wersja: 1.0.1 - Poprawiona animacja przycisku pomocy
 const Utils = {
     showElement: (id) => {
         document.getElementById(id).style.display = 'block';
