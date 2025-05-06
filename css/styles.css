@@ -481,10 +481,21 @@ button:hover {
     transition: all 0.3s ease !important;
 }
 
-/* Style dla zduplikowanego przycisku pomocy */
+/* Style dla zduplikowanych przycisków pomocy */
 .duplicate-help-button {
     position: fixed !important;
-    z-index: 999 !important; /* Pod oryginalnym przyciskiem */
+    z-index: 1001 !important; /* Nad oryginalnym przyciskiem */
+}
+
+/* Specyficzne styles dla przycisku wjeżdżającego */
+.slide-in-btn {
+    z-index: 1002 !important; /* Najwyższy z-index */
+}
+
+/* Specyficzne styles dla przycisku pulsującego */
+.pulse-btn {
+    z-index: 1001 !important;
+    transition: opacity 0.3s ease !important;
 }
 
 /* Animacja wjazdu przycisku pomocy od prawej strony */
