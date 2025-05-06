@@ -149,7 +149,7 @@ body {
 
 /* Przycisk minimalizacji/maksymalizacji nawy */
 .sidebar-toggle {
-    position: absolute;
+    position: fixed;
     left: 280px;
     top: 20px;
     width: 30px;
@@ -452,9 +452,9 @@ button:hover {
 
 /* Style dla przycisku pomocy */
 .help-button {
-    position: absolute;
+    position: fixed;
     right: 20px;
-    top: 20px;
+    top: 120px;
     width: 40px;
     height: 40px;
     background-color: var(--dark-brown);
@@ -465,7 +465,7 @@ button:hover {
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    z-index: 50;
+    z-index: 100;
     display: flex;
     align-items: center;
     justify-content: center;
