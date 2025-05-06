@@ -1,5 +1,5 @@
 // --- Global Namespace ---
-// Wersja: 1.0.2 - Płynne przejścia między przyciskami pomocy
+// Wersja: 1.0.3 - Uproszczona animacja z jednym przyciskiem
 const Utils = {
     showElement: (id) => {
         document.getElementById(id).style.display = 'block';
@@ -193,8 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function openHelpModal(modal) {
         if (modal) {
             modal.classList.add('active');
-        } else {
-            console.error("Próba otwarcia nieistniejącego okna pomocy");
         }
     }
     
@@ -211,106 +209,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // Zmienna do śledzenia, czy przycisk pomocy został już kliknięty
     let helpButtonClicked = localStorage.getItem('helpButtonClicked') === 'true';
     
-    // Funkcja tworząca zduplikowany przycisk do animacji
-    function createDuplicateButton(originalButton, toolName) {
-        if (!originalButton) return;
+    // Funkcja animująca przycisk pomocy
+    function animateHelpButton(button) {
+        if (!button) return;
         
-        // Nie ukrywamy oryginalnego przycisku - będzie widoczny cały czas
-        // originalButton.style.opacity = '0';
+        // 1. Przygotuj przycisk - ukryj go poza ekranem
+        button.style.transform = 'translateX(100px)';
+        button.style.opacity = '0';
+        button.classList.remove('slide-in', 'pulse');
         
-        // Stwórz duplikat przycisku do animacji wjazdu
-        const slideInBtn = document.createElement('button');
-        slideInBtn.className = 'help-button duplicate-help-button slide-in-btn';
-        slideInBtn.innerHTML = '?';
-        slideInBtn.id = `help-${toolName}-slide-in`;
+        // Wymuszenie przepływu
+        button.offsetHeight;
         
-        // Dodaj duplikat do body
-        document.body.appendChild(slideInBtn);
+        // 2. Animacja wjazdu
+        button.classList.add('slide-in');
         
-        // Pozycjonuj duplikat dokładnie nad oryginalnym przyciskiem
-        const rect = originalButton.getBoundingClientRect();
-        slideInBtn.style.top = rect.top + 'px';
-        slideInBtn.style.right = (window.innerWidth - rect.right) + 'px';
-        
-        // Dodaj animację wjazdu
-        slideInBtn.style.transform = 'translateX(100px)';
-        slideInBtn.style.opacity = '0';
-        slideInBtn.offsetHeight; // Wymuszenie przepływu
-        slideInBtn.classList.add('slide-in');
-        
-        // Stwórz drugi duplikat przycisku do pulsowania
-        const pulseBtn = document.createElement('button');
-        pulseBtn.className = 'help-button duplicate-help-button pulse-btn';
-        pulseBtn.innerHTML = '?';
-        pulseBtn.id = `help-${toolName}-pulse`;
-        pulseBtn.style.opacity = '0'; // Początkowo niewidoczny
-        
-        // Dodaj drugi duplikat do body
-        document.body.appendChild(pulseBtn);
-        
-        // Pozycjonuj drugi duplikat dokładnie nad oryginalnym przyciskiem
-        pulseBtn.style.top = rect.top + 'px';
-        pulseBtn.style.right = (window.innerWidth - rect.right) + 'px';
-        
-        // Po zakończeniu animacji wjazdu, usuń pierwszy duplikat i pokaż pulsujący
+        // 3. Po zakończeniu wjazdu, dodaj pulsowanie
         setTimeout(() => {
-            // Usuń przycisk wjeżdżający
-            slideInBtn.style.opacity = '0';
-            setTimeout(() => {
-                document.body.removeChild(slideInBtn);
-            }, 300);
+            // Dodaj pulsowanie
+            button.classList.add('pulse');
             
-            // Pokaż przycisk pulsujący z płynnym przejściem
-            pulseBtn.style.transition = 'opacity 0.3s ease-in';
-            pulseBtn.style.opacity = '1';
-            pulseBtn.classList.add('pulse');
-            
-            // Zatrzymaj pulsowanie po 3 sekundach
+            // 4. Zatrzymaj pulsowanie po 1.5 sekundach
             setTimeout(() => {
-                // Płynne ukrycie przycisku pulsującego
-                pulseBtn.style.opacity = '0';
-                setTimeout(() => {
-                    pulseBtn.classList.remove('pulse');
-                    document.body.removeChild(pulseBtn);
+                button.classList.remove('pulse');
+                
+                // 5. Ustaw interwał ponownego pulsowania co minutę
+                const pulseInterval = setInterval(() => {
+                    if (helpButtonClicked) {
+                        clearInterval(pulseInterval);
+                        return;
+                    }
                     
-                    // Ustaw interwał ponownego pulsowania co minutę
-                    const pulseInterval = setInterval(() => {
-                        if (helpButtonClicked) {
-                            clearInterval(pulseInterval);
-                            return;
-                        }
-                        
-                        // Stwórz nowy przycisk pulsujący
-                        const newPulseBtn = document.createElement('button');
-                        newPulseBtn.className = 'help-button duplicate-help-button pulse-btn';
-                        newPulseBtn.innerHTML = '?';
-                        newPulseBtn.style.opacity = '0';
-                        newPulseBtn.style.top = rect.top + 'px';
-                        newPulseBtn.style.right = (window.innerWidth - rect.right) + 'px';
-                        document.body.appendChild(newPulseBtn);
-                        
-                        // Płynne pojawienie się i pulsowanie
-                        setTimeout(() => {
-                            newPulseBtn.style.transition = 'opacity 0.3s ease-in';
-                            newPulseBtn.style.opacity = '1';
-                            newPulseBtn.classList.add('pulse');
-                            
-                            // Zatrzymaj pulsowanie po 3 sekundach
-                            setTimeout(() => {
-                                // Płynne ukrycie
-                                newPulseBtn.style.opacity = '0';
-                                setTimeout(() => {
-                                    newPulseBtn.classList.remove('pulse');
-                                    document.body.removeChild(newPulseBtn);
-                                }, 300);
-                            }, 3000);
-                        }, 10);
-                    }, 60000);
-                }, 300);
-            }, 3000);
+                    // Dodaj pulsowanie
+                    button.classList.add('pulse');
+                    
+                    // Zatrzymaj pulsowanie po 1.5 sekundach
+                    setTimeout(() => {
+                        button.classList.remove('pulse');
+                    }, 1500);
+                }, 60000);
+            }, 1500);
         }, 800);
-        
-        return { slideInBtn, pulseBtn };
     }
     
     // Obsługa kliknięcia przycisków pomocy
@@ -319,16 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
             openHelpModal(helpModalAhp);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
-            
-            // Usuń wszystkie duplikaty przycisków
-            document.querySelectorAll('.duplicate-help-button').forEach(btn => {
-                btn.style.opacity = '0';
-                setTimeout(() => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                }, 300);
-            });
+            helpAhpBtn.classList.remove('pulse');
             
             // Wyczyść wszystkie interwały
             const highestId = window.setTimeout(() => {}, 0);
@@ -339,9 +269,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Uruchom animacje dla aktywnego przycisku pomocy
         if (App.currentTool === 'ahp' || App.currentTool === null) {
+            // Daj chwilę na załadowanie DOM
             setTimeout(() => {
-                createDuplicateButton(helpAhpBtn, 'ahp');
-            }, 500);
+                animateHelpButton(helpAhpBtn);
+            }, 300);
         }
     }
     
@@ -350,16 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             openHelpModal(helpModalCuttingStock);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
-            
-            // Usuń wszystkie duplikaty przycisków
-            document.querySelectorAll('.duplicate-help-button').forEach(btn => {
-                btn.style.opacity = '0';
-                setTimeout(() => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                }, 300);
-            });
+            helpCuttingStockBtn.classList.remove('pulse');
             
             // Wyczyść wszystkie interwały
             const highestId = window.setTimeout(() => {}, 0);
@@ -374,16 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             openHelpModal(helpModalProductionOpt);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
-            
-            // Usuń wszystkie duplikaty przycisków
-            document.querySelectorAll('.duplicate-help-button').forEach(btn => {
-                btn.style.opacity = '0';
-                setTimeout(() => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                }, 300);
-            });
+            helpProductionOptBtn.classList.remove('pulse');
             
             // Wyczyść wszystkie interwały
             const highestId = window.setTimeout(() => {}, 0);
@@ -401,37 +314,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // Jeśli przycisk pomocy nie został jeszcze kliknięty, pokaż animacje dla nowego narzędzia
         if (!helpButtonClicked) {
             let activeHelpButton;
-            let toolName;
             
             switch(tool) {
                 case 'ahp':
                     activeHelpButton = helpAhpBtn;
-                    toolName = 'ahp';
                     break;
                 case 'cutting-stock':
                     activeHelpButton = helpCuttingStockBtn;
-                    toolName = 'cutting-stock';
                     break;
                 case 'production-opt':
                     activeHelpButton = helpProductionOptBtn;
-                    toolName = 'production-opt';
                     break;
             }
             
-            // Usuń wszystkie istniejące duplikaty przycisków
-            document.querySelectorAll('.duplicate-help-button').forEach(btn => {
-                btn.style.opacity = '0';
-                setTimeout(() => {
-                    if (btn.parentNode) {
-                        btn.parentNode.removeChild(btn);
-                    }
-                }, 300);
-            });
-            
             if (activeHelpButton) {
                 setTimeout(() => {
-                    createDuplicateButton(activeHelpButton, toolName);
-                }, 500);
+                    animateHelpButton(activeHelpButton);
+                }, 300);
             }
         }
     };
