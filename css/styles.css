@@ -389,15 +389,19 @@ button:hover {
     }
 
     .app-nav ul {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        gap: 0.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 5px;
     }
 
     .app-nav button {
-        width: 100%;
-        padding: 10px;
-        margin: 2px 0;
+        width: auto;
+        padding: 8px 10px;
+        margin: 0;
+        font-size: 0.9rem;
     }
 
     .input-row {
@@ -475,6 +479,26 @@ button:hover {
     align-items: center !important;
     justify-content: center !important;
     transition: all 0.3s ease !important;
+}
+
+/* Styl dla pulsującego przycisku pomocy */
+@keyframes pulse {
+    0% { 
+        box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.9);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 15px 5px rgba(212, 175, 55, 0.7);
+        transform: scale(1.05);
+    }
+    100% { 
+        box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+        transform: scale(1);
+    }
+}
+
+.help-button.pulse {
+    animation: pulse 1.5s infinite;
 }
 
 .help-button:hover {
