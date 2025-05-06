@@ -1,0 +1,450 @@
+/* 
+   styles.css - Główny plik stylów dla całej aplikacji
+   Zawiera tylko style wspólne dla wszystkich modułów
+*/
+
+:root {
+    --dark-brown: #4A3C31;
+    --medium-brown: #785E45;
+    --light-brown: #BFA58E;
+    --gold: #D4AF37;
+    --cream: #F5E6D3;
+    --white: #FFFFFF;
+    --background: #e9d3c0;
+    --error-color: #dc3545;
+    --success-color: #28a745;
+}
+
+/* Resetowanie podstawowych stylów */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background);
+    background-image: url('../asfalt-dark.png');
+    background-repeat: repeat;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Główny kontener aplikacji */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Nagłówek / Menu - od krawędzi do krawędzi */
+.app-header {
+    background-color: var(--dark-brown);
+    color: var(--white);
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    border-bottom: 4px solid var(--gold);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 60;
+}
+
+.app-header h1 {
+    padding: 1rem 0;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.app-nav {
+    background-color: var(--medium-brown);
+    padding: 0.5rem 0;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.app-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.app-nav button {
+    background: none;
+    border: none;
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border-radius: 5px;
+}
+
+.app-nav button:hover, 
+.app-nav button.active {
+    background-color: var(--dark-brown);
+}
+
+/* Główny kontener treści */
+.app-content {
+    display: flex;
+    flex: 1;
+    position: relative;
+    background-color: var(--background);
+    background-image: url('../asfalt-dark.png');
+    background-repeat: repeat;
+    min-height: calc(100vh - 150px);
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* Nawa boczna - lewa strona */
+.app-sidebar {
+    width: 280px;
+    background-color: #d5b99f;
+    border-right: 2px solid var(--dark-brown);
+    padding: 15px 15px;
+    min-height: 100%;
+    overflow: auto;
+    transition: width 0.3s ease, transform 0.3s ease;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: #a38b75 #d5b99f;
+}
+
+/* Stylizacja paska przewijania dla Webkit (Chrome, Safari, Edge) */
+.app-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.app-sidebar::-webkit-scrollbar-track {
+    background: #d5b99f;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb {
+    background-color: #a38b75;
+    border-radius: 4px;
+    border: 2px solid #d5b99f;
+}
+
+/* Zminimalizowana nawa */
+.sidebar-minimized {
+    width: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
+    transform: translateX(-100%);
+}
+
+/* Przycisk minimalizacji/maksymalizacji nawy */
+.sidebar-toggle {
+    position: absolute;
+    left: 280px;
+    top: 20px;
+    width: 30px;
+    height: 30px;
+    background-color: var(--dark-brown);
+    color: var(--white);
+    border: none;
+    border-radius: 0 4px 4px 0;
+    z-index: 100;
+    cursor: pointer;
+    transition: left 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Przycisk przy zminimalizowanej nawie */
+.sidebar-minimized + .sidebar-toggle {
+    left: 0;
+}
+
+/* Ikona strzałki */
+.arrow-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--white);
+}
+
+/* Główna treść - prawa strona */
+.app-main {
+    flex: 1;
+    padding: 20px;
+    transition: margin-left 0.3s ease;
+    min-height: calc(100vh - 150px);
+    background-color: var(--background);
+    background-image: url('../asfalt-dark.png');
+    background-repeat: repeat;
+    width: 100%;
+}
+
+/* Stopka - od krawędzi do krawędzi */
+.app-footer {
+    background-color: var(--dark-brown);
+    color: var(--white);
+    text-align: center;
+    padding: 10px 0;
+    width: 100%;
+    margin-top: auto;
+}
+
+/* Wspólne style dla narzędzi */
+.tool-content {
+    display: none;
+    padding: 20px;
+    background-color: var(--background);
+    background-image: url('../asfalt-dark.png');
+    background-repeat: repeat;
+    border-radius: 8px;
+    margin-top: 20px;
+    overflow: visible;
+    height: auto !important;
+    min-height: fit-content;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tool-content.active {
+    display: block;
+    height: auto !important;
+    min-height: fit-content;
+}
+
+.tool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.tool-header h2 {
+    margin: 0;
+    color: var(--dark-brown);
+    font-size: 1.8rem;
+}
+
+/* Wspólne style formularzy */
+.input-group {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid var(--dark-brown);
+    border-radius: 8px;
+    background-color: var(--background);
+    background-image: url('../asfalt-dark.png');
+    background-repeat: repeat;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+input[type="number"],
+input[type="text"],
+select {
+    padding: 10px;
+    border: 1px solid var(--dark-brown);
+    border-radius: 4px;
+    width: 150px;
+    background-color: var(--white);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) inset;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--dark-brown);
+    box-shadow: 0 0 0 3px rgba(74, 60, 49, 0.3);
+}
+
+/* Wspólne style przycisków */
+button {
+    background-color: var(--dark-brown);
+    color: var(--white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    background-color: #3A2F28;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.small-button {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+/* Wspólne style dla wyników */
+.results {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--white);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    border: 1px solid var(--dark-brown);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.error {
+    color: var(--error-color);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid var(--error-color);
+    border-radius: 4px;
+    background-color: #f8d7da;
+}
+
+.success {
+    color: var(--success-color);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid var(--success-color);
+    border-radius: 4px;
+    background-color: #d4edda;
+}
+
+/* Style dla komunikatów o błędach */
+.error-message {
+    background-color: #FEE7E7;
+    border-left: 5px solid #D53636;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.error-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.error-content {
+    flex: 1;
+}
+
+.error-content h4 {
+    margin: 0 0 5px 0;
+    color: #D53636;
+}
+
+.error-content p {
+    margin: 0;
+    color: #333;
+}
+
+/* Media queries dla responsywności */
+@media (max-width: 992px) {
+    .app-sidebar:not(.sidebar-minimized) {
+        width: 240px;
+    }
+    
+    .sidebar-toggle {
+        width: 25px;
+        height: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .app-header h1 {
+        font-size: 1.5rem;
+        padding: 0 10px;
+    }
+
+    .app-nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .app-nav button {
+        width: 100%;
+        padding: 10px;
+        margin: 2px 0;
+    }
+
+    .input-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    button {
+        padding: 12px 20px;
+        margin: 5px 0;
+        min-height: 44px;
+        touch-action: manipulation;
+        width: 100%;
+    }
+
+    .results {
+        font-size: 14px;
+        white-space: normal;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header h1 {
+        font-size: 1.3rem;
+    }
+
+    .tool-content {
+        padding: 10px;
+    }
+
+    .input-group {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .app-footer {
+        padding: 8px 0;
+    }
+} 

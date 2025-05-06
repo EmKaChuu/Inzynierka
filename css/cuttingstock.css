@@ -1,0 +1,683 @@
+/* 
+ * cuttingstock.css 
+ * Style dla modułu rozkroju (Problem Rozkroju)
+ */
+
+/* Główny kontener modułu rozkroju */
+#tool-cutting-stock {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#tool-cutting-stock h2 {
+    color: #4A3C31;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #D4AF37;
+    padding-bottom: 10px;
+}
+
+/* Sekcja danych wejściowych */
+#tool-cutting-stock .input-group {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #d1c0ab;
+}
+
+/* Rzędy z danymi wejściowymi */
+#tool-cutting-stock .input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9e1d7;
+}
+
+#tool-cutting-stock .input-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Etykiety */
+#tool-cutting-stock label {
+    min-width: 120px;
+    font-weight: 500;
+    color: #4A3C31;
+    margin-right: 15px;
+}
+
+/* Pola wejściowe */
+#tool-cutting-stock input[type="number"] {
+    padding: 10px 12px;
+    border: 1px solid #bfa58e;
+    border-radius: 6px;
+    width: 120px;
+    font-size: 16px;
+    background-color: #fcfaf8;
+    transition: all 0.3s ease;
+}
+
+#tool-cutting-stock input[type="number"]:focus {
+    border-color: #D4AF37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+    outline: none;
+    background-color: #ffffff;
+}
+
+/* Checkbox dla dokładnej liczby sztuk */
+#tool-cutting-stock input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+    accent-color: #4A3C31;
+}
+
+/* Lista zamówień */
+#ordersList {
+    width: 100%;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #f8f4ef;
+    border-radius: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0d5c5;
+}
+
+/* Przyciski */
+#tool-cutting-stock button {
+    background-color: #785E45;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    margin-right: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#tool-cutting-stock button:hover {
+    background-color: #4A3C31;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#tool-cutting-stock button:active {
+    transform: translateY(0);
+}
+
+/* Przycisk obliczania */
+#tool-cutting-stock button[onclick="CuttingStock.calculate()"] {
+    background-color: #D4AF37;
+    color: #4A3C31;
+    font-weight: bold;
+    padding: 15px 30px;
+    margin-top: 15px;
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 16px;
+}
+
+#tool-cutting-stock button[onclick="CuttingStock.calculate()"]:hover {
+    background-color: #c9a42f;
+}
+
+/* Przycisk usuwania zamówienia */
+#tool-cutting-stock .small-button {
+    background-color: #bfa58e;
+    color: #4A3C31;
+    padding: 8px 15px;
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+#tool-cutting-stock .small-button:hover {
+    background-color: #a38b75;
+}
+
+/* Sekcja wyników */
+#cuttingStockResults {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    border: 1px solid #d1c0ab;
+}
+
+#cuttingStockResults h3 {
+    color: #4A3C31;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #D4AF37;
+    padding-bottom: 10px;
+}
+
+#cuttingStockResults h4 {
+    color: #785E45;
+    font-size: 1.2rem;
+    margin: 20px 0 10px 0;
+    border-left: 4px solid #D4AF37;
+    padding-left: 10px;
+}
+
+/* Sekcja podsumowania */
+.results-summary {
+    background-color: #f8f4ef;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid #4A3C31;
+}
+
+.results-summary p {
+    margin: 10px 0;
+    color: #4A3C31;
+}
+
+.results-summary strong {
+    color: #4A3C31;
+}
+
+/* Tabela z wynikami */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.results-table th {
+    background-color: #785E45;
+    color: white;
+    text-align: left;
+    padding: 12px 15px;
+    font-weight: 600;
+}
+
+.results-table th:first-child {
+    border-top-left-radius: 6px;
+}
+
+.results-table th:last-child {
+    border-top-right-radius: 6px;
+}
+
+.results-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0d5c5;
+    color: #4A3C31;
+}
+
+.results-table tr:nth-child(even) {
+    background-color: #f8f4ef;
+}
+
+.results-table tr:last-child td:first-child {
+    border-bottom-left-radius: 6px;
+}
+
+.results-table tr:last-child td:last-child {
+    border-bottom-right-radius: 6px;
+}
+
+.results-table tr:hover {
+    background-color: #f0e6d9;
+}
+
+/* Sekcja wizualizacji */
+#cuttingStockVisualization {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    border: 1px solid #d1c0ab;
+}
+
+#cuttingStockVisualization h3 {
+    color: #4A3C31;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #D4AF37;
+    padding-bottom: 10px;
+}
+
+#cuttingStockVisualization h4 {
+    color: #785E45;
+    font-size: 1.2rem;
+    margin: 20px 0 10px 0;
+    border-left: 4px solid #D4AF37;
+    padding-left: 10px;
+}
+
+#cuttingStockVisualization h5 {
+    color: #785E45;
+    margin: 15px 0 10px 0;
+    display: flex;
+    align-items: center;
+}
+
+#cuttingStockVisualization h5 small {
+    color: #bfa58e;
+    margin-left: 10px;
+    font-weight: normal;
+}
+
+/* Kontener dla wykresów */
+#sankeyChart {
+    width: 100% !important;
+    height: 600px !important;
+    margin-top: 20px;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Stylowanie wzorów cięcia */
+.pattern-visualization-container {
+    margin-top: 30px;
+}
+
+.pattern-container {
+    background-color: #f8f4ef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #785E45;
+}
+
+.pattern-bar-container {
+    height: 60px !important;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 15px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.pattern-info {
+    color: #4A3C31;
+    font-size: 14px;
+    margin-top: 10px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #e0d5c5;
+}
+
+.pattern-info p {
+    margin: 5px 0;
+}
+
+/* Wskaźnik ładowania */
+#cuttingStockLoadingIndicator {
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f4ef;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #d1c0ab;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e0d5c5;
+    border-radius: 50%;
+    border-top: 4px solid #D4AF37;
+    margin: 0 auto 15px auto;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+    #tool-cutting-stock .input-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #tool-cutting-stock label {
+        margin-bottom: 8px;
+        min-width: auto;
+    }
+    
+    #tool-cutting-stock input[type="number"] {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .results-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+}
+
+/* Dodatkowe style dla nowych elementów */
+
+/* Material usage chart container */
+.material-usage-chart-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0d5c5;
+}
+
+/* Pole priorytetu dla zamówienia */
+#tool-cutting-stock input[id^="order-priority"] {
+    padding: 10px 12px;
+    border: 1px solid #bfa58e;
+    border-radius: 6px;
+    width: 60px;
+    font-size: 16px;
+    background-color: #fcfaf8;
+    transition: all 0.3s ease;
+}
+
+#tool-cutting-stock input[id^="order-priority"]:focus {
+    border-color: #D4AF37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+    outline: none;
+    background-color: #ffffff;
+}
+
+/* Dialog porównywania różnych długości kłód */
+.comparison-dialog-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.comparison-dialog {
+    position: relative;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.comparison-dialog h3 {
+    color: #4A3C31;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #D4AF37;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.comparison-dialog h4 {
+    color: #785E45;
+    font-size: 1.2rem;
+    margin: 20px 0 10px 0;
+    border-left: 4px solid #D4AF37;
+    padding-left: 10px;
+}
+
+.comparison-form {
+    background-color: #f8f4ef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.comparison-form label {
+    color: #4A3C31;
+    font-weight: 500;
+}
+
+.comparison-form input[type="number"] {
+    padding: 8px 10px;
+    border: 1px solid #bfa58e;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+}
+
+.comparison-form input[type="number"]:focus {
+    border-color: #D4AF37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+    outline: none;
+}
+
+/* Przycisk porównania długości kłód */
+#compareStockLengthsButton {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 0;
+    text-align: center;
+    background-color: #785E45;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#compareStockLengthsButton:hover {
+    background-color: #4A3C31;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Przyciski w dialogu */
+.comparison-dialog button.calculate-button {
+    background-color: #D4AF37;
+    color: #4A3C31;
+    font-weight: bold;
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.comparison-dialog button.calculate-button:hover {
+    background-color: #c9a42f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Legend items dla wykresów */
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 15px;
+    margin-bottom: 5px;
+}
+
+.color-box {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+    border-radius: 3px;
+}
+
+/* Dodatkowe style dla wykresów */
+#sankeyChart, #materialUsagePieChart, #productUsageChart, #comparisonChart {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e0d5c5;
+    background-color: #ffffff;
+}
+
+/* Dodatkowe style dla elementów nadprogramowych */
+.extra-element {
+    position: relative;
+}
+
+.extra-element::after {
+    content: '+';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    color: #1e6b30;
+    font-weight: bold;
+}
+
+/* Sekcja eksportu */
+.export-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.export-button {
+    padding: 10px 20px;
+    background-color: #4A3C31;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.export-button:hover {
+    background-color: #785E45;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Extra pieces info */
+.extra-pieces-info {
+    background-color: rgba(46, 204, 113, 0.1);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+.extra-pieces-info h4 {
+    color: #2e7d32;
+    margin-top: 0;
+}
+
+.extra-pieces-info ul {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+/* Responsywność dla małych ekranów */
+@media (max-width: 768px) {
+    .material-usage-chart-container {
+        flex-direction: column;
+    }
+    
+    #materialUsagePieChart, #productUsageChart {
+        width: 100% !important;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-dialog {
+        width: 95%;
+        padding: 15px;
+    }
+    
+    .comparison-form input[type="number"] {
+        width: 60px !important;
+    }
+}
+
+/* Style dla sekcji ograniczeń dostępności kłód */
+.stock-limits-section {
+    background-color: #f8f4ef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    border: 1px dashed #D4AF37;
+}
+
+.stock-limits-section h4 {
+    color: #4A3C31;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.stock-limits-container {
+    margin-bottom: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.stock-limit-row {
+    background-color: #ffffff !important;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0d5c5;
+}
+
+.stock-limit-row:last-child {
+    margin-bottom: 0;
+}
+
+.stock-limit-row label {
+    color: #4A3C31;
+    font-weight: normal;
+    font-size: 14px;
+}
+
+.stock-limit-row input {
+    padding: 8px 10px;
+    border: 1px solid #bfa58e;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+}
+
+.stock-limit-row input:focus {
+    border-color: #D4AF37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+    outline: none;
+}
+
+.stock-limit-row .small-button {
+    font-size: 13px;
+    padding: 6px 12px;
+} 
