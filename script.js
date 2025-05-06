@@ -208,6 +208,25 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeHelpModal(modal) {
         if (modal) {
             modal.classList.remove('active');
+            
+            // Upewnij się, że oryginalny przycisk dla aktualnego narzędzia jest widoczny
+            let originalBtn;
+            switch(App.currentTool) {
+                case 'ahp':
+                    originalBtn = helpAhpBtn;
+                    break;
+                case 'cutting-stock':
+                    originalBtn = helpCuttingStockBtn;
+                    break;
+                case 'production-opt':
+                    originalBtn = helpProductionOptBtn;
+                    break;
+            }
+            
+            if (originalBtn && helpButtonClicked) {
+                originalBtn.style.opacity = '1';
+                originalBtn.style.display = 'flex';
+            }
         }
     }
     
