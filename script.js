@@ -173,10 +173,14 @@ document.addEventListener('DOMContentLoaded', App.initialize);
 
 // Obsługa przycisków pomocy i okienek modalnych
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("Inicjalizacja systemu pomocy...");
+    
     // Przyciski pomocy
     const helpAhpBtn = document.getElementById('help-ahp');
     const helpCuttingStockBtn = document.getElementById('help-cutting-stock');
     const helpProductionOptBtn = document.getElementById('help-production-opt');
+    
+    console.log("Przyciski pomocy:", helpAhpBtn, helpCuttingStockBtn, helpProductionOptBtn);
     
     // Okienka modalne
     const helpModalAhp = document.getElementById('help-modal-ahp');
@@ -188,17 +192,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Funkcja otwierająca okienko modalne
     function openHelpModal(modal) {
-        modal.classList.add('active');
+        if (modal) {
+            modal.classList.add('active');
+        } else {
+            console.error("Próba otwarcia nieistniejącego okna pomocy");
+        }
     }
     
     // Funkcja zamykająca okienko modalne
     function closeHelpModal(modal) {
-        modal.classList.remove('active');
+        if (modal) {
+            modal.classList.remove('active');
+        }
     }
     
     // Funkcja dodająca animację wjazdu do przycisku pomocy
     function addSlideInEffect(button) {
         if (button) {
+            console.log("Dodaję efekt wjazdu do przycisku:", button);
             button.classList.add('slide-in');
         }
     }
@@ -206,6 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Funkcja dodająca pulsowanie do przycisku pomocy
     function addPulseEffect(button) {
         if (button) {
+            console.log("Dodaję efekt pulsowania do przycisku:", button);
             button.classList.add('pulse');
         }
     }
@@ -213,27 +225,54 @@ document.addEventListener('DOMContentLoaded', function() {
     // Funkcja usuwająca pulsowanie z przycisku pomocy
     function removePulseEffect(button) {
         if (button) {
+            console.log("Usuwam efekt pulsowania z przycisku:", button);
             button.classList.remove('pulse');
         }
     }
     
+    // Resetowanie stanu przycisku pomocy (do testów)
+    localStorage.removeItem('helpButtonClicked');
+    
     // Zmienna do śledzenia, czy przycisk pomocy został już kliknięty
     let helpButtonClicked = localStorage.getItem('helpButtonClicked') === 'true';
+    console.log("Stan przycisku pomocy (kliknięty):", helpButtonClicked);
     
     // Funkcja zarządzająca animacjami przycisku pomocy
     function manageHelpButtonAnimation(button) {
-        if (!button || helpButtonClicked) return;
+        if (!button) {
+            console.error("Brak przycisku do animacji");
+            return;
+        }
+        
+        if (helpButtonClicked) {
+            console.log("Pomijam animacje - przycisk już kliknięty");
+            return;
+        }
+        
+        console.log("Rozpoczynam sekwencję animacji dla przycisku:", button);
         
         // 1. Najpierw dodaj animację wjazdu od prawej strony
-        addSlideInEffect(button);
+        button.style.transform = "translateX(100px)";
+        button.style.opacity = "0";
+        
+        // Wymuszenie przepływu i ponownego renderowania
+        button.offsetHeight;
+        
+        // Dodaj klasę animacji
+        button.classList.add('slide-in');
+        
+        console.log("Dodano animację wjazdu, czekam 800ms...");
         
         // 2. Po zakończeniu animacji wjazdu, dodaj pulsowanie
         setTimeout(() => {
+            console.log("Czas na pulsowanie");
+            
             // Dodaj pulsowanie
             addPulseEffect(button);
             
             // 3. Zatrzymaj pulsowanie po 3 sekundach
             setTimeout(() => {
+                console.log("Koniec pierwszego pulsowania");
                 removePulseEffect(button);
             }, 3000);
         }, 800); // Czas trwania animacji wjazdu
@@ -241,15 +280,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // 4. Ustawienie interwału dla powtarzającego się pulsowania co minutę
         const pulseInterval = setInterval(() => {
             if (helpButtonClicked) {
+                console.log("Czyszczę interwał - przycisk został kliknięty");
                 clearInterval(pulseInterval);
                 return;
             }
             
+            console.log("Rozpoczynam cykliczne pulsowanie");
             // Dodaj pulsowanie
             addPulseEffect(button);
             
             // Zatrzymaj pulsowanie po 3 sekundach
             setTimeout(() => {
+                console.log("Koniec cyklicznego pulsowania");
                 removePulseEffect(button);
             }, 3000);
         }, 60000); // Co minutę
@@ -258,6 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Obsługa kliknięcia przycisków pomocy
     if (helpAhpBtn) {
         helpAhpBtn.addEventListener('click', function() {
+            console.log("Kliknięto przycisk pomocy AHP");
             openHelpModal(helpModalAhp);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
@@ -271,13 +314,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Uruchom animacje dla aktywnego przycisku pomocy
-        if (App.currentTool === 'ahp') {
-            manageHelpButtonAnimation(helpAhpBtn);
+        if (App.currentTool === 'ahp' || App.currentTool === null) {
+            console.log("Uruchamiam animację dla przycisku AHP");
+            // Daj chwilę na załadowanie DOM
+            setTimeout(() => {
+                manageHelpButtonAnimation(helpAhpBtn);
+            }, 100);
         }
+    } else {
+        console.error("Nie znaleziono przycisku pomocy AHP");
     }
     
     if (helpCuttingStockBtn) {
         helpCuttingStockBtn.addEventListener('click', function() {
+            console.log("Kliknięto przycisk pomocy Cutting Stock");
             openHelpModal(helpModalCuttingStock);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
@@ -289,15 +339,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.clearInterval(i);
             }
         });
-        
-        // Uruchom animacje dla aktywnego przycisku pomocy
-        if (App.currentTool === 'cutting-stock') {
-            manageHelpButtonAnimation(helpCuttingStockBtn);
-        }
     }
     
     if (helpProductionOptBtn) {
         helpProductionOptBtn.addEventListener('click', function() {
+            console.log("Kliknięto przycisk pomocy Production Opt");
             openHelpModal(helpModalProductionOpt);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
@@ -309,16 +355,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.clearInterval(i);
             }
         });
-        
-        // Uruchom animacje dla aktywnego przycisku pomocy
-        if (App.currentTool === 'production-opt') {
-            manageHelpButtonAnimation(helpProductionOptBtn);
-        }
     }
     
     // Obsługa przełączania między narzędziami - aktualizacja animacji przycisku pomocy
     const originalSwitchToTool = App.switchToTool;
     App.switchToTool = function(tool) {
+        console.log("Przełączanie narzędzia na:", tool);
         originalSwitchToTool(tool);
         
         // Jeśli przycisk pomocy nie został jeszcze kliknięty, pokaż animacje dla nowego narzędzia
@@ -338,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (activeHelpButton) {
+                console.log("Uruchamiam animację dla przycisku:", tool);
                 manageHelpButtonAnimation(activeHelpButton);
             }
         }
