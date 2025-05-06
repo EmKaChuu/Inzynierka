@@ -221,8 +221,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupHelpButtonAnimation(originalButton, toolName) {
         if (!originalButton) return;
         
-        // Ukryj oryginalny przycisk
-        originalButton.style.visibility = 'hidden';
+        // Ukryj oryginalny przycisk całkowicie (nie tylko przezroczystość)
+        originalButton.style.opacity = '0';
+        originalButton.style.display = 'none';
         
         // 1. Stwórz pierwszy przycisk (ten, który wjeżdża)
         const slideInButton = document.createElement('button');
@@ -372,18 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
             
-            // Zatrzymaj wszystkie animacje i ukryj dodatkowe przyciski
-            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
-                // Zatrzymaj animacje
-                btn.style.animation = 'none';
-                btn.classList.remove('pulse', 'slide-in');
-                
-                // Ukryj przyciski (ale nie usuwaj ich)
-                btn.style.opacity = '0';
-                btn.style.display = 'none';
-            });
-            
-            // Pokaż oryginalny przycisk (przywróć zarówno widoczność jak i display)
+            // Znajdź oryginalny przycisk dla danego narzędzia
             let originalBtn;
             switch(toolName) {
                 case 'ahp':
@@ -397,6 +387,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
             
+            // Zatrzymaj wszystkie animacje i ukryj TYLKO dodatkowe przyciski
+            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
+                // Zatrzymaj animacje
+                btn.style.animation = 'none';
+                btn.classList.remove('pulse', 'slide-in');
+                
+                // Ukryj przyciski (ale nie usuwaj ich)
+                btn.style.opacity = '0';
+                btn.style.display = 'none';
+            });
+            
+            // Pokaż oryginalny przycisk (przywróć zarówno widoczność jak i display)
             if (originalBtn) {
                 originalBtn.style.opacity = '1';
                 originalBtn.style.display = 'flex';
