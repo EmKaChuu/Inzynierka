@@ -77,11 +77,6 @@
             <aside id="app-sidebar" class="app-sidebar">
                 <!-- AHP Sidebar -->
                 <div id="ahp-sidebar-content" class="sidebar-content">
-                    <!-- Informacja o istotności nawy bocznej -->
-                    <div class="sidebar-info">
-                        <p><strong>Ważne!</strong> Panel boczny zawiera niezbędne ustawienia do prawidłowego działania kalkulatora AHP.</p>
-                    </div>
-                    
                     <!-- Sekcja kryteriów -->
                     <div class="sidebar-main-section">
                         <h3>Kryteria</h3>
@@ -142,8 +137,8 @@
                             <div class="interface-switch">
                                 <label>Wybierz tryb interfejsu:</label>
                                 <div class="switch-options">
-                                    <button id="matrix-interface" class="switch-option">Macierz porównań</button>
-                                    <button id="simplified-interface" class="switch-option active">Uproszczony</button>
+                                    <button id="matrix-interface" class="switch-option" title="Macierz porównań"><i class="fas fa-table"></i></button>
+                                    <button id="simplified-interface" class="switch-option active" title="Uproszczony"><i class="fas fa-sliders-h"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -296,6 +291,7 @@
                 <li>Wskaźnik spójności (CR) poniżej 0.1 oznacza, że Twoje porównania są spójne. Jeśli jest wyższy, rozważ ponowne przemyślenie niektórych porównań.</li>
                 <li>Możesz przełączać się między interfejsami w dowolnym momencie - Twoje dane zostaną zachowane.</li>
                 <li>Wyniki możesz pobrać w formacie CSV, JSON lub TXT do dalszej analizy.</li>
+                <li><strong>Uwaga:</strong> Panel boczny zawiera istotne ustawienia dla metody AHP. Użyj go, aby zdefiniować liczbę i nazwy kryteriów oraz opcji przed przystąpieniem do porównań.</li>
             </ul>
         </div>
     </div>

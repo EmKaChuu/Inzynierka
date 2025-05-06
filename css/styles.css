@@ -484,19 +484,26 @@ button:hover {
 /* Styl dla pulsującego przycisku pomocy */
 @keyframes glow-pulse {
     0% { 
-        box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.8);
+        box-shadow: 0 0 0 0 rgba(70, 130, 180, 0.9);
+        transform: scale(1);
     }
-    50% { 
-        box-shadow: 0 0 20px 5px rgba(212, 175, 55, 0.8);
+    33% { 
+        box-shadow: 0 0 25px 8px rgba(70, 130, 180, 0.8);
+        transform: scale(1.15);
+    }
+    66% { 
+        box-shadow: 0 0 25px 8px rgba(212, 175, 55, 0.8);
+        transform: scale(1.15);
     }
     100% { 
-        box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.8);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.9);
+        transform: scale(1);
     }
 }
 
 .help-button.pulse {
-    animation: glow-pulse 2s infinite ease-in-out;
-    box-shadow: 0 0 20px 5px rgba(212, 175, 55, 0.8) !important;
+    animation: glow-pulse 3s infinite ease-in-out;
+    box-shadow: 0 0 20px 5px rgba(70, 130, 180, 0.8) !important;
 }
 
 .help-button:hover {

@@ -196,24 +196,74 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.remove('active');
     }
     
+    // Funkcja dodająca pulsowanie do przycisku pomocy
+    function addPulseEffect(button) {
+        if (button) {
+            button.classList.add('pulse');
+        }
+    }
+    
+    // Funkcja usuwająca pulsowanie z przycisku pomocy
+    function removePulseEffect(button) {
+        if (button) {
+            button.classList.remove('pulse');
+        }
+    }
+    
+    // Zmienna do śledzenia, czy przycisk pomocy został już kliknięty
+    let helpButtonClicked = false;
+    
     // Obsługa kliknięcia przycisków pomocy
     if (helpAhpBtn) {
         helpAhpBtn.addEventListener('click', function() {
             openHelpModal(helpModalAhp);
+            helpButtonClicked = true;
+            removePulseEffect(helpAhpBtn);
         });
+        
+        // Dodaj pulsowanie po załadowaniu strony
+        addPulseEffect(helpAhpBtn);
     }
     
     if (helpCuttingStockBtn) {
         helpCuttingStockBtn.addEventListener('click', function() {
             openHelpModal(helpModalCuttingStock);
+            helpButtonClicked = true;
+            removePulseEffect(helpCuttingStockBtn);
         });
     }
     
     if (helpProductionOptBtn) {
         helpProductionOptBtn.addEventListener('click', function() {
             openHelpModal(helpModalProductionOpt);
+            helpButtonClicked = true;
+            removePulseEffect(helpProductionOptBtn);
         });
     }
+    
+    // Dodaj pulsowanie ponownie po 30 sekundach, jeśli przycisk nie został kliknięty
+    setTimeout(function() {
+        if (!helpButtonClicked) {
+            const activeToolId = App.currentTool;
+            let activeHelpButton;
+            
+            switch(activeToolId) {
+                case 'ahp':
+                    activeHelpButton = helpAhpBtn;
+                    break;
+                case 'cutting-stock':
+                    activeHelpButton = helpCuttingStockBtn;
+                    break;
+                case 'production-opt':
+                    activeHelpButton = helpProductionOptBtn;
+                    break;
+            }
+            
+            if (activeHelpButton) {
+                addPulseEffect(activeHelpButton);
+            }
+        }
+    }, 30000); // 30 sekund
     
     // Obsługa zamykania okienek
     closeButtons.forEach(function(button) {
