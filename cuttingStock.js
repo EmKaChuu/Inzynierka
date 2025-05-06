@@ -64,21 +64,6 @@ const CuttingStock = {
             fileInput.style.display = 'none';
             fileInput.addEventListener('change', CuttingStock.handleFileSelect);
             inputGroup.appendChild(fileInput);
-            
-            // Dodaj przycisk do porównywania różnych długości kłód
-            const compareButtonRow = document.createElement('div');
-            compareButtonRow.className = 'input-row';
-            compareButtonRow.style.marginTop = '15px';
-            compareButtonRow.style.justifyContent = 'center';
-            
-            const compareButton = document.createElement('button');
-            compareButton.id = 'compareStockLengthsButton';
-            compareButton.textContent = 'Porównaj różne długości kłód';
-            compareButton.onclick = CuttingStock.openComparisonDialog;
-            compareButton.style.backgroundColor = '#785E45';
-            
-            compareButtonRow.appendChild(compareButton);
-            inputGroup.appendChild(compareButtonRow);
         }
     },
     
@@ -1396,15 +1381,11 @@ const CuttingStock = {
         }
     },
     
-    // Zapisz aktualne zamówienie do pliku JSON
+    // Funkcja do zapisywania zamówień do pliku JSON
     saveOrdersToFile: () => {
-        // Zbierz dane zamówienia
-        const logLength = parseFloat(document.getElementById('logLength').value);
-        const exactCuts = document.getElementById('exactCuts').checked;
-        
+        // Zbierz aktualne zamówienia
         const orders = [];
         const orderRows = document.querySelectorAll('[id^="order-row-"]');
-        
         for (const row of orderRows) {
             const rowId = parseInt(row.id.split('-')[2]);
             const lengthInput = document.getElementById(`order-length-${rowId}`);
@@ -1416,7 +1397,7 @@ const CuttingStock = {
                 const quantity = parseInt(quantityInput.value);
                 const priority = parseInt(priorityInput.value);
                 
-                if (!isNaN(length) && !isNaN(quantity) && !isNaN(priority) && length > 0 && quantity > 0 && priority >= 1 && priority <= 10) {
+                if (!isNaN(length) && !isNaN(quantity) && !isNaN(priority) && length > 0 && quantity > 0) {
                     orders.push({
                         length: length,
                         quantity: quantity,
@@ -1427,63 +1408,45 @@ const CuttingStock = {
         }
         
         if (orders.length === 0) {
-            alert('Brak zamówień do zapisania. Dodaj co najmniej jedno zamówienie.');
+            alert('Brak danych do zapisania. Dodaj co najmniej jedno prawidłowe zamówienie.');
             return;
         }
         
-        // Zbierz ograniczenia dostępności kłód
-        const stockLimits = [];
-        const limitRows = document.querySelectorAll('.stock-limit-row');
-        for (const row of limitRows) {
-            const limitId = row.id.split('-').pop();
-            const lengthInput = document.querySelector(`#limit-length-${limitId}`);
-            const quantityInput = document.querySelector(`#limit-quantity-${limitId}`);
-            
-            if (lengthInput && quantityInput) {
-                const length = parseFloat(lengthInput.value);
-                const quantity = parseInt(quantityInput.value);
-                
-                if (!isNaN(length) && !isNaN(quantity) && length > 0 && quantity > 0) {
-                    stockLimits.push({
-                        length: length,
-                        quantity: quantity
-                    });
-                }
+        // Dodaj długość kłody
+        const logLengthInput = document.getElementById('logLength');
+        let logLength = null;
+        if (logLengthInput) {
+            logLength = parseFloat(logLengthInput.value);
+            if (isNaN(logLength) || logLength <= 0) {
+                logLength = null;
             }
         }
         
-        // Utwórz obiekt do zapisania
+        // Przygotuj dane do zapisania
         const saveData = {
-            logLength: logLength,
-            exactCuts: exactCuts,
             orders: orders,
-            stockLimits: stockLimits,
-            date: new Date().toISOString()
+            logLength: logLength
         };
         
-        // Konwertuj do JSON
+        // Konwertuj na JSON
         const jsonData = JSON.stringify(saveData, null, 2);
         
-        // Utwórz i pobierz plik
-        const blob = new Blob([jsonData], { type: 'application/json' });
+        // Utwórz link do pobrania pliku
+        const blob = new Blob([jsonData], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'zamowienie_rozkresu_' + new Date().toISOString().split('T')[0] + '.json';
-        document.body.appendChild(a);
-        a.click();
-        
-        // Poczekaj i wyczyść
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'zamowienie_rozkroj.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     },
     
-    // Otwarcie okna dialogowego wyboru pliku
+    // Funkcja do wczytywania zamówień z pliku JSON
     loadOrdersFromFile: () => {
-        document.getElementById('ordersFileInput').click();
+        const fileInput = document.getElementById('ordersFileInput');
+        fileInput.click();
     },
     
     // Obsługa wybranego pliku
@@ -1497,12 +1460,12 @@ const CuttingStock = {
                 const data = JSON.parse(e.target.result);
                 CuttingStock.loadOrdersFromData(data);
             } catch (error) {
-                alert('Błąd wczytywania pliku: ' + error.message);
+                alert(`Błąd podczas wczytywania pliku: ${error.message}`);
             }
         };
         reader.readAsText(file);
         
-        // Zresetuj input, aby umożliwić ponowne wybranie tego samego pliku
+        // Zresetuj input, aby można było wczytać ten sam plik ponownie
         event.target.value = '';
     },
     
@@ -1672,473 +1635,5 @@ const CuttingStock = {
         
         // Pokaż komunikat o sukcesie
         alert('Zamówienie zostało pomyślnie wczytane.');
-    },
-    
-    // Otwórz dialog do porównywania różnych długości kłód
-    openComparisonDialog: () => {
-        // Sprawdź, czy są jakieś zamówienia
-        const orderRows = document.querySelectorAll('[id^="order-row-"]');
-        if (orderRows.length === 0) {
-            alert('Dodaj co najmniej jedno zamówienie przed porównaniem różnych długości kłód.');
-            return;
-        }
-        
-        // Zbierz aktualne zamówienia
-        const orders = [];
-        for (const row of orderRows) {
-            const rowId = parseInt(row.id.split('-')[2]);
-            const lengthInput = document.getElementById(`order-length-${rowId}`);
-            const quantityInput = document.getElementById(`order-quantity-${rowId}`);
-            const priorityInput = document.getElementById(`order-priority-${rowId}`);
-            
-            if (lengthInput && quantityInput && priorityInput) {
-                const length = parseFloat(lengthInput.value);
-                const quantity = parseInt(quantityInput.value);
-                const priority = parseInt(priorityInput.value);
-                
-                if (!isNaN(length) && !isNaN(quantity) && !isNaN(priority) && length > 0 && quantity > 0 && priority >= 1 && priority <= 10) {
-                    orders.push({
-                        id: rowId,
-                        length: length,
-                        quantity: quantity,
-                        priority: priority
-                    });
-                }
-            }
-        }
-        
-        if (orders.length === 0) {
-            alert('Nieprawidłowe dane zamówienia. Wypełnij poprawnie co najmniej jedno zamówienie.');
-            return;
-        }
-        
-        // Znajdź lub utwórz dialog
-        let dialogContainer = document.getElementById('comparisonDialogContainer');
-        
-        if (!dialogContainer) {
-            dialogContainer = document.createElement('div');
-            dialogContainer.id = 'comparisonDialogContainer';
-            dialogContainer.className = 'comparison-dialog-container';
-            dialogContainer.style.position = 'fixed';
-            dialogContainer.style.top = '0';
-            dialogContainer.style.left = '0';
-            dialogContainer.style.width = '100%';
-            dialogContainer.style.height = '100%';
-            dialogContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            dialogContainer.style.zIndex = '1000';
-            dialogContainer.style.display = 'flex';
-            dialogContainer.style.justifyContent = 'center';
-            dialogContainer.style.alignItems = 'center';
-            
-            document.body.appendChild(dialogContainer);
-        } else {
-            dialogContainer.innerHTML = '';
-            dialogContainer.style.display = 'flex';
-        }
-        
-        // Utwórz dialog
-        const dialog = document.createElement('div');
-        dialog.className = 'comparison-dialog';
-        dialog.style.backgroundColor = '#ffffff';
-        dialog.style.padding = '20px';
-        dialog.style.borderRadius = '8px';
-        dialog.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
-        dialog.style.maxWidth = '800px';
-        dialog.style.width = '90%';
-        dialog.style.maxHeight = '80vh';
-        dialog.style.overflowY = 'auto';
-        
-        // Nagłówek dialogu
-        const header = document.createElement('h3');
-        header.textContent = 'Porównanie różnych długości kłód';
-        header.style.borderBottom = '2px solid #D4AF37';
-        header.style.paddingBottom = '10px';
-        header.style.marginBottom = '20px';
-        header.style.color = '#4A3C31';
-        
-        // Przyciski zamknięcia
-        const closeButton = document.createElement('button');
-        closeButton.textContent = '×';
-        closeButton.style.position = 'absolute';
-        closeButton.style.top = '10px';
-        closeButton.style.right = '15px';
-        closeButton.style.backgroundColor = 'transparent';
-        closeButton.style.border = 'none';
-        closeButton.style.fontSize = '24px';
-        closeButton.style.cursor = 'pointer';
-        closeButton.style.color = '#4A3C31';
-        closeButton.onclick = () => { dialogContainer.style.display = 'none'; };
-        
-        // Instrukcje
-        const instructions = document.createElement('p');
-        instructions.textContent = 'Wprowadź zakres długości kłód do porównania. Wyniki pokażą, która długość kłody jest najbardziej optymalna dla twojego zamówienia.';
-        instructions.style.marginBottom = '20px';
-        
-        // Formularz
-        const form = document.createElement('div');
-        form.className = 'comparison-form';
-        
-        // Pola do wprowadzania zakresu długości
-        const rangeDiv = document.createElement('div');
-        rangeDiv.style.display = 'flex';
-        rangeDiv.style.marginBottom = '20px';
-        rangeDiv.style.gap = '10px';
-        rangeDiv.style.alignItems = 'center';
-        
-        const minLengthLabel = document.createElement('label');
-        minLengthLabel.textContent = 'Minimalna długość kłody:';
-        minLengthLabel.style.flex = '1';
-        
-        const minLengthInput = document.createElement('input');
-        minLengthInput.type = 'number';
-        minLengthInput.id = 'minStockLength';
-        minLengthInput.value = '2.0';
-        minLengthInput.min = '0.5';
-        minLengthInput.step = '0.1';
-        minLengthInput.style.width = '80px';
-        
-        const maxLengthLabel = document.createElement('label');
-        maxLengthLabel.textContent = 'Maksymalna długość kłody:';
-        maxLengthLabel.style.flex = '1';
-        maxLengthLabel.style.marginLeft = '20px';
-        
-        const maxLengthInput = document.createElement('input');
-        maxLengthInput.type = 'number';
-        maxLengthInput.id = 'maxStockLength';
-        maxLengthInput.value = '6.0';
-        maxLengthInput.min = '1.0';
-        maxLengthInput.step = '0.1';
-        maxLengthInput.style.width = '80px';
-        
-        const stepLabel = document.createElement('label');
-        stepLabel.textContent = 'Krok:';
-        stepLabel.style.flex = '1';
-        stepLabel.style.marginLeft = '20px';
-        
-        const stepInput = document.createElement('input');
-        stepInput.type = 'number';
-        stepInput.id = 'stepSize';
-        stepInput.value = '0.5';
-        stepInput.min = '0.1';
-        stepInput.step = '0.1';
-        stepInput.style.width = '80px';
-        
-        rangeDiv.appendChild(minLengthLabel);
-        rangeDiv.appendChild(minLengthInput);
-        rangeDiv.appendChild(maxLengthLabel);
-        rangeDiv.appendChild(maxLengthInput);
-        rangeDiv.appendChild(stepLabel);
-        rangeDiv.appendChild(stepInput);
-        
-        // Przycisk do rozpoczęcia porównania
-        const compareButton = document.createElement('button');
-        compareButton.textContent = 'Rozpocznij porównanie';
-        compareButton.className = 'calculate-button';
-        compareButton.style.backgroundColor = '#D4AF37';
-        compareButton.style.color = '#4A3C31';
-        compareButton.style.padding = '12px 20px';
-        compareButton.style.border = 'none';
-        compareButton.style.borderRadius = '6px';
-        compareButton.style.marginTop = '20px';
-        compareButton.style.cursor = 'pointer';
-        compareButton.style.fontWeight = 'bold';
-        compareButton.style.width = '100%';
-        compareButton.onclick = () => CuttingStock.compareStockLengths(orders);
-        
-        // Dodaj elementy do formularza
-        form.appendChild(rangeDiv);
-        form.appendChild(compareButton);
-        
-        // Miejsce na wyniki porównania
-        const resultsContainer = document.createElement('div');
-        resultsContainer.id = 'comparisonResults';
-        resultsContainer.style.marginTop = '30px';
-        
-        // Złóż dialog
-        dialog.appendChild(closeButton);
-        dialog.appendChild(header);
-        dialog.appendChild(instructions);
-        dialog.appendChild(form);
-        dialog.appendChild(resultsContainer);
-        
-        // Dodaj dialog do kontenera
-        dialogContainer.appendChild(dialog);
-    },
-    
-    // Funkcja do porównywania różnych długości kłód
-    compareStockLengths: (orders) => {
-        // Pobierz parametry
-        const minLength = parseFloat(document.getElementById('minStockLength').value);
-        const maxLength = parseFloat(document.getElementById('maxStockLength').value);
-        const step = parseFloat(document.getElementById('stepSize').value);
-        
-        if (isNaN(minLength) || isNaN(maxLength) || isNaN(step) || minLength <= 0 || maxLength <= 0 || step <= 0) {
-            alert('Wprowadź prawidłowe wartości dla zakresu długości kłód.');
-            return;
-        }
-        
-        if (minLength > maxLength) {
-            alert('Minimalna długość kłody musi być mniejsza niż maksymalna.');
-            return;
-        }
-        
-        if ((maxLength - minLength) / step > 20) {
-            alert('Zbyt duży zakres lub zbyt mały krok. Maksymalna liczba porównań to 20.');
-            return;
-        }
-        
-        // Pokaż indykator ładowania
-        const resultsContainer = document.getElementById('comparisonResults');
-        resultsContainer.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Trwa obliczanie porównania...</p></div>';
-        
-        // Opóźnienie, aby UI mógł się zaktualizować
-        setTimeout(() => {
-            try {
-                // Rozpocznij porównanie
-                const results = [];
-                
-                // Sprawdź każdą długość kłody w zakresie
-                for (let stockLength = minLength; stockLength <= maxLength; stockLength += step) {
-                    stockLength = parseFloat(stockLength.toFixed(1)); // Zapobiega błędom zaokrąglania
-                    
-                    console.log(`Sprawdzam długość kłody: ${stockLength}m`);
-                    
-                    try {
-                        // Wywołaj funkcję rozwiązującą problem rozkroju bez wyświetlania wizualizacji
-                        const solution = CuttingStock.solveCuttingStock(stockLength, orders, false);
-                        
-                        // Zapisz wyniki
-                        results.push({
-                            stockLength: stockLength,
-                            totalStockUsed: solution.totalStockUsed,
-                            totalMaterialUsed: solution.totalMaterialUsed,
-                            totalWaste: solution.totalWaste,
-                            wastePercentage: solution.wastePercentage,
-                            extraPieces: solution.extraPieces || {}
-                        });
-                    } catch (error) {
-                        console.error(`Błąd dla długości ${stockLength}m:`, error);
-                        // Kontynuuj mimo błędu
-                    }
-                }
-                
-                // Posortuj wyniki według całkowitej ilości odpadów
-                results.sort((a, b) => a.totalWaste - b.totalWaste);
-                
-                // Wyświetl wyniki
-                CuttingStock.displayComparisonResults(results);
-            } catch (error) {
-                resultsContainer.innerHTML = `<div class="error">Błąd podczas porównywania: ${error.message}</div>`;
-            }
-        }, 100);
-    },
-    
-    // Wyświetl wyniki porównania
-    displayComparisonResults: (results) => {
-        const resultsContainer = document.getElementById('comparisonResults');
-        resultsContainer.innerHTML = '';
-        
-        if (results.length === 0) {
-            resultsContainer.innerHTML = '<p>Nie znaleziono prawidłowych wyników dla podanego zakresu długości kłód.</p>';
-            return;
-        }
-        
-        // Nagłówek wyników
-        const header = document.createElement('h4');
-        header.textContent = 'Wyniki porównania';
-        header.style.borderBottom = '1px solid #d1c0ab';
-        header.style.paddingBottom = '10px';
-        header.style.marginBottom = '20px';
-        resultsContainer.appendChild(header);
-        
-        // Utwórz dane do wykresu porównawczego
-        const chartContainer = document.createElement('div');
-        chartContainer.id = 'comparisonChart';
-        chartContainer.style.height = '400px';
-        chartContainer.style.width = '100%';
-        chartContainer.style.marginBottom = '30px';
-        resultsContainer.appendChild(chartContainer);
-        
-        // Wykresy: długość kłody vs liczba kłód oraz długość kłody vs % odpadu
-        const stockLengths = results.map(r => r.stockLength);
-        const totalStocks = results.map(r => Math.round(r.totalStockUsed));
-        const wastePercentages = results.map(r => r.wastePercentage);
-        
-        const trace1 = {
-            x: stockLengths,
-            y: totalStocks,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Liczba kłód',
-            line: {color: '#4A3C31'},
-            yaxis: 'y'
-        };
-        
-        const trace2 = {
-            x: stockLengths,
-            y: wastePercentages,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Procent odpadu',
-            line: {color: '#D4AF37'},
-            yaxis: 'y2'
-        };
-        
-        const layout = {
-            title: 'Porównanie długości kłód',
-            xaxis: {
-                title: 'Długość kłody (m)'
-            },
-            yaxis: {
-                title: 'Liczba kłód',
-                titlefont: {color: '#4A3C31'},
-                tickfont: {color: '#4A3C31'}
-            },
-            yaxis2: {
-                title: 'Procent odpadu (%)',
-                titlefont: {color: '#D4AF37'},
-                tickfont: {color: '#D4AF37'},
-                overlaying: 'y',
-                side: 'right'
-            },
-            legend: {
-                x: 0.02,
-                y: 1
-            }
-        };
-        
-        Plotly.newPlot('comparisonChart', [trace1, trace2], layout);
-        
-        // Tabela wyników
-        const tableContainer = document.createElement('div');
-        tableContainer.style.overflowX = 'auto';
-        resultsContainer.appendChild(tableContainer);
-        
-        const table = document.createElement('table');
-        table.className = 'results-table';
-        table.style.width = '100%';
-        table.style.borderCollapse = 'collapse';
-        tableContainer.appendChild(table);
-        
-        // Nagłówek tabeli
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        
-        ['Długość kłody (m)', 'Liczba kłód', 'Całkowita długość kłód (m)', 'Odpad (m)', 'Odpad (%)', 'Nadprogramowe kawałki'].forEach(text => {
-            const th = document.createElement('th');
-            th.textContent = text;
-            th.style.padding = '10px';
-            th.style.backgroundColor = '#785E45';
-            th.style.color = 'white';
-            headerRow.appendChild(th);
-        });
-        
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-        
-        // Ciało tabeli
-        const tbody = document.createElement('tbody');
-        
-        results.forEach((result, index) => {
-            const row = document.createElement('tr');
-            if (index === 0) {
-                row.style.backgroundColor = 'rgba(46, 204, 113, 0.2)';
-                row.style.fontWeight = 'bold';
-            } else if (index % 2 === 0) {
-                row.style.backgroundColor = '#f8f4ef';
-            }
-            
-            // Długość kłody
-            const cellStockLength = document.createElement('td');
-            cellStockLength.textContent = result.stockLength.toFixed(1);
-            cellStockLength.style.padding = '10px';
-            row.appendChild(cellStockLength);
-            
-            // Liczba kłód
-            const cellStockCount = document.createElement('td');
-            cellStockCount.textContent = Math.round(result.totalStockUsed);
-            cellStockCount.style.padding = '10px';
-            row.appendChild(cellStockCount);
-            
-            // Całkowita długość kłód
-            const cellTotalLength = document.createElement('td');
-            cellTotalLength.textContent = result.totalMaterialUsed.toFixed(2);
-            cellTotalLength.style.padding = '10px';
-            row.appendChild(cellTotalLength);
-            
-            // Odpad
-            const cellWaste = document.createElement('td');
-            cellWaste.textContent = result.totalWaste.toFixed(2);
-            cellWaste.style.padding = '10px';
-            row.appendChild(cellWaste);
-            
-            // Procent odpadu
-            const cellWastePercentage = document.createElement('td');
-            cellWastePercentage.textContent = result.wastePercentage.toFixed(2);
-            cellWastePercentage.style.padding = '10px';
-            row.appendChild(cellWastePercentage);
-            
-            // Nadprogramowe kawałki
-            const cellExtraPieces = document.createElement('td');
-            cellExtraPieces.style.padding = '10px';
-            
-            const extraPiecesCount = Object.keys(result.extraPieces).length;
-            if (extraPiecesCount > 0) {
-                const extraItems = [];
-                let totalExtra = 0;
-                
-                for (const orderId in result.extraPieces) {
-                    const extra = result.extraPieces[orderId];
-                    extraItems.push(`${extra.quantity} × ${extra.length}m`);
-                    totalExtra += extra.quantity;
-                }
-                
-                cellExtraPieces.textContent = extraItems.join(', ') + ` (łącznie: ${totalExtra} szt.)`;
-            } else {
-                cellExtraPieces.textContent = 'Brak';
-            }
-            
-            row.appendChild(cellExtraPieces);
-            
-            tbody.appendChild(row);
-        });
-        
-        table.appendChild(tbody);
-        
-        // Informacja o najlepszym wyniku
-        const bestResult = results[0];
-        const summaryBox = document.createElement('div');
-        summaryBox.style.marginTop = '20px';
-        summaryBox.style.padding = '15px';
-        summaryBox.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
-        summaryBox.style.border = '1px solid rgba(46, 204, 113, 0.3)';
-        summaryBox.style.borderRadius = '6px';
-        
-        summaryBox.innerHTML = `
-            <h4 style="margin-top: 0; color: #2e7d32;">Najlepszy wynik</h4>
-            <p><strong>Optymalna długość kłody:</strong> ${bestResult.stockLength.toFixed(1)}m</p>
-            <p><strong>Liczba potrzebnych kłód:</strong> ${Math.round(bestResult.totalStockUsed)}</p>
-            <p><strong>Całkowita długość kłód:</strong> ${bestResult.totalMaterialUsed.toFixed(2)}m</p>
-            <p><strong>Całkowite odpady:</strong> ${bestResult.totalWaste.toFixed(2)}m (${bestResult.wastePercentage.toFixed(2)}%)</p>
-        `;
-        
-        resultsContainer.appendChild(summaryBox);
-        
-        // Przycisk do zastosowania optymalnej długości kłody
-        const applyButton = document.createElement('button');
-        applyButton.textContent = 'Zastosuj optymalną długość kłody';
-        applyButton.style.backgroundColor = '#2e7d32';
-        applyButton.style.color = 'white';
-        applyButton.style.border = 'none';
-        applyButton.style.padding = '10px 20px';
-        applyButton.style.borderRadius = '4px';
-        applyButton.style.marginTop = '15px';
-        applyButton.style.cursor = 'pointer';
-        applyButton.onclick = () => {
-            document.getElementById('logLength').value = bestResult.stockLength.toFixed(1);
-            document.getElementById('comparisonDialogContainer').style.display = 'none';
-        };
-        
-        resultsContainer.appendChild(applyButton);
     }
 } 
