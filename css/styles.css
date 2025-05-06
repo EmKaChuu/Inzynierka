@@ -151,7 +151,7 @@ body {
 .sidebar-toggle {
     position: fixed;
     left: 280px;
-    top: 20vh; /* 20% wysokości ekranu od góry */
+    top: 23vh; /* 20% wysokości ekranu od góry */
     width: 30px;
     height: 30px;
     background-color: var(--dark-brown);
@@ -454,7 +454,7 @@ button:hover {
 .help-button {
     position: fixed !important;
     right: 20px !important;
-    top: 120px !important;
+    top: 23vh !important; /* Na tej samej wysokości co strzałka nawy */
     width: 40px !important;
     height: 40px !important;
     background-color: var(--dark-brown) !important;
