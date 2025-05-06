@@ -28,7 +28,7 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
+    background-image: url('/asfalt-dark.png');
     background-repeat: repeat;
     min-height: 100vh;
     display: flex;
@@ -100,7 +100,7 @@ body {
     flex: 1;
     position: relative;
     background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
+    background-image: url('/asfalt-dark.png');
     background-repeat: repeat;
     min-height: calc(100vh - 150px);
     height: 100%;
@@ -188,7 +188,7 @@ body {
     transition: margin-left 0.3s ease;
     min-height: calc(100vh - 150px);
     background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
+    background-image: url('/asfalt-dark.png');
     background-repeat: repeat;
     width: 100%;
 }
@@ -208,7 +208,7 @@ body {
     display: none;
     padding: 20px;
     background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
+    background-image: url('/asfalt-dark.png');
     background-repeat: repeat;
     border-radius: 8px;
     margin-top: 20px;
@@ -246,7 +246,7 @@ body {
     border: 1px solid var(--dark-brown);
     border-radius: 8px;
     background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
+    background-image: url('/asfalt-dark.png');
     background-repeat: repeat;
 }
 
@@ -446,5 +446,114 @@ button:hover {
 
     .app-footer {
         padding: 8px 0;
+    }
+}
+
+/* Style dla przycisku pomocy */
+.help-button {
+    position: fixed;
+    right: 20px;
+    top: 120px;
+    width: 40px;
+    height: 40px;
+    background-color: var(--dark-brown);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.help-button:hover {
+    background-color: var(--medium-brown);
+    transform: scale(1.1);
+}
+
+/* Style dla okienka pomocy */
+.help-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center;
+}
+
+.help-modal.active {
+    display: flex;
+}
+
+.help-modal-content {
+    background-color: var(--white);
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--dark-brown);
+    position: relative;
+}
+
+.help-modal-content h3 {
+    color: var(--dark-brown);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--light-brown);
+    padding-bottom: 10px;
+}
+
+.help-modal-content p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.help-modal-content ul {
+    margin-bottom: 15px;
+    padding-left: 20px;
+}
+
+.help-modal-content li {
+    margin-bottom: 8px;
+}
+
+.close-help-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--dark-brown);
+}
+
+.close-help-modal:hover {
+    color: var(--medium-brown);
+}
+
+/* Responsywność dla okienka pomocy */
+@media (max-width: 768px) {
+    .help-button {
+        right: 10px;
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+    }
+    
+    .help-modal-content {
+        width: 95%;
+        padding: 15px;
     }
 } 

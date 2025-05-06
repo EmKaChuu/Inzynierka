@@ -169,4 +169,84 @@ const App = {
 document.addEventListener('calculation-complete', Utils.adjustContainerHeights);
 
 // Inicjalizacja po załadowaniu dokumentu
-document.addEventListener('DOMContentLoaded', App.initialize); 
+document.addEventListener('DOMContentLoaded', App.initialize);
+
+// Obsługa przycisków pomocy i okienek modalnych
+document.addEventListener('DOMContentLoaded', function() {
+    // Przyciski pomocy
+    const helpAhpBtn = document.getElementById('help-ahp');
+    const helpCuttingStockBtn = document.getElementById('help-cutting-stock');
+    const helpProductionOptBtn = document.getElementById('help-production-opt');
+    
+    // Okienka modalne
+    const helpModalAhp = document.getElementById('help-modal-ahp');
+    const helpModalCuttingStock = document.getElementById('help-modal-cutting-stock');
+    const helpModalProductionOpt = document.getElementById('help-modal-production-opt');
+    
+    // Przyciski zamykania okienek
+    const closeButtons = document.querySelectorAll('.close-help-modal');
+    
+    // Funkcja otwierająca okienko modalne
+    function openHelpModal(modal) {
+        modal.classList.add('active');
+    }
+    
+    // Funkcja zamykająca okienko modalne
+    function closeHelpModal(modal) {
+        modal.classList.remove('active');
+    }
+    
+    // Obsługa kliknięcia przycisków pomocy
+    if (helpAhpBtn) {
+        helpAhpBtn.addEventListener('click', function() {
+            openHelpModal(helpModalAhp);
+        });
+    }
+    
+    if (helpCuttingStockBtn) {
+        helpCuttingStockBtn.addEventListener('click', function() {
+            openHelpModal(helpModalCuttingStock);
+        });
+    }
+    
+    if (helpProductionOptBtn) {
+        helpProductionOptBtn.addEventListener('click', function() {
+            openHelpModal(helpModalProductionOpt);
+        });
+    }
+    
+    // Obsługa zamykania okienek
+    closeButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const modal = button.closest('.help-modal');
+            closeHelpModal(modal);
+        });
+    });
+    
+    // Zamykanie okienka po kliknięciu poza jego zawartością
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('help-modal')) {
+            closeHelpModal(e.target);
+        }
+    });
+    
+    // Aktualizacja widoczności przycisków pomocy w zależności od aktywnego narzędzia
+    function updateHelpButtonsVisibility() {
+        const activeToolId = App.currentTool;
+        
+        helpAhpBtn.style.display = activeToolId === 'ahp' ? 'flex' : 'none';
+        helpCuttingStockBtn.style.display = activeToolId === 'cutting-stock' ? 'flex' : 'none';
+        helpProductionOptBtn.style.display = activeToolId === 'production-opt' ? 'flex' : 'none';
+    }
+    
+    // Nasłuchiwanie na zmianę aktywnego narzędzia
+    const toolButtons = document.querySelectorAll('.app-nav button');
+    toolButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            setTimeout(updateHelpButtonsVisibility, 100);
+        });
+    });
+    
+    // Inicjalizacja widoczności przycisków pomocy
+    updateHelpButtonsVisibility();
+}); 

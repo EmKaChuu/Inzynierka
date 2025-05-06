@@ -112,6 +112,11 @@
             
             <!-- Główna treść - prawa strona -->
             <main class="app-main">
+                <!-- Przyciski pomocy dla każdej strony -->
+                <button id="help-ahp" class="help-button" title="Pomoc AHP">?</button>
+                <button id="help-cutting-stock" class="help-button" title="Pomoc Problem Rozkroju" style="display: none;">?</button>
+                <button id="help-production-opt" class="help-button" title="Pomoc Optymalizacja Produkcji" style="display: none;">?</button>
+                
                 <!-- AHP Tool -->
                 <div id="tool-ahp" class="tool-content">
                     <div class="tool-header">
@@ -242,6 +247,47 @@
         <footer class="app-footer">
             <p>Michał Kopeć 2025</p>
         </footer>
+    </div>
+
+    <!-- Okienka modalne pomocy -->
+    <div id="help-modal-ahp" class="help-modal">
+        <div class="help-modal-content">
+            <button class="close-help-modal">&times;</button>
+            <h3>Jak korzystać z Kalkulatora AHP</h3>
+            <p>Analityczny Proces Hierarchiczny (AHP) to metoda wspomagania podejmowania decyzji wielokryterialnych. Oto jak korzystać z tego narzędzia:</p>
+            
+            <ol>
+                <li><strong>Zdefiniuj kryteria</strong> - W lewym panelu wprowadź liczbę kryteriów (od 3 do 6) i nadaj im nazwy odpowiadające aspektom Twojej decyzji. (np. Cena, Jakość, Dostępność)</li>
+                <li><strong>Zdefiniuj opcje</strong> - Wprowadź liczbę opcji (od 2 do 6) i nadaj im nazwy odpowiadające dostępnym wariantom wyboru. <br>(np. Produkt A, Produkt B, Samochód osobowy, Samochód ciężarowy)</li>
+                <li><strong>Porównaj kryteria</strong> - Wybierz interfejs (macierzowy lub uproszczony) i określ względną ważność każdego kryterium względem innych.<br> (np. Cena jest ważniejsza od Jakości)</li>
+                <li><strong>Porównaj opcje</strong> - Dla każdego kryterium określ, jak dobrze każda opcja spełnia dane kryterium w porównaniu z innymi opcjami.<br> (np. Produkt A jest lepszy od Produktu B)</li>
+                <li><strong>Oblicz wyniki</strong> - Kliknij przycisk "Oblicz wyniki AHP", aby uzyskać ranking opcji i wizualizacje.</li>
+            </ol>
+
+            <h4>Wskazówki:</h4>
+            <ul>
+                <li>Skala porównań od 1 do 9 oznacza: 1 - równe znaczenie, 9 - skrajnie większe znaczenie.</li>
+                <li>Wskaźnik spójności (CR) poniżej 0.1 oznacza, że Twoje porównania są spójne. Jeśli jest wyższy, rozważ ponowne przemyślenie niektórych porównań.</li>
+                <li>Możesz przełączać się między interfejsami w dowolnym momencie - Twoje dane zostaną zachowane.</li>
+                <li>Wyniki możesz pobrać w formacie CSV, JSON lub TXT do dalszej analizy.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="help-modal-cutting-stock" class="help-modal">
+        <div class="help-modal-content">
+            <button class="close-help-modal">&times;</button>
+            <h3>Jak korzystać z narzędzia Problem Rozkroju</h3>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+    </div>
+
+    <div id="help-modal-production-opt" class="help-modal">
+        <div class="help-modal-content">
+            <button class="close-help-modal">&times;</button>
+            <h3>Jak korzystać z narzędzia Optymalizacja Produkcji</h3>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
     </div>
 
     <!-- Własne skrypty -->
