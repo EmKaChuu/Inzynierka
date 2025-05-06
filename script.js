@@ -1,5 +1,5 @@
 // --- Global Namespace ---
-// Wersja: 1.0.3 - Uproszczona animacja z jednym przyciskiem
+// Wersja: 1.0.4 - Dokładnie według specyfikacji: dwa przyciski
 const Utils = {
     showElement: (id) => {
         document.getElementById(id).style.display = 'block';
@@ -209,101 +209,148 @@ document.addEventListener('DOMContentLoaded', function() {
     // Zmienna do śledzenia, czy przycisk pomocy został już kliknięty
     let helpButtonClicked = localStorage.getItem('helpButtonClicked') === 'true';
     
-    // Funkcja animująca przycisk pomocy
-    function animateHelpButton(button) {
-        if (!button) return;
+    // Funkcja tworząca i animująca przyciski pomocy
+    function setupHelpButtonAnimation(originalButton, toolName) {
+        if (!originalButton) return;
         
-        // 1. Przygotuj przycisk - ukryj go poza ekranem
-        button.style.transform = 'translateX(100px)';
-        button.style.opacity = '0';
-        button.classList.remove('slide-in', 'pulse');
+        // Ukryj oryginalny przycisk
+        originalButton.style.visibility = 'hidden';
+        
+        // 1. Stwórz pierwszy przycisk (ten, który wjeżdża)
+        const slideInButton = document.createElement('button');
+        slideInButton.className = 'help-button slide-in-button';
+        slideInButton.innerHTML = '?';
+        slideInButton.id = `help-${toolName}-slide`;
+        
+        // Dodaj przycisk do body
+        document.body.appendChild(slideInButton);
+        
+        // Pozycjonuj przycisk dokładnie w miejscu oryginalnego
+        const rect = originalButton.getBoundingClientRect();
+        slideInButton.style.top = rect.top + 'px';
+        slideInButton.style.right = (window.innerWidth - rect.right) + 'px';
+        
+        // Ustaw początkową pozycję poza ekranem
+        slideInButton.style.transform = 'translateX(100px)';
+        slideInButton.style.opacity = '0';
         
         // Wymuszenie przepływu
-        button.offsetHeight;
+        slideInButton.offsetHeight;
         
-        // 2. Animacja wjazdu
-        button.classList.add('slide-in');
+        // Animacja wjazdu
+        slideInButton.classList.add('slide-in');
         
-        // 3. Po zakończeniu wjazdu, dodaj pulsowanie
+        // 2. Stwórz drugi przycisk (pulsujący)
+        const pulseButton = document.createElement('button');
+        pulseButton.className = 'help-button pulse-button';
+        pulseButton.innerHTML = '?';
+        pulseButton.id = `help-${toolName}-pulse`;
+        
+        // Dodaj przycisk do body
+        document.body.appendChild(pulseButton);
+        
+        // Pozycjonuj przycisk dokładnie w miejscu oryginalnego
+        pulseButton.style.top = rect.top + 'px';
+        pulseButton.style.right = (window.innerWidth - rect.right) + 'px';
+        
+        // Początkowo niewidoczny
+        pulseButton.style.opacity = '0';
+        
+        // Po zakończeniu animacji wjazdu, pokaż pulsujący przycisk
         setTimeout(() => {
-            // Dodaj pulsowanie
-            button.classList.add('pulse');
+            // Płynne pojawienie się pulsującego przycisku
+            pulseButton.style.transition = 'opacity 0.3s ease-in';
+            pulseButton.style.opacity = '1';
+            pulseButton.classList.add('pulse');
             
-            // 4. Zatrzymaj pulsowanie po 1.5 sekundach
+            // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
             setTimeout(() => {
-                button.classList.remove('pulse');
+                // Płynne ukrycie pulsującego przycisku
+                pulseButton.style.opacity = '0';
                 
-                // 5. Ustaw interwał ponownego pulsowania co minutę
-                const pulseInterval = setInterval(() => {
-                    if (helpButtonClicked) {
-                        clearInterval(pulseInterval);
-                        return;
-                    }
+                setTimeout(() => {
+                    pulseButton.classList.remove('pulse');
                     
-                    // Dodaj pulsowanie
-                    button.classList.add('pulse');
-                    
-                    // Zatrzymaj pulsowanie po 1.5 sekundach
-                    setTimeout(() => {
-                        button.classList.remove('pulse');
-                    }, 1500);
-                }, 60000);
+                    // Ustaw interwał ponownego pulsowania co minutę
+                    const pulseInterval = setInterval(() => {
+                        if (helpButtonClicked) {
+                            clearInterval(pulseInterval);
+                            return;
+                        }
+                        
+                        // Płynne pojawienie się pulsującego przycisku
+                        pulseButton.style.opacity = '1';
+                        pulseButton.classList.add('pulse');
+                        
+                        // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
+                        setTimeout(() => {
+                            // Płynne ukrycie pulsującego przycisku
+                            pulseButton.style.opacity = '0';
+                            
+                            setTimeout(() => {
+                                pulseButton.classList.remove('pulse');
+                            }, 300);
+                        }, 1500);
+                    }, 60000);
+                }, 300);
             }, 1500);
-        }, 800);
+        }, 800); // Po zakończeniu animacji wjazdu
+        
+        // Dodaj obsługę kliknięcia do obu przycisków
+        slideInButton.addEventListener('click', function() {
+            handleHelpButtonClick(toolName);
+        });
+        
+        pulseButton.addEventListener('click', function() {
+            handleHelpButtonClick(toolName);
+        });
+        
+        return { slideInButton, pulseButton };
     }
     
-    // Obsługa kliknięcia przycisków pomocy
-    if (helpAhpBtn) {
-        helpAhpBtn.addEventListener('click', function() {
-            openHelpModal(helpModalAhp);
+    // Funkcja obsługująca kliknięcie przycisku pomocy
+    function handleHelpButtonClick(toolName) {
+        let modal;
+        switch(toolName) {
+            case 'ahp':
+                modal = helpModalAhp;
+                break;
+            case 'cutting-stock':
+                modal = helpModalCuttingStock;
+                break;
+            case 'production-opt':
+                modal = helpModalProductionOpt;
+                break;
+        }
+        
+        if (modal) {
+            openHelpModal(modal);
             helpButtonClicked = true;
             localStorage.setItem('helpButtonClicked', 'true');
-            helpAhpBtn.classList.remove('pulse');
+            
+            // Usuń wszystkie dodatkowe przyciski
+            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
+                btn.style.opacity = '0';
+                setTimeout(() => {
+                    if (btn.parentNode) {
+                        btn.parentNode.removeChild(btn);
+                    }
+                }, 300);
+            });
             
             // Wyczyść wszystkie interwały
             const highestId = window.setTimeout(() => {}, 0);
             for (let i = highestId; i >= 0; i--) {
                 window.clearInterval(i);
             }
-        });
-        
-        // Uruchom animacje dla aktywnego przycisku pomocy
-        if (App.currentTool === 'ahp' || App.currentTool === null) {
-            // Daj chwilę na załadowanie DOM
-            setTimeout(() => {
-                animateHelpButton(helpAhpBtn);
-            }, 300);
         }
     }
     
-    if (helpCuttingStockBtn) {
-        helpCuttingStockBtn.addEventListener('click', function() {
-            openHelpModal(helpModalCuttingStock);
-            helpButtonClicked = true;
-            localStorage.setItem('helpButtonClicked', 'true');
-            helpCuttingStockBtn.classList.remove('pulse');
-            
-            // Wyczyść wszystkie interwały
-            const highestId = window.setTimeout(() => {}, 0);
-            for (let i = highestId; i >= 0; i--) {
-                window.clearInterval(i);
-            }
-        });
-    }
-    
-    if (helpProductionOptBtn) {
-        helpProductionOptBtn.addEventListener('click', function() {
-            openHelpModal(helpModalProductionOpt);
-            helpButtonClicked = true;
-            localStorage.setItem('helpButtonClicked', 'true');
-            helpProductionOptBtn.classList.remove('pulse');
-            
-            // Wyczyść wszystkie interwały
-            const highestId = window.setTimeout(() => {}, 0);
-            for (let i = highestId; i >= 0; i--) {
-                window.clearInterval(i);
-            }
-        });
+    // Uruchom animacje dla aktywnego przycisku pomocy
+    if (App.currentTool === 'ahp' || App.currentTool === null) {
+        setTimeout(() => {
+            setupHelpButtonAnimation(helpAhpBtn, 'ahp');
+        }, 300);
     }
     
     // Obsługa przełączania między narzędziami - aktualizacja animacji przycisku pomocy
@@ -314,23 +361,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Jeśli przycisk pomocy nie został jeszcze kliknięty, pokaż animacje dla nowego narzędzia
         if (!helpButtonClicked) {
             let activeHelpButton;
+            let toolName;
             
             switch(tool) {
                 case 'ahp':
                     activeHelpButton = helpAhpBtn;
+                    toolName = 'ahp';
                     break;
                 case 'cutting-stock':
                     activeHelpButton = helpCuttingStockBtn;
+                    toolName = 'cutting-stock';
                     break;
                 case 'production-opt':
                     activeHelpButton = helpProductionOptBtn;
+                    toolName = 'production-opt';
                     break;
             }
             
+            // Usuń wszystkie istniejące przyciski
+            document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
+                btn.style.opacity = '0';
+                setTimeout(() => {
+                    if (btn.parentNode) {
+                        btn.parentNode.removeChild(btn);
+                    }
+                }, 300);
+            });
+            
             if (activeHelpButton) {
                 setTimeout(() => {
-                    animateHelpButton(activeHelpButton);
-                }, 300);
+                    setupHelpButtonAnimation(activeHelpButton, toolName);
+                }, 500);
             }
         }
     };

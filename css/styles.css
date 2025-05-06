@@ -481,6 +481,16 @@ button:hover {
     transition: all 0.3s ease !important;
 }
 
+/* Style dla przycisków pomocniczych */
+.slide-in-button {
+    z-index: 1001 !important; /* Nad oryginalnym przyciskiem */
+}
+
+.pulse-button {
+    z-index: 1002 !important; /* Najwyższy z-index, nad przyciskiem wjeżdżającym */
+    transition: opacity 0.3s ease !important;
+}
+
 /* Animacja wjazdu przycisku pomocy od prawej strony */
 @keyframes slide-in {
     0% { transform: translateX(100px); opacity: 0; }
