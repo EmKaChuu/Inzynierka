@@ -1,5 +1,5 @@
 // --- Global Namespace ---
-// Wersja: 1.0.4 - Dokładnie według specyfikacji: dwa przyciski
+// Wersja: 1.0.5 - Przycisk pulsujący niewidoczny od początku
 const Utils = {
     showElement: (id) => {
         document.getElementById(id).style.display = 'block';
@@ -246,54 +246,65 @@ document.addEventListener('DOMContentLoaded', function() {
         pulseButton.innerHTML = '?';
         pulseButton.id = `help-${toolName}-pulse`;
         
-        // Dodaj przycisk do body
+        // Dodaj przycisk do body, ale ustaw go jako całkowicie niewidoczny
+        pulseButton.style.opacity = '0';
+        pulseButton.style.visibility = 'hidden'; // Dodatkowe ukrycie
         document.body.appendChild(pulseButton);
         
         // Pozycjonuj przycisk dokładnie w miejscu oryginalnego
         pulseButton.style.top = rect.top + 'px';
         pulseButton.style.right = (window.innerWidth - rect.right) + 'px';
         
-        // Początkowo niewidoczny
-        pulseButton.style.opacity = '0';
-        
         // Po zakończeniu animacji wjazdu, pokaż pulsujący przycisk
         setTimeout(() => {
-            // Płynne pojawienie się pulsującego przycisku
+            // Przygotuj przycisk pulsujący do pokazania
             pulseButton.style.transition = 'opacity 0.3s ease-in';
-            pulseButton.style.opacity = '1';
-            pulseButton.classList.add('pulse');
+            pulseButton.style.visibility = 'visible'; // Teraz można go pokazać
             
-            // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
+            // Płynne pojawienie się pulsującego przycisku
             setTimeout(() => {
-                // Płynne ukrycie pulsującego przycisku
-                pulseButton.style.opacity = '0';
+                pulseButton.style.opacity = '1';
+                pulseButton.classList.add('pulse');
                 
+                // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
                 setTimeout(() => {
-                    pulseButton.classList.remove('pulse');
+                    // Płynne ukrycie pulsującego przycisku
+                    pulseButton.style.opacity = '0';
                     
-                    // Ustaw interwał ponownego pulsowania co minutę
-                    const pulseInterval = setInterval(() => {
-                        if (helpButtonClicked) {
-                            clearInterval(pulseInterval);
-                            return;
-                        }
+                    setTimeout(() => {
+                        pulseButton.classList.remove('pulse');
+                        pulseButton.style.visibility = 'hidden'; // Ukryj całkowicie
                         
-                        // Płynne pojawienie się pulsującego przycisku
-                        pulseButton.style.opacity = '1';
-                        pulseButton.classList.add('pulse');
-                        
-                        // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
-                        setTimeout(() => {
-                            // Płynne ukrycie pulsującego przycisku
-                            pulseButton.style.opacity = '0';
+                        // Ustaw interwał ponownego pulsowania co minutę
+                        const pulseInterval = setInterval(() => {
+                            if (helpButtonClicked) {
+                                clearInterval(pulseInterval);
+                                return;
+                            }
                             
+                            // Przygotuj przycisk do pokazania
+                            pulseButton.style.visibility = 'visible';
+                            
+                            // Płynne pojawienie się pulsującego przycisku
                             setTimeout(() => {
-                                pulseButton.classList.remove('pulse');
-                            }, 300);
-                        }, 1500);
-                    }, 60000);
-                }, 300);
-            }, 1500);
+                                pulseButton.style.opacity = '1';
+                                pulseButton.classList.add('pulse');
+                                
+                                // Po 1.5 sekundy zatrzymaj pulsowanie i ukryj przycisk
+                                setTimeout(() => {
+                                    // Płynne ukrycie pulsującego przycisku
+                                    pulseButton.style.opacity = '0';
+                                    
+                                    setTimeout(() => {
+                                        pulseButton.classList.remove('pulse');
+                                        pulseButton.style.visibility = 'hidden'; // Ukryj całkowicie
+                                    }, 300);
+                                }, 1500);
+                            }, 10);
+                        }, 60000);
+                    }, 300);
+                }, 1500);
+            }, 10);
         }, 800); // Po zakończeniu animacji wjazdu
         
         // Dodaj obsługę kliknięcia do obu przycisków
@@ -331,6 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Usuń wszystkie dodatkowe przyciski
             document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
                 btn.style.opacity = '0';
+                btn.style.visibility = 'hidden'; // Natychmiast ukryj
                 setTimeout(() => {
                     if (btn.parentNode) {
                         btn.parentNode.removeChild(btn);
@@ -381,6 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Usuń wszystkie istniejące przyciski
             document.querySelectorAll('.slide-in-button, .pulse-button').forEach(btn => {
                 btn.style.opacity = '0';
+                btn.style.visibility = 'hidden'; // Natychmiast ukryj
                 setTimeout(() => {
                     if (btn.parentNode) {
                         btn.parentNode.removeChild(btn);
