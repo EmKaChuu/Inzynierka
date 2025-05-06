@@ -151,7 +151,7 @@ body {
 .sidebar-toggle {
     position: fixed;
     left: 280px;
-    top: 70px;
+    top: 20vh; /* 20% wysokości ekranu od góry */
     width: 30px;
     height: 30px;
     background-color: var(--dark-brown);
