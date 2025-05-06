@@ -328,11 +328,41 @@
                 });
             }
             
+            // Zapobiegaj zamykaniu nawy podczas kliknięcia wewnątrz niej
+            if (sidebar) {
+                sidebar.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // Zapobiegaj zamykaniu nawy podczas wpisywania tekstu w polach formularzy
+                const formInputs = sidebar.querySelectorAll('input, select, textarea');
+                formInputs.forEach(function(input) {
+                    input.addEventListener('focus', function(e) {
+                        e.stopPropagation();
+                        // Upewnij się, że nawa pozostaje otwarta
+                        sidebar.classList.remove('sidebar-minimized');
+                        if (sidebarToggle.querySelector('.arrow-icon')) {
+                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                        }
+                    });
+                    
+                    // Zapobiegaj zamykaniu nawy podczas wpisywania tekstu
+                    input.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                    
+                    input.addEventListener('touchstart', function(e) {
+                        e.stopPropagation();
+                    });
+                });
+            }
+            
             // Funkcja dostosowująca UI na urządzeniach mobilnych
             function adjustMobileUI() {
                 if (window.innerWidth <= 992) {
                     // Urządzenie mobilne - nawa minimalizowana
-                    if (sidebar) {
+                    if (sidebar && !sidebar.contains(document.activeElement)) {
+                        // Nie zamykaj nawy, jeśli użytkownik aktualnie wpisuje tekst w polu formularza
                         sidebar.classList.add('sidebar-minimized');
                         sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
                     }
