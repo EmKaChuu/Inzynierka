@@ -28,7 +28,7 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--background);
-    background-image: url('/asfalt-dark.png');
+    background-image: url('asfalt-dark.png');
     background-repeat: repeat;
     min-height: 100vh;
     display: flex;
@@ -100,7 +100,7 @@ body {
     flex: 1;
     position: relative;
     background-color: var(--background);
-    background-image: url('/asfalt-dark.png');
+    background-image: url('asfalt-dark.png');
     background-repeat: repeat;
     min-height: calc(100vh - 150px);
     height: 100%;
@@ -188,7 +188,7 @@ body {
     transition: margin-left 0.3s ease;
     min-height: calc(100vh - 150px);
     background-color: var(--background);
-    background-image: url('/asfalt-dark.png');
+    background-image: url('asfalt-dark.png');
     background-repeat: repeat;
     width: 100%;
 }
@@ -205,10 +205,11 @@ body {
 
 /* Wspólne style dla narzędzi */
 .tool-content {
+    position: relative;
     display: none;
     padding: 20px;
     background-color: var(--background);
-    background-image: url('/asfalt-dark.png');
+    background-image: url('asfalt-dark.png');
     background-repeat: repeat;
     border-radius: 8px;
     margin-top: 20px;
@@ -246,7 +247,7 @@ body {
     border: 1px solid var(--dark-brown);
     border-radius: 8px;
     background-color: var(--background);
-    background-image: url('/asfalt-dark.png');
+    background-image: url('asfalt-dark.png');
     background-repeat: repeat;
 }
 
@@ -451,9 +452,9 @@ button:hover {
 
 /* Style dla przycisku pomocy */
 .help-button {
-    position: fixed;
+    position: absolute;
     right: 20px;
-    top: 120px;
+    top: 20px;
     width: 40px;
     height: 40px;
     background-color: var(--dark-brown);
@@ -464,7 +465,7 @@ button:hover {
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;

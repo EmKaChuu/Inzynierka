@@ -229,24 +229,4 @@ document.addEventListener('DOMContentLoaded', function() {
             closeHelpModal(e.target);
         }
     });
-    
-    // Aktualizacja widoczności przycisków pomocy w zależności od aktywnego narzędzia
-    function updateHelpButtonsVisibility() {
-        const activeToolId = App.currentTool;
-        
-        helpAhpBtn.style.display = activeToolId === 'ahp' ? 'flex' : 'none';
-        helpCuttingStockBtn.style.display = activeToolId === 'cutting-stock' ? 'flex' : 'none';
-        helpProductionOptBtn.style.display = activeToolId === 'production-opt' ? 'flex' : 'none';
-    }
-    
-    // Nasłuchiwanie na zmianę aktywnego narzędzia
-    const toolButtons = document.querySelectorAll('.app-nav button');
-    toolButtons.forEach(function(button) {
-        button.addEventListener('click', function() {
-            setTimeout(updateHelpButtonsVisibility, 100);
-        });
-    });
-    
-    // Inicjalizacja widoczności przycisków pomocy
-    updateHelpButtonsVisibility();
 }); 
