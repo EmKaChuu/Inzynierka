@@ -332,7 +332,6 @@ const CuttingStock = {
             totalStockUsed: totalPatternUses, // Suma użyć wszystkich wzorów
             patterns: usedPatterns,
             extraPieces: {}, // Dodajemy informację o nadprogramowych kawałkach
-            theoreticalMinLogs: theoreticalMinLogs, // Dodajemy informację o teoretycznym minimum
             totalOrderLength: totalOrderLength // Dodajemy całkowitą długość zamówionych elementów
         };
         
@@ -468,7 +467,6 @@ const CuttingStock = {
         
         // Liczba kłód to suma użyć wszystkich wzorów
         const stockUsed = CuttingStock.solution.totalStockUsed;
-        const theoreticalMinLogs = CuttingStock.solution.theoreticalMinLogs || stockUsed;
         const totalOrderLength = CuttingStock.solution.totalOrderLength || 0;
         
         // Pobierz długość kłody
@@ -484,7 +482,6 @@ const CuttingStock = {
             <h4>Podsumowanie</h4>
             <p><strong>Długość kłody:</strong> ${logLength.toFixed(2)}m</p>
             <p><strong>Liczba potrzebnych kłód:</strong> ${stockUsed}</p>
-            <p><strong>Teoretyczne minimum kłód:</strong> ${theoreticalMinLogs}</p>
             <p><strong>Całkowita długość zamówionych elementów:</strong> ${totalOrderLength.toFixed(2)}m</p>
             <details>
                 <summary>Szczegóły zamówienia</summary>
@@ -618,23 +615,6 @@ const CuttingStock = {
                 stockLength = 2.0;
                 console.log('Używam domyślnej długości kłody:', stockLength);
             }
-        }
-        
-        // Nagłówek wizualizacji
-        const header = document.createElement('h3');
-        header.textContent = 'Wizualizacja rozkroju';
-        container.appendChild(header);
-        
-        // Dodaj informację o całkowitym zapotrzebowaniu
-        if (CuttingStock.solution.totalOrderLength) {
-            const orderSummary = document.createElement('div');
-            orderSummary.className = 'order-summary';
-            orderSummary.innerHTML = `
-                <p><strong>Całkowita długość zamówionych elementów:</strong> ${CuttingStock.solution.totalOrderLength.toFixed(2)}m</p>
-                <p><strong>Teoretyczne minimum kłód:</strong> ${CuttingStock.solution.theoreticalMinLogs} (${(CuttingStock.solution.theoreticalMinLogs * stockLength).toFixed(2)}m)</p>
-                <p><strong>Liczba użytych kłód:</strong> ${CuttingStock.solution.totalStockUsed} (${(CuttingStock.solution.totalStockUsed * stockLength).toFixed(2)}m)</p>
-            `;
-            container.appendChild(orderSummary);
         }
         
         // Dodaj wykres kołowy pokazujący wykorzystanie materiału
@@ -1260,14 +1240,12 @@ const CuttingStock = {
         
         // Podsumowanie
         const stockUsed = CuttingStock.solution.totalStockUsed;
-        const theoreticalMinLogs = CuttingStock.solution.theoreticalMinLogs || stockUsed;
         const totalOrderLength = CuttingStock.solution.totalOrderLength || 0;
         
         content += 'PODSUMOWANIE:\n';
         content += '--------------\n';
         content += `Długość kłody: ${parseFloat(document.getElementById('logLength').value).toFixed(2)}m\n`;
         content += `Liczba potrzebnych kłód: ${stockUsed}\n`;
-        content += `Teoretyczne minimum kłód: ${theoreticalMinLogs}\n`;
         content += `Całkowita długość zamówionych elementów: ${totalOrderLength.toFixed(2)}m\n`;
         content += `Całkowite zużycie materiału: ${CuttingStock.solution.totalMaterialUsed.toFixed(2)}m\n`;
         content += `Całkowite odpady: ${CuttingStock.solution.totalWaste.toFixed(2)}m (${CuttingStock.solution.wastePercentage.toFixed(2)}%)\n\n`;
