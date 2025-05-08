@@ -306,33 +306,35 @@ const CuttingStock = {
             solution.result = theoreticalMinLogs;
         }
         
-        const result = {
-            totalStockUsed: Math.max(Math.round(solution.result), theoreticalMinLogs), // Zaokrąglamy do liczb całkowitych, ale nie mniej niż teoretyczne minimum
-            patterns: [],
-            extraPieces: {}, // Dodajemy informację o nadprogramowych kawałkach
-            theoreticalMinLogs: theoreticalMinLogs, // Dodajemy informację o teoretycznym minimum
-            totalOrderLength: totalOrderLength // Dodajemy całkowitą długość zamówionych elementów
-        };
+        // Obliczamy sumę użyć wszystkich wzorów - to będzie rzeczywista liczba kłód
+        let totalPatternUses = 0;
         
         // Pobierz wykorzystane wzory
+        const usedPatterns = [];
         for (const key in solution) {
             if (key.startsWith('pattern_') && solution[key] > 0) {
                 const patternId = parseInt(key.split('_')[1]);
                 const pattern = CuttingStock.patterns[patternId];
                 
                 // Skaluj liczbę użyć wzoru proporcjonalnie do całkowitej liczby kłód
-                let count = solution[key];
-                if (calculatedStockUsed < theoreticalMinLogs * 0.9) {
-                    count = count * (result.totalStockUsed / calculatedStockUsed);
-                }
+                let count = Math.round(solution[key]);
+                totalPatternUses += count;
                 
-                result.patterns.push({
+                usedPatterns.push({
                     id: patternId,
                     pattern: pattern,
-                    count: Math.round(count) // Zaokrąglamy do liczb całkowitych
+                    count: count // Zaokrąglamy do liczb całkowitych
                 });
             }
         }
+        
+        const result = {
+            totalStockUsed: totalPatternUses, // Suma użyć wszystkich wzorów
+            patterns: usedPatterns,
+            extraPieces: {}, // Dodajemy informację o nadprogramowych kawałkach
+            theoreticalMinLogs: theoreticalMinLogs, // Dodajemy informację o teoretycznym minimum
+            totalOrderLength: totalOrderLength // Dodajemy całkowitą długość zamówionych elementów
+        };
         
         // Oblicz zużycie materiału, odpady i nadprogramowe kawałki
         let totalMaterialUsed = 0;
@@ -464,10 +466,13 @@ const CuttingStock = {
         const summary = document.createElement('div');
         summary.className = 'results-summary';
         
-        // Zaokrąglamy wartości do liczb całkowitych
-        const stockUsed = Math.round(CuttingStock.solution.totalStockUsed);
+        // Liczba kłód to suma użyć wszystkich wzorów
+        const stockUsed = CuttingStock.solution.totalStockUsed;
         const theoreticalMinLogs = CuttingStock.solution.theoreticalMinLogs || stockUsed;
         const totalOrderLength = CuttingStock.solution.totalOrderLength || 0;
+        
+        // Pobierz długość kłody
+        const logLength = parseFloat(document.getElementById('logLength').value);
         
         // Dodaj informację o zamówionych elementach
         let orderDetails = '';
@@ -477,8 +482,9 @@ const CuttingStock = {
         
         summary.innerHTML = `
             <h4>Podsumowanie</h4>
+            <p><strong>Długość kłody:</strong> ${logLength.toFixed(2)}m</p>
             <p><strong>Liczba potrzebnych kłód:</strong> ${stockUsed}</p>
-            <p><strong>Teoretyczne minimum kłód:</strong> ${theoreticalMinLogs} (przy założeniu idealnego podziału)</p>
+            <p><strong>Teoretyczne minimum kłód:</strong> ${theoreticalMinLogs}</p>
             <p><strong>Całkowita długość zamówionych elementów:</strong> ${totalOrderLength.toFixed(2)}m</p>
             <details>
                 <summary>Szczegóły zamówienia</summary>
@@ -547,8 +553,7 @@ const CuttingStock = {
         // Dla każdego wzoru
         for (const patternResult of CuttingStock.solution.patterns) {
             const pattern = patternResult.pattern;
-            // Zaokrąglamy liczbę użyć do liczby całkowitej
-            const count = Math.round(patternResult.count);
+            const count = patternResult.count;
             
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -627,7 +632,7 @@ const CuttingStock = {
             orderSummary.innerHTML = `
                 <p><strong>Całkowita długość zamówionych elementów:</strong> ${CuttingStock.solution.totalOrderLength.toFixed(2)}m</p>
                 <p><strong>Teoretyczne minimum kłód:</strong> ${CuttingStock.solution.theoreticalMinLogs} (${(CuttingStock.solution.theoreticalMinLogs * stockLength).toFixed(2)}m)</p>
-                <p><strong>Liczba użytych kłód:</strong> ${Math.round(CuttingStock.solution.totalStockUsed)} (${(Math.round(CuttingStock.solution.totalStockUsed) * stockLength).toFixed(2)}m)</p>
+                <p><strong>Liczba użytych kłód:</strong> ${CuttingStock.solution.totalStockUsed} (${(CuttingStock.solution.totalStockUsed * stockLength).toFixed(2)}m)</p>
             `;
             container.appendChild(orderSummary);
         }
@@ -639,8 +644,8 @@ const CuttingStock = {
         const nodes = [];
         const links = [];
         
-        // Zaokrąglamy liczbę kłód do liczby całkowitej
-        const totalStockUsed = Math.round(CuttingStock.solution.totalStockUsed);
+        // Liczba kłód to suma użyć wszystkich wzorów
+        const totalStockUsed = CuttingStock.solution.totalStockUsed;
         
         // Dodaj węzeł źródłowy - kłody
         nodes.push({ 
@@ -675,8 +680,7 @@ const CuttingStock = {
         // Dodaj węzły dla wzorów cięcia
         CuttingStock.solution.patterns.forEach((patternResult, idx) => {
             const pattern = patternResult.pattern;
-            // Zaokrąglamy liczbę użyć do liczby całkowitej
-            const count = Math.round(patternResult.count);
+            const count = patternResult.count;
             
             const nodeIndex = nodes.length;
             nodes.push({ 
@@ -879,8 +883,8 @@ const CuttingStock = {
         
         // Dodaj również wizualizację wzorów cięcia
         const patternVisDiv = document.createElement('div');
-        patternVisDiv.id = 'patternVisContainer';
-        patternVisDiv.className = 'pattern-visualization-container';
+        patternVisDiv.className = 'pattern-visualization';
+        patternVisDiv.style.marginTop = '30px';
         container.appendChild(patternVisDiv);
         
         const patternVisHeader = document.createElement('h4');
@@ -890,8 +894,7 @@ const CuttingStock = {
         // Dla każdego wzoru utwórz wizualizację
         CuttingStock.solution.patterns.forEach((patternResult, idx) => {
             const pattern = patternResult.pattern;
-            // Zaokrąglamy liczbę użyć do liczby całkowitej
-            const count = Math.round(patternResult.count);
+            const count = patternResult.count;
             
             const patternContainer = document.createElement('div');
             patternContainer.className = 'pattern-container';
@@ -1091,7 +1094,7 @@ const CuttingStock = {
         // Oblicz, ile każdego elementu zostało wyprodukowanych
         for (const patternResult of CuttingStock.solution.patterns) {
             const pattern = patternResult.pattern;
-            const count = Math.round(patternResult.count);
+            const count = patternResult.count;
             
             for (const orderId in pattern.counts) {
                 const order = CuttingStock.orders.find(o => o.id === parseInt(orderId));
@@ -1256,7 +1259,7 @@ const CuttingStock = {
         content += '==============================================================\n\n';
         
         // Podsumowanie
-        const stockUsed = Math.round(CuttingStock.solution.totalStockUsed);
+        const stockUsed = CuttingStock.solution.totalStockUsed;
         const theoreticalMinLogs = CuttingStock.solution.theoreticalMinLogs || stockUsed;
         const totalOrderLength = CuttingStock.solution.totalOrderLength || 0;
         
@@ -1293,7 +1296,7 @@ const CuttingStock = {
         content += '-------------\n';
         for (const patternResult of CuttingStock.solution.patterns) {
             const pattern = patternResult.pattern;
-            const count = Math.round(patternResult.count);
+            const count = patternResult.count;
             
             content += `Wzór ${patternResult.id + 1} (użyty ${count} razy):\n`;
             
