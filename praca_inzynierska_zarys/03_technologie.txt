@@ -1,0 +1,148 @@
+# ROZDZIAŁ 3: ZASTOSOWANE TECHNOLOGIE
+
+## 3.1 Technologie webowe - przegląd i uzasadnienie wyboru
+
+W procesie tworzenia aplikacji wykorzystano szereg technologii webowych, które umożliwiły implementację funkcjonalnej i responsywnej aplikacji bez konieczności instalacji po stronie użytkownika. Poniżej przedstawiono kluczowe technologie wraz z uzasadnieniem ich wyboru:
+
+### 3.1.1 HTML5 (HyperText Markup Language)
+
+HTML5 stanowi podstawową technologię definiującą strukturę aplikacji webowej. Wybór najnowszej wersji języka HTML umożliwił wykorzystanie nowoczesnych elementów semantycznych, które poprawiają dostępność i czytelność kodu. W implementowanej aplikacji HTML5 posłużył do:
+
+- Zdefiniowania struktury interfejsu użytkownika
+- Wdrożenia formularzy do wprowadzania danych
+- Zapewnienia kompatybilności z nowoczesnymi przeglądarkami
+- Implementacji kontenerów dla wykresów i wizualizacji
+
+### 3.1.2 CSS3 (Cascading Style Sheets)
+
+CSS3 wykorzystano do stylizacji interfejsu użytkownika, zapewniając estetyczny wygląd oraz responsywność aplikacji na różnych urządzeniach. Kluczowe aspekty implementacji CSS:
+
+- Zastosowanie zmiennych CSS do spójnego zarządzania kolorystyką
+- Wykorzystanie Flexbox do tworzenia elastycznych układów
+- Implementacja Media Queries dla zapewnienia responsywności
+- Zaawansowane animacje i efekty wizualne poprawiające doświadczenie użytkownika:
+  - Animacje pulsowania dla przycisków pomocy z kolorowym podświetleniem
+  - Płynne przejścia między stanami interfejsu
+  - Efekty cieni i gradientów dla zwiększenia głębi interfejsu
+  - Responsywne dostosowanie układu na urządzeniach mobilnych
+- Stylizacja formularzy i elementów interaktywnych
+- Dostosowanie interfejsu dla różnych rozmiarów ekranu, ze szczególnym uwzględnieniem urządzeń mobilnych
+
+### 3.1.3 JavaScript (ES6+)
+
+JavaScript stanowi fundament logiki aplikacji, umożliwiając implementację złożonych algorytmów obliczeniowych oraz interaktywność interfejsu. Wykorzystano nowoczesne funkcje języka JavaScript (ES6+) takie jak:
+
+- Arrow functions dla zwięzłego zapisu funkcji
+- Destrukturyzacja dla czytelnego dostępu do właściwości obiektów
+- Template literals dla dynamicznego generowania treści HTML
+- Funkcje wyższego rzędu do manipulacji danymi (map, filter, reduce)
+- Asynchroniczność (Promise, async/await) dla optymalizacji przepływu danych
+
+## 3.2 Wykorzystane biblioteki zewnętrzne
+
+### 3.2.1 math.js
+
+Biblioteka math.js została wykorzystana jako kluczowy komponent do obliczeń matematycznych, szczególnie w module AHP. Uzasadnienie wyboru tej biblioteki:
+
+- Wszechstronność funkcji matematycznych (operacje na macierzach, wektorach)
+- Wysokiej jakości implementacja metod numerycznych
+- Dobra dokumentacja i aktywna społeczność
+- Obsługa różnych typów danych (zmiennoprzecinkowe, zespolone, macierze)
+
+W implementacji metody AHP biblioteka ta posłużyła do:
+- Wykonywania operacji na macierzach porównań parami
+- Obliczania wartości własnych i wektorów własnych
+- Normalizacji wektorów priorytetów
+- Obliczania wskaźnika spójności (Consistency Ratio)
+
+### 3.2.2 Plotly.js
+
+Plotly.js wybrano jako bibliotekę do wizualizacji danych ze względu na:
+
+- Bogactwo dostępnych typów wykresów (słupkowe, kołowe, powierzchniowe, 3D)
+- Interaktywność wykresów (powiększanie, przesuwanie, wyświetlanie szczegółów)
+- Responsywność i dostosowanie do różnych rozmiarów ekranu
+- Możliwość eksportu wykresów do różnych formatów
+
+W aplikacji biblioteka ta została wykorzystana do:
+- Wizualizacji wyników metody AHP (wykresy słupkowe, radar charts)
+- Graficznej reprezentacji schematów cięcia w module rozkroju
+- Wizualizacji rozwiązań optymalizacyjnych w przestrzeni dwuwymiarowej
+- Prezentacji funkcji celu i ograniczeń w optymalizacji produkcji
+
+### 3.2.3 JavaScript Linear Programming Solver (solver.js)
+
+Biblioteka solver.js została zaimplementowana jako silnik optymalizacyjny do rozwiązywania problemów programowania liniowego i całkowitoliczbowego. Wybór tej biblioteki wynikał z:
+
+- Możliwości rozwiązywania problemów programowania liniowego i całkowitoliczbowego
+- Implementacji w czystym JavaScript, bez zależności od zewnętrznych bibliotek
+- Dobrej wydajności dla problemów średniej wielkości
+- Prostego API, umożliwiającego łatwą integrację
+
+W aplikacji solver.js wykorzystano do:
+- Modelowania i rozwiązywania problemu rozkroju materiałów
+- Optymalizacji alokacji zasobów w module optymalizacji produkcji
+- Implementacji algorytmu generacji kolumn dla problemu rozkroju
+
+## 3.3 Architektura aplikacji
+
+### 3.3.1 Model aplikacji jednoplikowej (SPA - Single Page Application)
+
+Aplikacja została zaimplementowana jako SPA (Single Page Application), co oznacza, że cała logika i interfejs użytkownika zawarte są w jednym pliku HTML, z dynamicznie ładowanymi modułami JavaScript. Takie podejście zapewnia:
+
+- Płynne przełączanie między modułami bez przeładowywania strony
+- Lepsze doświadczenie użytkownika dzięki natychmiastowej reakcji na interakcje
+- Redukcję obciążenia serwera, gdyż logika jest wykonywana po stronie klienta
+- Możliwość uruchomienia aplikacji bez dostępu do internetu (po pierwszym załadowaniu)
+
+### 3.3.2 Modułowa struktura kodu
+
+Kod aplikacji został zorganizowany w modułową strukturę, która ułatwia zarządzanie, testowanie i rozszerzanie funkcjonalności:
+
+```
+App (główny obiekt aplikacji)
+├── Utils (funkcje pomocnicze)
+├── AHP (moduł kalkulatora AHP)
+│   ├── setupInputs()
+│   ├── setupOptions()
+│   ├── createCriteriaComparisonMatrix()
+│   └── ...
+├── CuttingStock (moduł problemu rozkroju)
+│   ├── init()
+│   ├── addOrderRow()
+│   ├── calculate()
+│   └── ...
+└── ProductionOpt (moduł optymalizacji produkcji)
+    ├── init()
+    ├── updateObjectiveFunction()
+    ├── addConstraint()
+    └── ...
+```
+
+Każdy moduł posiada własny stan i metody, które są odpowiedzialne za konkretne funkcjonalności, co zgodne jest z paradygmatem programowania obiektowego i zapewnia separację zadań.
+
+### 3.3.3 System pomocy kontekstowej
+
+Aplikacja została wyposażona w zaawansowany system pomocy kontekstowej, który wspiera użytkownika w korzystaniu z poszczególnych modułów:
+
+- Dedykowane przyciski pomocy dla każdego modułu, umieszczone w strategicznych miejscach interfejsu
+- Animowane podświetlenie przycisków pomocy, przyciągające uwagę nowych użytkowników
+- Modalne okna pomocy zawierające szczegółowe instrukcje i wskazówki dotyczące korzystania z danego narzędzia
+- Kontekstowe wyjaśnienia kluczowych pojęć i parametrów
+- Automatyczne uruchamianie podpowiedzi dla nowych użytkowników
+
+System pomocy został zaprojektowany z myślą o różnych poziomach zaawansowania użytkowników, oferując zarówno podstawowe wskazówki dla początkujących, jak i zaawansowane informacje dla doświadczonych użytkowników.
+
+### 3.3.4 Responsywny interfejs użytkownika
+
+Interfejs aplikacji został zaprojektowany zgodnie z zasadami projektowania responsywnego, umożliwiając efektywne korzystanie z aplikacji na różnych urządzeniach:
+
+- Adaptacyjny układ dostosowujący się do różnych rozmiarów ekranu
+- Zoptymalizowana nawigacja dla urządzeń mobilnych:
+  - Rozwijane menu boczne zajmujące optymalną przestrzeń ekranu (75-80%)
+  - Kompaktowy układ przycisków w nagłówku
+  - Ikonograficzne reprezentacje funkcji zamiast opisów tekstowych
+- Dostosowanie formularzy i elementów interaktywnych do obsługi dotykowej
+- Optymalizacja wizualizacji wyników dla mniejszych ekranów
+
+Dzięki zastosowaniu technik responsywnego projektowania, aplikacja oferuje spójne doświadczenie użytkownika niezależnie od używanego urządzenia, co jest szczególnie istotne w kontekście rosnącej popularności urządzeń mobilnych. 

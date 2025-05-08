@@ -30,26 +30,30 @@ const CuttingStock = {
         // Sprawdź, czy przyciski już istnieją, aby uniknąć duplikacji
         if (!document.getElementById('loadSampleDataButton')) {
             const buttonRow = document.createElement('div');
-            buttonRow.className = 'input-row';
-            buttonRow.style.marginTop = '15px';
+            buttonRow.className = 'input-row button-row';
+            buttonRow.style.marginTop = '20px';
             buttonRow.style.justifyContent = 'center';
             
             const loadSampleButton = document.createElement('button');
             loadSampleButton.id = 'loadSampleDataButton';
-            loadSampleButton.textContent = 'Załaduj przykładowe dane';
+            loadSampleButton.innerHTML = '<i class="fas fa-flask"></i> Załaduj przykładowe dane';
             loadSampleButton.onclick = CuttingStock.loadSampleData;
-            loadSampleButton.style.marginRight = '10px';
+            loadSampleButton.className = 'action-button';
+            loadSampleButton.title = 'Załaduj przykładowe dane do testowania';
             
             const saveOrdersButton = document.createElement('button');
             saveOrdersButton.id = 'saveOrdersButton';
-            saveOrdersButton.textContent = 'Zapisz zamówienie';
+            saveOrdersButton.innerHTML = '<i class="fas fa-save"></i> Zapisz zamówienie';
             saveOrdersButton.onclick = CuttingStock.saveOrdersToFile;
-            saveOrdersButton.style.marginRight = '10px';
+            saveOrdersButton.className = 'action-button';
+            saveOrdersButton.title = 'Zapisz bieżące zamówienie do pliku';
             
             const loadOrdersButton = document.createElement('button');
             loadOrdersButton.id = 'loadOrdersButton';
-            loadOrdersButton.textContent = 'Wczytaj zamówienie';
+            loadOrdersButton.innerHTML = '<i class="fas fa-file-import"></i> Wczytaj zamówienie';
             loadOrdersButton.onclick = CuttingStock.loadOrdersFromFile;
+            loadOrdersButton.className = 'action-button';
+            loadOrdersButton.title = 'Wczytaj zamówienie z pliku';
             
             buttonRow.appendChild(loadSampleButton);
             buttonRow.appendChild(saveOrdersButton);
@@ -73,16 +77,21 @@ const CuttingStock = {
         
         const orderRow = document.createElement('div');
         orderRow.id = `order-row-${rowId}`;
-        orderRow.className = 'input-row';
+        orderRow.className = 'input-row order-row';
         
         // Etykieta zamówienia
         const orderLabel = document.createElement('span');
         orderLabel.textContent = `Zamówienie ${rowId + 1}:`;
         orderLabel.style.minWidth = '100px';
+        orderLabel.className = 'order-label';
         
         // Długość elementu
+        const lengthContainer = document.createElement('div');
+        lengthContainer.className = 'input-field-container';
+        
         const lengthLabel = document.createElement('label');
         lengthLabel.textContent = 'Długość:';
+        lengthLabel.htmlFor = `order-length-${rowId}`;
         
         const lengthInput = document.createElement('input');
         lengthInput.type = 'number';
@@ -91,9 +100,16 @@ const CuttingStock = {
         lengthInput.min = '0.1';
         lengthInput.placeholder = 'np. 1.2';
         
+        lengthContainer.appendChild(lengthLabel);
+        lengthContainer.appendChild(lengthInput);
+        
         // Ilość sztuk
+        const quantityContainer = document.createElement('div');
+        quantityContainer.className = 'input-field-container';
+        
         const quantityLabel = document.createElement('label');
         quantityLabel.textContent = 'Ilość:';
+        quantityLabel.htmlFor = `order-quantity-${rowId}`;
         
         const quantityInput = document.createElement('input');
         quantityInput.type = 'number';
@@ -101,33 +117,20 @@ const CuttingStock = {
         quantityInput.min = '1';
         quantityInput.placeholder = 'np. 10';
         
-        // Priorytet/Wartość elementu
-        const priorityLabel = document.createElement('label');
-        priorityLabel.textContent = 'Priorytet:';
-        
-        const priorityInput = document.createElement('input');
-        priorityInput.type = 'number';
-        priorityInput.id = `order-priority-${rowId}`;
-        priorityInput.step = '1';
-        priorityInput.min = '1';
-        priorityInput.max = '10';
-        priorityInput.value = '5';
-        priorityInput.title = 'Priorytet elementu (1-10). Wyższy priorytet oznacza, że element zostanie preferowany w przypadku nadprogramowych kawałków.';
+        quantityContainer.appendChild(quantityLabel);
+        quantityContainer.appendChild(quantityInput);
         
         // Przycisk usuwania
         const removeButton = document.createElement('button');
-        removeButton.textContent = 'Usuń';
+        removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń';
         removeButton.className = 'small-button';
         removeButton.onclick = () => CuttingStock.removeOrderRow(rowId);
+        removeButton.title = 'Usuń to zamówienie';
         
         // Dodaj elementy do wiersza
         orderRow.appendChild(orderLabel);
-        orderRow.appendChild(lengthLabel);
-        orderRow.appendChild(lengthInput);
-        orderRow.appendChild(quantityLabel);
-        orderRow.appendChild(quantityInput);
-        orderRow.appendChild(priorityLabel);
-        orderRow.appendChild(priorityInput);
+        orderRow.appendChild(lengthContainer);
+        orderRow.appendChild(quantityContainer);
         orderRow.appendChild(removeButton);
         
         // Dodaj wiersz do listy zamówień
@@ -165,8 +168,6 @@ const CuttingStock = {
                 const rowId = parseInt(row.id.split('-')[2]);
                 const length = parseFloat(document.getElementById(`order-length-${rowId}`).value);
                 const quantity = parseInt(document.getElementById(`order-quantity-${rowId}`).value);
-                const priorityElement = document.getElementById(`order-priority-${rowId}`);
-                const priority = priorityElement ? parseInt(priorityElement.value) : 5; // Domyślny priorytet 5, jeśli pole nie istnieje
                 
                 if (isNaN(length) || isNaN(quantity) || length <= 0 || quantity <= 0) {
                     throw new Error(`Nieprawidłowe dane w zamówieniu ${rowId + 1}.`);
@@ -179,8 +180,7 @@ const CuttingStock = {
                 CuttingStock.orders.push({
                     id: rowId,
                     length: length,
-                    quantity: quantity,
-                    priority: priority // Dodanie priorytetu do zamówienia
+                    quantity: quantity
                 });
             }
             
@@ -255,34 +255,13 @@ const CuttingStock = {
                     stockUsed: 1  // Każdy wzór zużywa jedną sztukę surowca
                 };
             } else {
-                // Dla niedokładnej liczby sztuk, optymalizujemy odpad z preferencją dla tworzenia nadprogramowych kawałków
-                // Wprowadzamy karę za odpad, która jest większa dla wzorów z dużym odpadem
+                // Dla niedokładnej liczby sztuk, optymalizujemy odpad
                 const wastePenalty = Math.pow(pattern.waste / stockLength, 2) * 100;
                 
                 model.variables[varKey] = {
                     stockUsed: 1,
                     wasteWithPenalty: wastePenalty  // Kara za odpad
                 };
-                
-                // Dodaj bonus za wykorzystanie elementów zgodnie z ich priorytetami
-                // Im wyższy priorytet elementu, tym większy bonus za jego nadprogramowe użycie
-                orders.forEach(order => {
-                    // Współczynnik priorytetu - normalizujemy do zakresu 0-1 (priorytet jest z zakresu 1-10)
-                    const priorityFactor = (order.priority || 5) / 10;
-                    
-                    // Bonus dla wszystkich elementów, ale proporcjonalny do priorytetu
-                    const bonusKey = `bonus_order_${order.id}`;
-                    if (!model.constraints[bonusKey]) {
-                        model.constraints[bonusKey] = { min: 0 }; // Minimum 0 - opcjonalne wykorzystanie
-                    }
-                    
-                    // Bonus zależy od priorytetu i długości elementu
-                    // Elementy krótsze i o wyższym priorytecie otrzymują większy bonus
-                    const lengthFactor = Math.max(0.5, 1 - order.length / stockLength); // Elementy krótsze mają większy bonus
-                    const bonus = lengthFactor * priorityFactor * 0.2; // Skalujemy bonus, aby nie przesłonić głównego celu
-                    
-                    model.variables[varKey][bonusKey] = (pattern.counts[order.id] || 0) * bonus;
-                });
             }
             
             // Dodaj ile każdy element pojawia się we wzorze
@@ -1042,34 +1021,25 @@ const CuttingStock = {
             return;
         }
         
-        // Utwórz kontener dla wykresu
-        const chartContainer = document.createElement('div');
-        chartContainer.className = 'material-usage-chart-container';
-        chartContainer.style.display = 'flex';
-        chartContainer.style.justifyContent = 'space-between';
-        chartContainer.style.marginBottom = '30px';
+        // Utwórz kontener dla wykresu kołowego
+        const pieChartContainer = document.createElement('div');
+        pieChartContainer.className = 'material-usage-chart-container';
+        pieChartContainer.style.marginBottom = '30px';
         
         // Kontener dla wykresu kołowego
         const pieChartDiv = document.createElement('div');
         pieChartDiv.id = 'materialUsagePieChart';
-        pieChartDiv.style.width = '45%';
+        pieChartDiv.style.width = '100%';
         pieChartDiv.style.height = '350px';
         
-        // Kontener dla wykresu produktowego
-        const productChartDiv = document.createElement('div');
-        productChartDiv.id = 'productUsageChart';
-        productChartDiv.style.width = '45%';
-        productChartDiv.style.height = '350px';
-        
-        chartContainer.appendChild(pieChartDiv);
-        chartContainer.appendChild(productChartDiv);
+        pieChartContainer.appendChild(pieChartDiv);
         
         // Wstaw kontener po podsumowaniu
         const orderSummary = container.querySelector('.order-summary');
         if (orderSummary) {
-            orderSummary.insertAdjacentElement('afterend', chartContainer);
+            orderSummary.insertAdjacentElement('afterend', pieChartContainer);
         } else {
-            container.appendChild(chartContainer);
+            container.appendChild(pieChartContainer);
         }
         
         // Przygotuj dane do wykresu kołowego - wykorzystanie materiału vs odpad
@@ -1109,24 +1079,6 @@ const CuttingStock = {
         
         Plotly.newPlot('materialUsagePieChart', pieData, pieLayout, { responsive: true });
         
-        // Przygotuj dane do wykresu produktowego - ile każdego typu elementu
-        const productData = [];
-        const productLabels = [];
-        const productColors = [];
-        
-        // Funkcja do generowania odcieni złotego koloru
-        const generateShade = (index) => {
-            // Bazowy kolor złoty w formie RGB
-            const baseColor = [212, 175, 55]; // #D4AF37
-            // Przyciemniamy kolor o określony procent dla każdego kolejnego elementu
-            const shadeFactor = 1 - (index * 0.15);
-            // Ograniczamy wartości, aby nie były za ciemne
-            const r = Math.max(Math.floor(baseColor[0] * shadeFactor), 100);
-            const g = Math.max(Math.floor(baseColor[1] * shadeFactor), 80);
-            const b = Math.max(Math.floor(baseColor[2] * shadeFactor), 20);
-            return `rgb(${r}, ${g}, ${b})`;
-        };
-        
         // Zbierz dane o liczbie każdego typu elementu w rozwiązaniu
         const typeCounts = {};
         CuttingStock.orders.forEach(order => {
@@ -1152,34 +1104,74 @@ const CuttingStock = {
             }
         }
         
-        // Przygotuj dane do wykresu
+        // Funkcja do generowania odcieni złotego koloru
+        const generateShade = (index) => {
+            // Bazowy kolor złoty w formie RGB
+            const baseColor = [212, 175, 55]; // #D4AF37
+            // Przyciemniamy kolor o określony procent dla każdego kolejnego elementu
+            const shadeFactor = 1 - (index * 0.15);
+            // Ograniczamy wartości, aby nie były za ciemne
+            const r = Math.max(Math.floor(baseColor[0] * shadeFactor), 100);
+            const g = Math.max(Math.floor(baseColor[1] * shadeFactor), 80);
+            const b = Math.max(Math.floor(baseColor[2] * shadeFactor), 20);
+            return `rgb(${r}, ${g}, ${b})`;
+        };
+        
+        // Przygotuj dane do wykresu zamówionych elementów
+        const orderedData = [];
+        const orderedLabels = [];
+        const orderedColors = [];
+        
+        // Przygotuj dane do wykresu nadmiarowych elementów
+        const extraData = [];
+        const extraLabels = [];
+        const extraColors = [];
+        let hasExtraElements = false;
+        
+        // Przygotuj dane do wykresów
         let i = 0;
         for (const length in typeCounts) {
             if (typeCounts.hasOwnProperty(length)) {
                 const data = typeCounts[length];
+                const baseColor = generateShade(i);
                 
-                // Jeśli wyprodukowano więcej niż wymagano, pokaż rozdział
+                // Dane dla zamówionych elementów
+                orderedData.push(Math.min(data.required, data.produced));
+                orderedLabels.push(`Element ${length}m`);
+                orderedColors.push(baseColor);
+                
+                // Dane dla nadmiarowych elementów (jeśli istnieją)
                 if (data.produced > data.required) {
-                    productData.push(data.required, data.produced - data.required);
-                    productLabels.push(`Element ${length}m (zamówione)`, `Element ${length}m (nadprogramowe)`);
-                    
-                    const baseColor = generateShade(i);
-                    productColors.push(baseColor, 'rgba(46, 204, 113, 0.8)');
-                } else {
-                    productData.push(data.produced);
-                    productLabels.push(`Element ${length}m`);
-                    productColors.push(generateShade(i));
+                    extraData.push(data.produced - data.required);
+                    extraLabels.push(`Element ${length}m`);
+                    extraColors.push('rgba(46, 204, 113, 0.8)');
+                    hasExtraElements = true;
                 }
+                
                 i++;
             }
         }
         
-        const productChartData = [{
-            x: productLabels,
-            y: productData,
+        // Utwórz kontener dla wykresu zamówionych elementów
+        const orderedChartContainer = document.createElement('div');
+        orderedChartContainer.className = 'material-usage-chart-container';
+        orderedChartContainer.style.marginBottom = '30px';
+        
+        const orderedChartDiv = document.createElement('div');
+        orderedChartDiv.id = 'orderedElementsChart';
+        orderedChartDiv.style.width = '100%';
+        orderedChartDiv.style.height = '350px';
+        
+        orderedChartContainer.appendChild(orderedChartDiv);
+        container.appendChild(orderedChartContainer);
+        
+        // Wykres zamówionych elementów
+        const orderedChartData = [{
+            x: orderedLabels,
+            y: orderedData,
             type: 'bar',
             marker: {
-                color: productColors
+                color: orderedColors
             },
             hoverinfo: 'x+y',
             hoverlabel: {
@@ -1188,20 +1180,67 @@ const CuttingStock = {
             }
         }];
         
-        const productChartLayout = {
-            title: 'Liczba poszczególnych elementów',
+        const orderedChartLayout = {
+            title: 'Liczba zamówionych elementów',
             font: { size: 14 },
             height: 350,
-            margin: { t: 50, b: 100, l: 50, r: 20 },
+            margin: { t: 50, b: 80, l: 50, r: 20 },
             xaxis: {
-                tickangle: -45
+                tickangle: -45,
+                automargin: true
             },
             yaxis: {
                 title: 'Liczba sztuk'
             }
         };
         
-        Plotly.newPlot('productUsageChart', productChartData, productChartLayout, { responsive: true });
+        Plotly.newPlot('orderedElementsChart', orderedChartData, orderedChartLayout, { responsive: true });
+        
+        // Jeśli istnieją nadmiarowe elementy, utwórz dla nich osobny wykres
+        if (hasExtraElements) {
+            const extraChartContainer = document.createElement('div');
+            extraChartContainer.className = 'material-usage-chart-container';
+            extraChartContainer.style.marginBottom = '30px';
+            
+            const extraChartDiv = document.createElement('div');
+            extraChartDiv.id = 'extraElementsChart';
+            extraChartDiv.style.width = '100%';
+            extraChartDiv.style.height = '350px';
+            
+            extraChartContainer.appendChild(extraChartDiv);
+            container.appendChild(extraChartContainer);
+            
+            // Wykres nadmiarowych elementów
+            const extraChartData = [{
+                x: extraLabels,
+                y: extraData,
+                type: 'bar',
+                marker: {
+                    color: extraColors
+                },
+                hoverinfo: 'x+y',
+                hoverlabel: {
+                    bgcolor: '#FFF',
+                    font: { size: 16 }
+                }
+            }];
+            
+            const extraChartLayout = {
+                title: 'Liczba nadmiarowych elementów',
+                font: { size: 14 },
+                height: 350,
+                margin: { t: 50, b: 80, l: 50, r: 20 },
+                xaxis: {
+                    tickangle: -45,
+                    automargin: true
+                },
+                yaxis: {
+                    title: 'Liczba sztuk'
+                }
+            };
+            
+            Plotly.newPlot('extraElementsChart', extraChartData, extraChartLayout, { responsive: true });
+        }
     },
     
     // Funkcja do eksportu wyników do TXT
@@ -1307,77 +1346,19 @@ const CuttingStock = {
         
         // Przykładowe dane
         const sampleData = [
-            { length: 0.8, quantity: 180, priority: 7 },
-            { length: 0.15, quantity: 280, priority: 3 },
-            { length: 1.2, quantity: 170, priority: 6 },
-            { length: 1.9, quantity: 180, priority: 8 }
+            { length: 0.8, quantity: 180 },
+            { length: 0.15, quantity: 280 },
+            { length: 1.2, quantity: 170 },
+            { length: 1.9, quantity: 180 }
         ];
         
         // Dodaj wiersze z przykładowymi danymi
         for (const data of sampleData) {
-            const rowId = CuttingStock.orderRows++;
+            CuttingStock.addOrderRow();
+            const rowId = CuttingStock.orderRows - 1;
             
-            const orderRow = document.createElement('div');
-            orderRow.id = `order-row-${rowId}`;
-            orderRow.className = 'input-row';
-            
-            // Etykieta zamówienia
-            const orderLabel = document.createElement('span');
-            orderLabel.textContent = `Zamówienie ${rowId + 1}:`;
-            orderLabel.style.minWidth = '100px';
-            
-            // Długość elementu
-            const lengthLabel = document.createElement('label');
-            lengthLabel.textContent = 'Długość:';
-            
-            const lengthInput = document.createElement('input');
-            lengthInput.type = 'number';
-            lengthInput.id = `order-length-${rowId}`;
-            lengthInput.step = '0.1';
-            lengthInput.min = '0.1';
-            lengthInput.value = data.length;
-            
-            // Ilość sztuk
-            const quantityLabel = document.createElement('label');
-            quantityLabel.textContent = 'Ilość:';
-            
-            const quantityInput = document.createElement('input');
-            quantityInput.type = 'number';
-            quantityInput.id = `order-quantity-${rowId}`;
-            quantityInput.min = '1';
-            quantityInput.value = data.quantity;
-            
-            // Priorytet
-            const priorityLabel = document.createElement('label');
-            priorityLabel.textContent = 'Priorytet:';
-            
-            const priorityInput = document.createElement('input');
-            priorityInput.type = 'number';
-            priorityInput.id = `order-priority-${rowId}`;
-            priorityInput.step = '1';
-            priorityInput.min = '1';
-            priorityInput.max = '10';
-            priorityInput.value = data.priority;
-            priorityInput.title = 'Priorytet elementu (1-10). Wyższy priorytet oznacza, że element zostanie preferowany w przypadku nadprogramowych kawałków.';
-            
-            // Przycisk usuwania
-            const removeButton = document.createElement('button');
-            removeButton.textContent = 'Usuń';
-            removeButton.className = 'small-button';
-            removeButton.onclick = () => CuttingStock.removeOrderRow(rowId);
-            
-            // Dodaj elementy do wiersza
-            orderRow.appendChild(orderLabel);
-            orderRow.appendChild(lengthLabel);
-            orderRow.appendChild(lengthInput);
-            orderRow.appendChild(quantityLabel);
-            orderRow.appendChild(quantityInput);
-            orderRow.appendChild(priorityLabel);
-            orderRow.appendChild(priorityInput);
-            orderRow.appendChild(removeButton);
-            
-            // Dodaj wiersz do listy zamówień
-            ordersList.appendChild(orderRow);
+            document.getElementById(`order-length-${rowId}`).value = data.length;
+            document.getElementById(`order-quantity-${rowId}`).value = data.quantity;
         }
     },
     
@@ -1390,18 +1371,15 @@ const CuttingStock = {
             const rowId = parseInt(row.id.split('-')[2]);
             const lengthInput = document.getElementById(`order-length-${rowId}`);
             const quantityInput = document.getElementById(`order-quantity-${rowId}`);
-            const priorityInput = document.getElementById(`order-priority-${rowId}`);
             
-            if (lengthInput && quantityInput && priorityInput) {
+            if (lengthInput && quantityInput) {
                 const length = parseFloat(lengthInput.value);
                 const quantity = parseInt(quantityInput.value);
-                const priority = parseInt(priorityInput.value);
                 
-                if (!isNaN(length) && !isNaN(quantity) && !isNaN(priority) && length > 0 && quantity > 0) {
+                if (!isNaN(length) && !isNaN(quantity) && length > 0 && quantity > 0) {
                     orders.push({
                         length: length,
-                        quantity: quantity,
-                        priority: priority
+                        quantity: quantity
                     });
                 }
             }
@@ -1422,10 +1400,15 @@ const CuttingStock = {
             }
         }
         
+        // Dodaj opcję dokładnej liczby sztuk
+        const exactCutsInput = document.getElementById('exactCuts');
+        const exactCuts = exactCutsInput ? exactCutsInput.checked : false;
+        
         // Przygotuj dane do zapisania
         const saveData = {
             orders: orders,
-            logLength: logLength
+            logLength: logLength,
+            exactCuts: exactCuts
         };
         
         // Konwertuj na JSON
@@ -1493,70 +1476,12 @@ const CuttingStock = {
         
         // Dodaj wiersze z wczytanymi danymi
         for (const order of data.orders) {
-            if (order.length && order.quantity && order.priority) {
-                const rowId = CuttingStock.orderRows++;
+            if (order.length && order.quantity) {
+                CuttingStock.addOrderRow();
+                const rowId = CuttingStock.orderRows - 1;
                 
-                const orderRow = document.createElement('div');
-                orderRow.id = `order-row-${rowId}`;
-                orderRow.className = 'input-row';
-                
-                // Etykieta zamówienia
-                const orderLabel = document.createElement('span');
-                orderLabel.textContent = `Zamówienie ${rowId + 1}:`;
-                orderLabel.style.minWidth = '100px';
-                
-                // Długość elementu
-                const lengthLabel = document.createElement('label');
-                lengthLabel.textContent = 'Długość:';
-                
-                const lengthInput = document.createElement('input');
-                lengthInput.type = 'number';
-                lengthInput.id = `order-length-${rowId}`;
-                lengthInput.step = '0.1';
-                lengthInput.min = '0.1';
-                lengthInput.value = order.length;
-                
-                // Ilość sztuk
-                const quantityLabel = document.createElement('label');
-                quantityLabel.textContent = 'Ilość:';
-                
-                const quantityInput = document.createElement('input');
-                quantityInput.type = 'number';
-                quantityInput.id = `order-quantity-${rowId}`;
-                quantityInput.min = '1';
-                quantityInput.value = order.quantity;
-                
-                // Priorytet
-                const priorityLabel = document.createElement('label');
-                priorityLabel.textContent = 'Priorytet:';
-                
-                const priorityInput = document.createElement('input');
-                priorityInput.type = 'number';
-                priorityInput.id = `order-priority-${rowId}`;
-                priorityInput.step = '1';
-                priorityInput.min = '1';
-                priorityInput.max = '10';
-                priorityInput.value = order.priority;
-                priorityInput.title = 'Priorytet elementu (1-10). Wyższy priorytet oznacza, że element zostanie preferowany w przypadku nadprogramowych kawałków.';
-                
-                // Przycisk usuwania
-                const removeButton = document.createElement('button');
-                removeButton.textContent = 'Usuń';
-                removeButton.className = 'small-button';
-                removeButton.onclick = () => CuttingStock.removeOrderRow(rowId);
-                
-                // Dodaj elementy do wiersza
-                orderRow.appendChild(orderLabel);
-                orderRow.appendChild(lengthLabel);
-                orderRow.appendChild(lengthInput);
-                orderRow.appendChild(quantityLabel);
-                orderRow.appendChild(quantityInput);
-                orderRow.appendChild(priorityLabel);
-                orderRow.appendChild(priorityInput);
-                orderRow.appendChild(removeButton);
-                
-                // Dodaj wiersz do listy zamówień
-                ordersList.appendChild(orderRow);
+                document.getElementById(`order-length-${rowId}`).value = order.length;
+                document.getElementById(`order-quantity-${rowId}`).value = order.quantity;
             }
         }
         
@@ -1565,75 +1490,7 @@ const CuttingStock = {
             CuttingStock.addOrderRow();
         }
         
-        // Wyczyść istniejące ograniczenia dostępności kłód
-        const stockLimitsContainer = document.getElementById('stockLimitsContainer');
-        if (stockLimitsContainer) {
-            stockLimitsContainer.innerHTML = '';
-            
-            // Dodaj wczytane ograniczenia dostępności kłód
-            if (data.stockLimits && Array.isArray(data.stockLimits)) {
-                for (const limit of data.stockLimits) {
-                    if (limit.length && limit.quantity) {
-                        const limitId = new Date().getTime() + Math.floor(Math.random() * 1000);
-                        
-                        const limitRow = document.createElement('div');
-                        limitRow.id = `stock-limit-row-${limitId}`;
-                        limitRow.className = 'input-row stock-limit-row';
-                        limitRow.style.backgroundColor = '#f8f4ef';
-                        limitRow.style.padding = '10px';
-                        limitRow.style.borderRadius = '6px';
-                        limitRow.style.marginBottom = '10px';
-                        
-                        // Długość kłody
-                        const lengthLabel = document.createElement('label');
-                        lengthLabel.textContent = 'Długość kłody:';
-                        
-                        const lengthInput = document.createElement('input');
-                        lengthInput.type = 'number';
-                        lengthInput.id = `limit-length-${limitId}`;
-                        lengthInput.className = 'limit-length';
-                        lengthInput.step = '0.1';
-                        lengthInput.min = '0.1';
-                        lengthInput.value = limit.length;
-                        lengthInput.style.width = '80px';
-                        
-                        // Dostępna ilość
-                        const quantityLabel = document.createElement('label');
-                        quantityLabel.textContent = 'Dostępna ilość:';
-                        quantityLabel.style.marginLeft = '15px';
-                        
-                        const quantityInput = document.createElement('input');
-                        quantityInput.type = 'number';
-                        quantityInput.id = `limit-quantity-${limitId}`;
-                        quantityInput.className = 'limit-quantity';
-                        quantityInput.min = '1';
-                        quantityInput.value = limit.quantity;
-                        quantityInput.style.width = '80px';
-                        
-                        // Przycisk usuwania
-                        const removeButton = document.createElement('button');
-                        removeButton.textContent = 'Usuń';
-                        removeButton.className = 'small-button';
-                        removeButton.onclick = () => {
-                            stockLimitsContainer.removeChild(limitRow);
-                        };
-                        removeButton.style.marginLeft = '15px';
-                        
-                        // Dodaj elementy do wiersza
-                        limitRow.appendChild(lengthLabel);
-                        limitRow.appendChild(lengthInput);
-                        limitRow.appendChild(quantityLabel);
-                        limitRow.appendChild(quantityInput);
-                        limitRow.appendChild(removeButton);
-                        
-                        // Dodaj wiersz do kontenera
-                        stockLimitsContainer.appendChild(limitRow);
-                    }
-                }
-            }
-        }
-        
         // Pokaż komunikat o sukcesie
         alert('Zamówienie zostało pomyślnie wczytane.');
     }
-} 
+}

@@ -173,16 +173,23 @@
                     <div class="input-group">
                         <div class="input-row">
                             <label>Długość kłody (m):</label>
-                            <input type="number" id="logLength" value="2.0" step="0.1">
+                            <input type="number" id="logLength" value="2.0" step="0.1" min="0.1">
+                            <span class="input-hint">Wprowadź długość dostępnej kłody w metrach</span>
                         </div>
-                        <div class="input-row">
+                        <div class="input-row checkbox-container">
                             <label>Dokładna liczba sztuk:</label>
                             <input type="checkbox" id="exactCuts">
+                            <span class="input-hint">Zaznacz, jeśli potrzebujesz dokładnie określoną liczbę elementów</span>
                         </div>
+                        <h3 class="section-title">Lista zamówień</h3>
                         <div id="ordersList"></div>
-                        <button onclick="CuttingStock.addOrderRow()">Dodaj zamówienie</button>
+                        <button onclick="CuttingStock.addOrderRow()" class="add-order-button">
+                            <i class="fas fa-plus"></i> Dodaj zamówienie
+                        </button>
                     </div>
-                    <button onclick="CuttingStock.calculate()">Oblicz optymalny podział</button>
+                    <button onclick="CuttingStock.calculate()" class="calculate-button">
+                        <i class="fas fa-calculator"></i> Oblicz optymalny podział
+                    </button>
                     <div id="cuttingStockResults" class="tool-content"></div>
                     <div id="cuttingStockVisualization" class="tool-content"></div>
                     <div id="cuttingStockLoadingIndicator" class="loading-indicator" style="display: none;">
@@ -300,7 +307,37 @@
         <div class="help-modal-content">
             <button class="close-help-modal">&times;</button>
             <h3>Jak korzystać z narzędzia Problem Rozkroju</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            <p>Problem rozkroju to optymalizacja cięcia materiału (np. kłód drewna) na mniejsze elementy, minimalizując odpady. Narzędzie to pomaga znaleźć najbardziej efektywny sposób podziału materiału.</p>
+            
+            <h4>Jak korzystać z narzędzia:</h4>
+            <ol>
+                <li><strong>Określ długość kłody</strong> - Wprowadź długość dostępnego materiału (np. 2.0m).</li>
+                <li><strong>Zaznacz opcję "Dokładna liczba sztuk"</strong> - Jeśli potrzebujesz dokładnie określoną liczbę elementów. Odznacz, jeśli dopuszczasz nadprogramowe kawałki.</li>
+                <li><strong>Dodaj zamówienia</strong> - Dla każdego elementu określ:
+                    <ul>
+                        <li><strong>Długość</strong> - długość potrzebnego elementu (musi być mniejsza niż długość kłody)</li>
+                        <li><strong>Ilość</strong> - liczba sztuk danego elementu</li>
+                    </ul>
+                </li>
+                <li><strong>Oblicz optymalny podział</strong> - Kliknij przycisk, aby uruchomić algorytm optymalizacji.</li>
+            </ol>
+            
+            <h4>Wyniki:</h4>
+            <p>Po obliczeniu otrzymasz:</p>
+            <ul>
+                <li><strong>Podsumowanie</strong> - liczba potrzebnych kłód, całkowite zużycie materiału i odpady</li>
+                <li><strong>Wzory cięcia</strong> - szczegółowy opis jak podzielić każdą kłodę</li>
+                <li><strong>Wizualizacje</strong> - graficzne przedstawienie optymalnego podziału</li>
+                <li><strong>Nadprogramowe kawałki</strong> - jeśli występują, informacja o dodatkowych elementach</li>
+            </ul>
+            
+            <h4>Wskazówki:</h4>
+            <ul>
+                <li>Możesz załadować przykładowe dane, aby zobaczyć jak działa narzędzie.</li>
+                <li>Zapisz swoje zamówienie do pliku JSON, aby móc je wczytać później.</li>
+                <li>Eksportuj wyniki do pliku tekstowego, aby zachować je do dokumentacji.</li>
+                <li>Jeśli nie zaznaczysz opcji "Dokładna liczba sztuk", algorytm może wygenerować nadprogramowe kawałki, aby lepiej wykorzystać materiał.</li>
+            </ul>
         </div>
     </div>
 
@@ -332,13 +369,21 @@
                     e.stopPropagation();
                     
                     if (sidebar) {
-                        sidebar.classList.toggle('sidebar-minimized');
+                        // Sprawdź czy jesteśmy na urządzeniu mobilnym
+                        const isMobile = window.innerWidth <= 992;
                         
-                        // Dostosuj główną zawartość od razu
-                        if (sidebar.classList.contains('sidebar-minimized')) {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
-                        } else {
+                        if (isMobile) {
+                            // Na urządzeniach mobilnych nawa zawsze pozostaje widoczna
+                            sidebar.classList.remove('sidebar-minimized');
                             sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                        } else {
+                            // Na desktopie pozwalamy na minimalizację
+                            sidebar.classList.toggle('sidebar-minimized');
+                            if (sidebar.classList.contains('sidebar-minimized')) {
+                                sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
+                            } else {
+                                sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                            }
                         }
                     }
                 });
@@ -355,14 +400,8 @@
                 formInputs.forEach(function(input) {
                     input.addEventListener('focus', function(e) {
                         e.stopPropagation();
-                        // Upewnij się, że nawa pozostaje otwarta
-                        sidebar.classList.remove('sidebar-minimized');
-                        if (sidebarToggle.querySelector('.arrow-icon')) {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-                        }
                     });
                     
-                    // Zapobiegaj zamykaniu nawy podczas wpisywania tekstu
                     input.addEventListener('click', function(e) {
                         e.stopPropagation();
                     });
@@ -376,17 +415,12 @@
             // Funkcja dostosowująca UI na urządzeniach mobilnych
             function adjustMobileUI() {
                 if (window.innerWidth <= 992) {
-                    // Urządzenie mobilne - nawa rozwinięta (zmiana zachowania)
-                    if (sidebar && !sidebar.contains(document.activeElement)) {
-                        // Nawa domyślnie rozwinięta na urządzeniach mobilnych
-                        sidebar.classList.remove('sidebar-minimized');
-                        sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-                    }
-                } else {
-                    // Desktop - nawa rozwinięta
+                    // Urządzenie mobilne - nawa zawsze rozwinięta
                     if (sidebar) {
                         sidebar.classList.remove('sidebar-minimized');
-                        sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                        if (sidebarToggle.querySelector('.arrow-icon')) {
+                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                        }
                     }
                 }
             }

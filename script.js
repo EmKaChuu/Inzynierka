@@ -42,15 +42,21 @@ const Utils = {
         // Dostosuj zawartość nawy bocznej do aktualnego narzędzia
         const sidebar = document.getElementById('app-sidebar');
         const sidebarContent = document.getElementById('ahp-sidebar-content');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
         
         // Pokazuj nawę boczną tylko dla AHP
         if (tool === 'ahp') {
             sidebar.style.display = 'block';
             if (sidebarContent) sidebarContent.style.display = 'block';
-            document.getElementById('sidebar-toggle').style.display = 'flex';
+            sidebarToggle.style.display = 'flex';
+            
+            // Nie wymuszaj rozwinięcia nawy przy każdym przełączeniu
+            if (!sidebar.classList.contains('sidebar-minimized')) {
+                sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+            }
         } else {
             sidebar.style.display = 'none';
-            document.getElementById('sidebar-toggle').style.display = 'none';
+            sidebarToggle.style.display = 'none';
         }
     },
     
