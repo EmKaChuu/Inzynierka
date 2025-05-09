@@ -31,16 +31,36 @@
             }, 1000); // Czekamy 1 sekundę, aby dać szansę głównej bibliotece
         });
     </script>
-    <script src="solver.js"></script>
+    <!-- Załaduj solver.js z CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/javascript-lp-solver@0.4.24/prod/solver.js"></script>
+    <!-- Zapasowy loader dla solver.js z lokalnego pliku -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                if (typeof solver === 'undefined') {
+                    console.log('Próba załadowania solver.js z lokalnego pliku...');
+                    var script = document.createElement('script');
+                    script.src = 'solver.js';
+                    script.onload = function() {
+                        console.log('Solver.js załadowany z lokalnego pliku');
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    console.log('Solver.js już załadowany z CDN');
+                }
+            }, 1000);
+        });
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Font Awesome dla ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <!-- Własne style -->
+    <!-- Własne styles -->
     <link href="css/styles.css?v=1.4" rel="stylesheet">
     <link href="css/ahp.css?v=1.4" rel="stylesheet">
     <link href="css/cuttingstock.css?v=1.4" rel="stylesheet">
+    <link rel="stylesheet" href="css/optimalization.css">
     
     <!-- Bezpośrednie styles dla tła i przycisków -->
     <style>
@@ -66,7 +86,7 @@
                 <ul>
                     <li><button id="nav-ahp" onclick="App.switchToTool('ahp')">Kalkulator AHP</button></li>
                     <li><button id="nav-cutting-stock" onclick="App.switchToTool('cutting-stock')">Problem Rozkroju</button></li>
-                    <li><button id="nav-production-opt" onclick="App.switchToTool('production-opt')">Optymalizacja Produkcji</button></li>
+                    <li><button id="nav-production-opt" onclick="App.switchToTool('production-opt')">Optymalizacja produkcji</button></li>
                 </ul>
             </nav>
         </header>
@@ -205,67 +225,36 @@
                     <!-- Przycisk pomocy Optymalizacja Produkcji -->
                     <button id="help-production-opt" class="help-button" title="Pomoc Optymalizacja Produkcji">?</button>
                     
-                    <div class="production-container">
-                        <div class="production-sidebar">
-                            <div class="input-group">
-                                <h3>Ustawienia</h3>
-                                <div class="input-row">
-                                    <label for="numVars">Liczba produktów/zmiennych:</label>
-                                    <input type="number" id="numVars" min="1" max="10" value="2">
-                                    <button onclick="ProductionOpt.updateObjectiveFunction()" class="small-button">Zastosuj</button>
-                                </div>
-                                <div class="input-row">
-                                    <label for="optimizationType">Typ optymalizacji:</label>
-                                    <select id="optimizationType">
-                                        <option value="max">Maksymalizacja (zysk)</option>
-                                        <option value="min">Minimalizacja (koszty)</option>
-                                    </select>
-                                </div>
-                                <div class="input-row">
-                                    <label for="productNames">Nazwy produktów (oddzielone przecinkami):</label>
-                                    <input type="text" id="productNames" placeholder="Produkt A, Produkt B, ...">
-                                    <button onclick="ProductionOpt.applyProductNames()" class="small-button">Zastosuj</button>
-                                </div>
-                            </div>
-
-                            <div class="input-group">
-                                <h3>Funkcja celu (zyski/koszty jednostkowe)</h3>
-                                <div id="objectiveFunction"></div>
-                            </div>
-                            
-                            <div class="input-group">
-                                <h3>Ograniczenia</h3>
-                                <div class="constraints-description">
-                                    <p>Przykłady ograniczeń:</p>
-                                    <ul>
-                                        <li>Maksymalna dostępność surowców</li>
-                                        <li>Ograniczenia czasowe maszyn</li>
-                                        <li>Minimalne/maksymalne ilości produktów</li>
-                                        <li>Ograniczenia budżetowe</li>
-                                    </ul>
-                                </div>
-                                <div id="constraints"></div>
-                                <button onclick="ProductionOpt.addConstraint()" class="add-constraint-button">
-                                    <span>+</span> Dodaj ograniczenie
-                                </button>
-                            </div>
-
-                            <button onclick="ProductionOpt.calculate()" class="calculate-button">Oblicz optimum</button>
+                    <div class="input-group">
+                        <div class="input-row">
+                            <label for="optimizationType">Typ optymalizacji:</label>
+                            <select id="optimizationType">
+                                <option value="max">Maksymalizacja (zysk)</option>
+                                <option value="min">Minimalizacja (koszty)</option>
+                            </select>
+                            <span class="input-hint">Wybierz, czy chcesz maksymalizować zysk czy minimalizować koszty</span>
                         </div>
-
-                        <div class="production-results">
-                            <div class="results-header">
-                                <h3>Wyniki Optymalizacji</h3>
-                            </div>
-
-                            <div id="productionOptSummary" style="display: none;" class="results-summary">
-                                <h4>Podsumowanie</h4>
-                                <div id="productionOptSummaryContent"></div>
-                            </div>
-
-                            <div id="productionOptResults" class="results-detail"></div>
-                            <div id="productionOptVisualization" class="visualization-container"></div>
-                        </div>
+                        
+                        <h3 class="section-title">Lista produktów</h3>
+                        <div id="productsList"></div>
+                        <button onclick="ProductionOpt.addProductRow()" class="add-order-button">
+                            <i class="fas fa-plus"></i> Dodaj produkt
+                        </button>
+                        
+                        <h3 class="section-title">Lista zasobów</h3>
+                        <div id="resourcesList"></div>
+                        <button onclick="ProductionOpt.addResourceRow()" class="add-order-button">
+                            <i class="fas fa-plus"></i> Dodaj zasób
+                        </button>
+                    </div>
+                    <button id="production-calculate-button" class="calculate-button" onclick="console.log('Kliknięto przycisk!'); ProductionOpt.calculate();">
+                        <i class="fas fa-calculator"></i> Oblicz optymalną produkcję
+                    </button>
+                    <div id="productionOptResults" style="margin-top: 20px; padding: 15px; background-color: #fff; border-radius: 8px; display: block;"></div>
+                    <div id="productionOptVisualization" style="margin-top: 20px; background-color: #fff; border-radius: 8px; padding: 15px; display: block;"></div>
+                    <div id="productionOptLoadingIndicator" class="loading-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Trwa obliczanie optymalnego rozwiązania...</p>
                     </div>
                 </div>
             </main>
@@ -345,11 +334,55 @@
         <div class="help-modal-content">
             <button class="close-help-modal">&times;</button>
             <h3>Jak korzystać z narzędzia Optymalizacja Produkcji</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            <p>Narzędzie optymalizacji produkcji pomaga znaleźć optymalną ilość produktów do wytworzenia, maksymalizując zysk lub minimalizując koszty przy ograniczonych zasobach.</p>
+            
+            <h4>Jak korzystać z narzędzia:</h4>
+            <ol>
+                <li><strong>Wybierz typ optymalizacji</strong> - zdecyduj, czy chcesz maksymalizować zysk czy minimalizować koszty.</li>
+                <li><strong>Dodaj produkty</strong> - dla każdego produktu określ:
+                    <ul>
+                        <li>Nazwę produktu</li>
+                        <li>Zysk lub koszt jednostkowy (w zależności od typu optymalizacji)</li>
+                        <li>Zużycie każdego dostępnego zasobu na jednostkę produktu</li>
+                    </ul>
+                </li>
+                <li><strong>Dodaj zasoby</strong> - dla każdego zasobu określ:
+                    <ul>
+                        <li>Nazwę zasobu (np. surowiec, czas maszyny, powierzchnia)</li>
+                        <li>Dostępną ilość zasobu</li>
+                    </ul>
+                </li>
+                <li><strong>Oblicz optymalną produkcję</strong> - kliknij przycisk, aby uruchomić algorytm optymalizacji.</li>
+                <li><strong>Przeanalizuj wyniki</strong> - po obliczeniu zobaczysz:
+                    <ul>
+                        <li>Optymalną ilość każdego produktu do wyprodukowania</li>
+                        <li>Całkowity zysk lub koszt</li>
+                        <li>Wykorzystanie poszczególnych zasobów</li>
+                        <li>Wykresy prezentujące wyniki</li>
+                    </ul>
+                </li>
+                <li><strong>Eksportuj wyniki</strong> - możesz zapisać raport z wynikami do pliku tekstowego.</li>
+            </ol>
+            
+            <h4>Interpretacja wyników:</h4>
+            <ul>
+                <li><strong>Produkty z ilością 0</strong> - oznaczają, że nie opłaca się ich produkować.</li>
+                <li><strong>Wyczerpane zasoby (100% wykorzystania)</strong> - są zasobami "wiążącymi", które ograniczają możliwość dalszej produkcji.</li>
+                <li><strong>Niewykorzystane zasoby</strong> - wskazują, że dany zasób nie jest ograniczeniem dla produkcji.</li>
+            </ul>
+            
+            <h4>Wskazówki:</h4>
+            <ul>
+                <li>Możesz załadować przykładowe dane, aby zobaczyć jak działa narzędzie.</li>
+                <li>Jeśli nie otrzymasz rozwiązania wykonalnego, sprawdź, czy twoje ograniczenia zasobów nie są zbyt restrykcyjne.</li>
+                <li>Możesz eksperymentować z różnymi wartościami zysków i zużycia zasobów, aby znaleźć optymalny plan produkcji.</li>
+                <li>Pamiętaj, że wyniki są tak dobre, jak dane wejściowe - upewnij się, że wprowadzone liczby są realistyczne.</li>
+            </ul>
         </div>
     </div>
 
     <!-- Własne skrypty -->
+    <script src="solver.js"></script>
     <script src="script.js"></script>
     <script src="ahp.js"></script>
     <script src="cuttingStock.js"></script>
@@ -369,24 +402,30 @@
                     e.stopPropagation();
                     
                     if (sidebar) {
-                        // Sprawdź czy jesteśmy na urządzeniu mobilnym
-                        const isMobile = window.innerWidth <= 992;
-                        
-                        if (isMobile) {
-                            // Na urządzeniach mobilnych nawa zawsze pozostaje widoczna
-                            sidebar.classList.remove('sidebar-minimized');
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                        // Przełączamy stan nawy niezależnie od urządzenia
+                        sidebar.classList.toggle('sidebar-minimized');
+                        if (sidebar.classList.contains('sidebar-minimized')) {
+                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
                         } else {
-                            // Na desktopie pozwalamy na minimalizację
-                            sidebar.classList.toggle('sidebar-minimized');
-                            if (sidebar.classList.contains('sidebar-minimized')) {
-                                sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
-                            } else {
-                                sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-                            }
+                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
                         }
                     }
                 });
+                
+                // Dodanie obsługi zdarzeń dotykowych
+                sidebarToggle.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (sidebar) {
+                        sidebar.classList.toggle('sidebar-minimized');
+                        if (sidebar.classList.contains('sidebar-minimized')) {
+                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
+                        } else {
+                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
+                        }
+                    }
+                }, { passive: false });
             }
             
             // Zapobiegaj zamykaniu nawy podczas kliknięcia wewnątrz niej
@@ -414,15 +453,8 @@
             
             // Funkcja dostosowująca UI na urządzeniach mobilnych
             function adjustMobileUI() {
-                if (window.innerWidth <= 992) {
-                    // Urządzenie mobilne - nawa zawsze rozwinięta
-                    if (sidebar) {
-                        sidebar.classList.remove('sidebar-minimized');
-                        if (sidebarToggle.querySelector('.arrow-icon')) {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-                        }
-                    }
-                }
+                // Usuwamy automatyczne rozwijanie nawy na urządzeniach mobilnych
+                // aby użytkownik mógł kontrolować stan nawy
             }
             
             // Wywołaj funkcję od razu i przy zmianie rozmiaru okna
@@ -449,6 +481,149 @@
             } else {
                 console.log('Biblioteka Plotly została załadowana poprawnie.');
             }
+        });
+    </script>
+    
+    <!-- Dodatkowy skrypt naprawiający przycisk obliczania w optymalizacji produkcji -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inicjalizacja naprawy przycisku optymalizacji produkcji');
+            
+            // Bezpośrednie podpięcie obsługi przycisku do funkcji calculate
+            const prodOptButton = document.getElementById('production-calculate-button');
+            if (prodOptButton) {
+                console.log('Znaleziono przycisk do podpięcia');
+                
+                // Usunięcie starych handlerów, które mogą kolidować
+                const newButton = prodOptButton.cloneNode(true);
+                prodOptButton.parentNode.replaceChild(newButton, prodOptButton);
+                
+                // Dodanie nowego handlera
+                newButton.addEventListener('click', function() {
+                    console.log('Kliknięto przycisk obliczania (z naprawczego skryptu)');
+                    if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculate === 'function') {
+                        try {
+                            if (typeof solver !== 'undefined' && typeof solver.Solve === 'function') {
+                                ProductionOpt.calculate();
+                            } else {
+                                console.warn('Solver niedostępny, używam alternatywnej metody');
+                                ProductionOpt.calculateFallback();
+                            }
+                        } catch (error) {
+                            console.error('Błąd podczas wywoływania ProductionOpt.calculate():', error);
+                            alert('Wystąpił błąd podczas obliczania. Próbuję alternatywną metodę...');
+                            try {
+                                ProductionOpt.calculateFallback();
+                            } catch (fallbackError) {
+                                console.error('Błąd podczas trybu awaryjnego:', fallbackError);
+                                alert('Nie udało się wykonać obliczeń. Sprawdź konsolę przeglądarki.');
+                            }
+                        }
+                    } else {
+                        console.error('Funkcja ProductionOpt.calculate nie jest dostępna!');
+                        alert('Nie można znaleźć funkcji obliczającej. Używam trybu awaryjnego...');
+                        try {
+                            ProductionOpt.calculateFallback();
+                        } catch (fallbackError) {
+                            console.error('Błąd podczas trybu awaryjnego:', fallbackError);
+                            alert('Nie udało się wykonać obliczeń. Sprawdź konsolę przeglądarki.');
+                        }
+                    }
+                });
+            } else {
+                console.error('Nie znaleziono przycisku "production-calculate-button"!');
+                
+                // Jeśli nie znaleziono przycisku, spróbuj znaleźć go z opóźnieniem
+                setTimeout(function() {
+                    const laterButton = document.getElementById('production-calculate-button') || document.querySelector('#tool-production-opt .calculate-button');
+                    if (laterButton) {
+                        console.log('Znaleziono przycisk z opóźnieniem');
+                        laterButton.addEventListener('click', function() {
+                            console.log('Kliknięto przycisk (znaleziony z opóźnieniem)');
+                            try {
+                                if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') {
+                                    ProductionOpt.calculateFallback();
+                                }
+                            } catch (error) {
+                                console.error('Błąd podczas obliczania:', error);
+                            }
+                        });
+                    }
+                }, 1000);
+            }
+            
+            // Dodatkowe sprawdzenie po pewnym czasie
+            setTimeout(function() {
+                // Sprawdź, czy solver jest dostępny
+                if (typeof solver === 'undefined') {
+                    console.warn('Solver.js nie został załadowany! Próba alternatywnej inicjalizacji...');
+                    
+                    // Próba ręcznego załadowania z CDN
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/javascript-lp-solver@0.4.24/prod/solver.js';
+                    script.onload = function() {
+                        console.log('Solver.js został pomyślnie załadowany z CDN w trybie awaryjnym!');
+                    };
+                    document.head.appendChild(script);
+                }
+            }, 2000);
+        });
+    </script>
+    
+    <!-- Najprostszy możliwy sposób bezpośredniego powiązania przycisku z funkcją -->
+    <script>
+        // Dodanie bezpośredniego handlera kliknięcia do przycisku
+        setTimeout(function() {
+            const button = document.getElementById('production-calculate-button');
+            if (button) {
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    console.log("Bezpośrednie kliknięcie przycisku!");
+                    
+                    if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') {
+                        ProductionOpt.calculateFallback();
+                    } else {
+                        alert("Nie znaleziono funkcji obliczającej!");
+                    }
+                    
+                    return false;
+                };
+                console.log("Dodano bezpośredni handler do przycisku!");
+            } else {
+                console.error("Nie znaleziono przycisku obliczania!");
+            }
+        }, 3000); // Daj stronie czas na pełne załadowanie
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inicjalizacja gwarantowanego działania przycisku obliczania optymalizacji produkcji.');
+            
+            // Bezpośrednie podpięcie kliku do przycisku
+            setTimeout(function() {
+                const calcButton = document.getElementById('production-calculate-button');
+                if (calcButton) {
+                    console.log('Znaleziono przycisk obliczania - podpinam event listener');
+                    
+                    // Usuń wszystkie istniejące handlery (czysty element)
+                    const newButton = calcButton.cloneNode(true);
+                    calcButton.parentNode.replaceChild(newButton, calcButton);
+                    
+                    // Dodaj nowy handler
+                    newButton.addEventListener('click', function(e) {
+                        console.log('Kliknięto przycisk obliczeń z bezpośredniego handlera!');
+                        e.preventDefault();
+                        
+                        if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculate === 'function') {
+                            ProductionOpt.calculate();
+                        } else if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') {
+                            ProductionOpt.calculateFallback();
+                        } else {
+                            alert('Nie znaleziono funkcji obliczającej!');
+                        }
+                    });
+                }
+            }, 500);
         });
     </script>
 </body>
