@@ -709,13 +709,18 @@ const DataShare = {
         }
     },
     
-    // Tworzy interfejs do udostępniania i importu danych
+    // Funkcja do tworzenia interfejsu udostępniania
     createShareInterface: (containerId) => {
+        console.log(`Tworzenie interfejsu udostępniania dla kontenera: ${containerId}`);
+        
         const container = document.getElementById(containerId);
         if (!container) return;
         
         // Wyczyść aktualną zawartość
         container.innerHTML = '';
+        
+        // Upewnij się, że kontener jest widoczny (tylko ta linia jest dodana w celu naprawy)
+        container.style.display = 'block';
         
         // Kontener główny
         const shareContainer = document.createElement('div');
@@ -743,6 +748,7 @@ const DataShare = {
         const generateContent = document.createElement('div');
         generateContent.className = 'share-tab-content active';
         generateContent.id = 'generate-tab';
+        generateContent.style.display = 'block';
         
         const importContent = document.createElement('div');
         importContent.className = 'share-tab-content';
@@ -915,6 +921,44 @@ const DataShare = {
     }
 };
 
+// Dodajemy funkcję do ręcznego wymuszenia inicjalizacji interfejsów udostępniania
+// Ta funkcja zostanie wywołana po określonym czasie po załadowaniu strony
+window.forceInitShareInterfaces = function() {
+    console.log("Wymuszanie inicjalizacji interfejsów udostępniania");
+    
+    ['ahp', 'cutting-stock', 'production-opt'].forEach(function(tool) {
+        const toolElement = document.getElementById(`tool-${tool}`);
+        const containerId = `${tool}-share-container`;
+        
+        if (toolElement) {
+            // Sprawdź, czy kontener już istnieje
+            let container = document.getElementById(containerId);
+            
+            // Jeśli nie istnieje, stwórz go
+            if (!container) {
+                container = document.createElement('div');
+                container.id = containerId;
+                container.className = 'share-section-container';
+                
+                const header = document.createElement('h3');
+                header.textContent = 'Udostępnianie danych';
+                container.appendChild(header);
+                
+                toolElement.appendChild(container);
+                
+                console.log(`Stworzono nowy kontener ${containerId}`);
+            } else {
+                console.log(`Kontener ${containerId} już istnieje`);
+            }
+            
+            // Wymuszamy ponowne utworzenie interfejsu
+            if (typeof DataShare !== 'undefined' && typeof DataShare.createShareInterface === 'function') {
+                DataShare.createShareInterface(containerId);
+            }
+        }
+    });
+};
+
 // Dodaj funkcję inicjalizacyjną do ładowania interfejsu udostępniania po załadowaniu strony
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Inicjalizacja modułu DataShare");
@@ -957,4 +1001,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         DataShare.checkUrlForShareCode();
     }, 500); // Małe opóźnienie, aby upewnić się, że strona jest w pełni załadowana
+});
+
+// Dodajemy globalny event resize dla dodatkowej inicjalizacji interfejsów
+window.addEventListener('resize', () => {
+    if (typeof DataShare !== 'undefined' && typeof window.forceInitShareInterfaces === 'function') {
+        window.forceInitShareInterfaces();
+    }
 }); 

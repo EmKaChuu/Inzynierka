@@ -55,6 +55,21 @@
     
     <!-- Font Awesome dla ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Zapasowe źródło dla Font Awesome (tylko to jest dodane w celu naprawy ikon) -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                // Sprawdzenie, czy Font Awesome został załadowany poprawnie
+                if (!document.querySelector('.fas')) {
+                    console.log('Próba załadowania Font Awesome z alternatywnego źródła...');
+                    var link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = 'https://use.fontawesome.com/releases/v6.0.0/css/all.min.css';
+                    document.head.appendChild(link);
+                }
+            }, 1000);
+        });
+    </script>
     
     <!-- Własne styles -->
     <link href="css/styles.css?v=1.4" rel="stylesheet">
@@ -389,6 +404,48 @@
     <script src="cuttingStock.js"></script>
     <script src="productionOpt.js"></script>
     <script src="dataShare.js"></script>
+    <!-- Dodatkowy skrypt do naprawy kontenerów udostępniania -->
+    <script>
+        // Ten skrypt jest dodany tylko w celu naprawy kontenerów udostępniania na GitHub Pages
+        document.addEventListener('DOMContentLoaded', function() {
+            // Opóźnione sprawdzenie, czy DataShare jest dostępny
+            setTimeout(function() {
+                console.log("Sprawdzam status kontenerów udostępniania...");
+                
+                // Sprawdź, czy kontenery udostępniania są widoczne - jeśli nie, dodaj je ponownie
+                ['ahp', 'cutting-stock', 'production-opt'].forEach(function(tool) {
+                    const containerId = `${tool}-share-container`;
+                    const container = document.getElementById(containerId);
+                    const toolContainer = document.getElementById(`tool-${tool}`);
+                    
+                    if ((!container || !container.offsetParent) && toolContainer) {
+                        console.log(`Kontener ${containerId} nie jest widoczny, próbuję go odtworzyć...`);
+                        
+                        // Jeśli kontener już istnieje, usuń go
+                        if (container) {
+                            container.remove();
+                        }
+                        
+                        // Stwórz nowy kontener udostępniania
+                        const shareSection = document.createElement('div');
+                        shareSection.id = containerId;
+                        shareSection.className = 'share-section-container';
+                        
+                        const header = document.createElement('h3');
+                        header.textContent = 'Udostępnianie danych';
+                        shareSection.appendChild(header);
+                        
+                        toolContainer.appendChild(shareSection);
+                        
+                        // Jeśli DataShare istnieje, użyj jego metody do utworzenia interfejsu
+                        if (typeof DataShare !== 'undefined' && typeof DataShare.createShareInterface === 'function') {
+                            DataShare.createShareInterface(containerId);
+                        }
+                    }
+                });
+            }, 1500);
+        });
+    </script>
     
     <!-- Skrypt obsługujący zwijanie/rozwijanie nawy bocznej -->
     <script>
