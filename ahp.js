@@ -162,8 +162,12 @@ const AHP = {
             input.id = `criteria-name-${i}`;
             input.placeholder = `Kryterium ${i+1}`;
             
-            // Ustaw wartość zgodnie z modelem danych
-            input.value = AHP.criteriaNames[i];
+            // Ustaw wartość zgodnie z modelem danych tylko dla niestandardowych nazw
+            if (AHP.criteriaNames[i] && !AHP.criteriaNames[i].startsWith('Kryterium ')) {
+                input.value = AHP.criteriaNames[i];
+            } else {
+                input.value = '';  // Puste pole dla nazw domyślnych
+            }
             
             // Zmodyfikowana obsługa onchange
             input.onchange = () => {
@@ -171,8 +175,7 @@ const AHP = {
                 if (input.value.trim() !== '') {
                     AHP.criteriaNames[i] = input.value;
                 } else {
-                    // Jeśli pole jest puste, przywróć domyślną nazwę
-                    input.value = `Kryterium ${i+1}`;
+                    // Jeśli pole jest puste, przywróć domyślną nazwę w modelu
                     AHP.criteriaNames[i] = `Kryterium ${i+1}`;
                 }
                 
@@ -307,8 +310,12 @@ const AHP = {
             input.id = `option-name-${i}`;
             input.placeholder = `Opcja ${i+1}`;
             
-            // Ustaw wartość zgodnie z modelem danych
-            input.value = AHP.optionNames[i];
+            // Ustaw wartość zgodnie z modelem danych tylko dla niestandardowych nazw
+            if (AHP.optionNames[i] && !AHP.optionNames[i].startsWith('Opcja ')) {
+                input.value = AHP.optionNames[i];
+            } else {
+                input.value = '';  // Puste pole dla nazw domyślnych
+            }
             
             // Zmodyfikowana obsługa onchange
             input.onchange = () => {
@@ -316,8 +323,7 @@ const AHP = {
                 if (input.value.trim() !== '') {
                     AHP.optionNames[i] = input.value;
                 } else {
-                    // Jeśli pole jest puste, przywróć domyślną nazwę
-                    input.value = `Opcja ${i+1}`;
+                    // Jeśli pole jest puste, przywróć domyślną nazwę w modelu
                     AHP.optionNames[i] = `Opcja ${i+1}`;
                 }
                 
