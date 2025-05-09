@@ -1,0 +1,491 @@
+/* Optymalizacja produkcji - nowoczesny, przejrzysty styl */
+
+.optimalization-container {
+    background: #f8f6f2;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(80,60,40,0.08);
+    padding: 32px 24px;
+    margin: 24px auto;
+    max-width: 900px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.optimalization-header {
+    font-size: 2rem;
+    color: #4A3C31;
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+.optimalization-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 24px;
+    justify-content: center;
+}
+
+.optimalization-input-group {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(80,60,40,0.06);
+    padding: 18px 16px;
+    min-width: 260px;
+    flex: 1 1 260px;
+}
+
+.optimalization-input-group label {
+    font-weight: 500;
+    color: #785E45;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.optimalization-input-group input,
+.optimalization-input-group select,
+.optimalization-input-group textarea {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #a38b75;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    background: #f9f7f4;
+}
+
+.optimalization-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.optimalization-btn {
+    background: #d5b99f;
+    color: #4A3C31;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.optimalization-btn:hover {
+    background: #a38b75;
+    color: #fff;
+}
+
+.optimalization-results {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(80,60,40,0.06);
+    padding: 20px 16px;
+    margin-top: 18px;
+}
+
+.optimalization-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-bottom: 24px;
+}
+.optimalization-table th, .optimalization-table td {
+    border: 1px solid #d5b99f;
+    padding: 8px 12px;
+    text-align: center;
+}
+.optimalization-table th {
+    background: #f3e7d9;
+    color: #4A3C31;
+    font-weight: 600;
+}
+.optimalization-table tr:nth-child(even) {
+    background: #f8f6f2;
+}
+
+.total-row {
+    background: #f3e7d9 !important;
+    font-weight: bold;
+}
+
+.error-message {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: #d32f2f;
+}
+
+.optimalization-export {
+    margin-top: 18px;
+    text-align: right;
+}
+
+@media (max-width: 700px) {
+    .optimalization-container {
+        padding: 12px 2vw;
+    }
+    .optimalization-inputs {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .optimalization-input-group {
+        min-width: unset;
+    }
+}
+
+/* Style dla modułu optymalizacji produkcji */
+
+/* Tło dla modułu optymalizacji produkcji */
+#tool-production-opt {
+    background-color: #ffffff;
+    background-image: url('../asfalt-dark.png');
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(80,60,40,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+#tool-production-opt .input-group {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(80,60,40,0.08);
+}
+
+#tool-production-opt #productionOptResults,
+#tool-production-opt #productionOptVisualization {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Kontenery dla produktów i zasobów */
+.product-row, .resource-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Kontenery pól */
+.input-field-container {
+    display: flex;
+    flex-direction: column;
+    margin-right: 15px;
+    min-width: 150px;
+}
+
+.input-field-container label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #4a3c31;
+}
+
+.input-field-container input {
+    padding: 6px 10px;
+    border: 1px solid #d5b99f;
+    border-radius: 4px;
+    width: 100%;
+    background-color: #fff;
+}
+
+/* Kontener dla pól zużycia zasobów */
+.resource-usage-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    flex-grow: 1;
+}
+
+.resource-usage-container .input-field-container {
+    min-width: 120px;
+    flex-grow: 0;
+}
+
+/* Style dla etykiety zamówienia */
+.order-label {
+    font-weight: 600;
+    color: #785E45;
+    margin-right: 15px;
+}
+
+/* Style dla przycisków */
+.add-order-button {
+    background: #d5b99f;
+    color: #4A3C31;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.add-order-button:hover {
+    background: #a38b75;
+    color: #fff;
+}
+
+.add-order-button i {
+    margin-right: 5px;
+}
+
+/* Styl dla przycisku obliczania */
+#tool-production-opt .calculate-button {
+    background: #d5b99f;
+    color: #4A3C31;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    margin: 20px auto;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: block;
+    transition: background 0.2s;
+}
+
+#tool-production-opt .calculate-button:hover {
+    background: #a38b75;
+    color: #fff;
+}
+
+#tool-production-opt .calculate-button i {
+    margin-right: 8px;
+}
+
+.action-button {
+    background: #d5b99f;
+    color: #4A3C31;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.action-button:hover {
+    background: #a38b75;
+    color: #fff;
+}
+
+.action-button i {
+    margin-right: 5px;
+}
+
+.small-button {
+    background: #f3e7d9;
+    color: #4A3C31;
+    border: 1px solid #d5b99f;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.small-button:hover {
+    background: #d5b99f;
+}
+
+.small-button i {
+    margin-right: 4px;
+}
+
+/* Wyniki optymalizacji */
+.main-result {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.detailed-results {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0 25px;
+}
+
+.results-table th, .results-table td {
+    border: 1px solid #d5b99f;
+    padding: 8px 12px;
+    text-align: center;
+}
+
+.results-table th {
+    background: #f3e7d9;
+    color: #4A3C31;
+    font-weight: 600;
+}
+
+.results-table tr:nth-child(even) {
+    background: #f8f6f2;
+}
+
+.total-row {
+    background: #f3e7d9 !important;
+    font-weight: bold;
+}
+
+/* Komunikaty o błędach */
+.error-message {
+    background-color: #fff3f3;
+    border-left: 4px solid #f44336;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: #d32f2f;
+}
+
+.error-message h3 {
+    margin-top: 0;
+    color: #d32f2f;
+}
+
+.error-message ul {
+    margin-bottom: 0;
+}
+
+/* Kontenery wykresów */
+.chart-container {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    height: 350px;
+}
+
+/* Wskazówki */
+.input-hint {
+    font-size: 0.8rem;
+    color: #785E45;
+    margin-left: 10px;
+    font-style: italic;
+}
+
+/* Responsywność dla urządzeń mobilnych */
+@media (max-width: 768px) {
+    .product-row, .resource-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .input-field-container {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .resource-usage-container {
+        width: 100%;
+        margin-top: 15px;
+    }
+    
+    .small-button {
+        margin-top: 10px;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+}
+
+/* Style dla tabel wyników */
+#productionOptResults table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#productionOptResults th {
+    background-color: #d5b99f;
+    color: #4A3C31;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #a38b75;
+    font-weight: 600;
+}
+
+#productionOptResults td {
+    padding: 8px 10px;
+    border: 1px solid #d5b99f;
+    text-align: left;
+}
+
+#productionOptResults td:nth-child(2),
+#productionOptResults td:nth-child(3),
+#productionOptResults td:nth-child(4) {
+    text-align: right;
+}
+
+#productionOptResults tr:nth-child(even) {
+    background-color: #f8f6f2;
+}
+
+#productionOptResults h3 {
+    color: #4A3C31;
+    margin-top: 0;
+    font-size: 1.5rem;
+}
+
+#productionOptResults h4 {
+    color: #785E45;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #d5b99f;
+    padding-bottom: 5px;
+}
+
+/* Style dla kontenerów wykresów */
+#productionOptVisualization {
+    margin-top: 20px;
+}
+
+#productionOptVisualization h4 {
+    color: #785E45;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #d5b99f;
+    padding-bottom: 5px;
+}
+
+#productChart, #resourceChart {
+    height: 300px;
+    margin-bottom: 30px;
+    background-color: #fff;
+    border: 1px solid #e0d5c8;
+    border-radius: 5px;
+} 
