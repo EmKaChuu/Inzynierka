@@ -816,15 +816,15 @@ const DataShare = {
         buttonContainer.appendChild(copyButton);
         buttonContainer.appendChild(urlButton);
         
-        // Dodaj przycisk generowania linku z wynikami (tylko dla AHP)
+        // Dodaj przycisk generowania linku z odpowiedziami (tylko dla AHP)
         if (containerId === 'ahp-share-container') {
             const resultsUrlButton = document.createElement('button');
             resultsUrlButton.id = 'generateResultsUrlButton';
             resultsUrlButton.className = 'action-button';
-            resultsUrlButton.innerHTML = '<i class="fas fa-calculator"></i> Kopiuj link z wynikami';
+            resultsUrlButton.innerHTML = '<i class="fas fa-calculator"></i> Kopiuj link z odpowiedziami';
             resultsUrlButton.title = 'Generuje link, który po otwarciu automatycznie przeprowadzi obliczenia';
             resultsUrlButton.onclick = () => {
-                // Zawsze generuj świeży link z wynikami
+                // Zawsze generuj świeży link z odpowiedziami
                 const resultsUrl = DataShare.generateResultsShareUrl();
                 if (resultsUrl) {
                     // Aktualizuj kod w polu tekstowym (bez prefiksu calc_)
