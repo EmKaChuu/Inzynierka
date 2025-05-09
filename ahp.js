@@ -12,6 +12,18 @@ const AHP = {
     RI: { 2: 0, 3: 0.52, 4: 0.89, 5: 1.11, 6: 1.25, 7: 1.35, 8: 1.40, 9: 1.45, 10: 1.49 },
     interfaceMode: 'simplified', // Nowy parametr - tryb interfejsu: 'matrix' lub 'simplified'
     comparisonValues: [9, 8, 7, 6, 5, 4, 3, 2, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9], // Tablica wartości porównań
+    
+    // Funkcja tworząca macierz jednostkową o podanym rozmiarze
+    createIdentityMatrix: (size) => {
+        const matrix = [];
+        for (let i = 0; i < size; i++) {
+            matrix[i] = [];
+            for (let j = 0; j < size; j++) {
+                matrix[i][j] = (i === j) ? 1 : 0;
+            }
+        }
+        return matrix;
+    },
 
     init: () => {
         console.log("Executing AHP.init()");

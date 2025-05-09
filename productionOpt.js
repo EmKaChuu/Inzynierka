@@ -9,27 +9,33 @@ const ProductionOpt = {
     init: () => {
         console.log("Executing ProductionOpt.init()");
         
-        // Przygotuj interfejs
-        ProductionOpt.productRows = 0;
-        ProductionOpt.products = [];
-        ProductionOpt.resourceRows = 0;
-        ProductionOpt.resources = [];
-        
-        // Wyczyść poprzednie wyniki
+        // Wyczyść poprzednie wyniki, ale zachowaj dane wejściowe
         Utils.clearElement('productionOptResults');
         Utils.clearElement('productionOptVisualization');
         Utils.hideElement('productionOptLoadingIndicator');
         
-        // Przygotuj listy produktów i zasobów
+        // Przygotuj listy produktów i zasobów TYLKO jeśli są puste
         const productsList = document.getElementById('productsList');
         const resourcesList = document.getElementById('resourcesList');
         
-        if (productsList) productsList.innerHTML = '';
-        if (resourcesList) resourcesList.innerHTML = '';
+        const hasExistingData = ProductionOpt.products.length > 0 || ProductionOpt.resources.length > 0;
         
-        // Dodaj pierwszy wiersz produktu i zasobu
-        ProductionOpt.addProductRow();
-        ProductionOpt.addResourceRow();
+        if (productsList && resourcesList && (productsList.children.length === 0 || resourcesList.children.length === 0)) {
+            if (!hasExistingData) {
+                // Inicjalizacja tylko przy pierwszym uruchomieniu
+                ProductionOpt.productRows = 0;
+                ProductionOpt.products = [];
+                ProductionOpt.resourceRows = 0;
+                ProductionOpt.resources = [];
+                
+                // Dodaj pierwszy wiersz produktu i zasobu
+                ProductionOpt.addProductRow();
+                ProductionOpt.addResourceRow();
+            } else {
+                // Odtwórz interfejs z istniejących danych
+                ProductionOpt.rebuildInterface();
+            }
+        }
         
         // Podepnij obsługę przycisku obliczania
         const calculateButton = document.querySelector('#tool-production-opt .calculate-button');
@@ -734,185 +740,77 @@ const ProductionOpt = {
     },
     
     calculate: () => {
-        console.log("Funkcja ProductionOpt.calculate została wywołana!");
+        console.log("Executing ProductionOpt.calculate()");
+        
         try {
-            // Zbierz dane z formularza
-            console.log("Próba zebrania danych z formularza...");
-            ProductionOpt.collectProductData();
-            ProductionOpt.collectResourceData();
-            
             // Wyczyść poprzednie wyniki
             Utils.clearElement('productionOptResults');
             Utils.clearElement('productionOptVisualization');
             
-            // Pokazanie wskaźnika ładowania
+            // Pokaż wskaźnik ładowania
             Utils.showElement('productionOptLoadingIndicator');
             
-            // Sprawdź, czy mamy jakieś aktywne produkty i zasoby
-            const activeProducts = ProductionOpt.products.filter(p => p && p.active);
+            // Zbierz dane produktów i zasobów
+            ProductionOpt.collectProductData();
+            ProductionOpt.collectResourceData();
+            
+            // Przygotuj dane dla algorytmu optymalizacji
             const activeResources = ProductionOpt.resources.filter(r => r && r.active);
-            
-            if (activeProducts.length === 0) {
-                throw new Error("Nie zdefiniowano żadnych produktów!");
-            }
-            
             if (activeResources.length === 0) {
-                throw new Error("Nie zdefiniowano żadnych zasobów!");
+                throw new Error('Brak zdefiniowanych zasobów.');
             }
             
-            // Kod sprawdzający, czy solver jest dostępny
-            if (typeof solver === 'undefined' || typeof solver.Solve !== 'function') {
-                console.error("Biblioteka solver.js nie jest dostępna! Używam metody fallback.");
-                Utils.hideElement('productionOptLoadingIndicator');
-                ProductionOpt.calculateFallback();
-                return;
+            const activeProducts = ProductionOpt.products.filter(p => p && p.active);
+            if (activeProducts.length === 0) {
+                throw new Error('Brak zdefiniowanych produktów.');
             }
             
-            // Sprawdź, czy wszystkie produkty mają zdefiniowane zużycie dla wszystkich zasobów
-            const activeResourceCount = activeResources.length;
+            // Przygotuj macierz współczynników
+            const A = []; // Macierz zużycia zasobów
+            const b = []; // Wektor dostępnych zasobów
+            const c = []; // Wektor zysków
             
+            // Dla każdego zasobu tworzymy wiersz macierzy A i element wektora b
+            let resourceIndex = 0;
+            for (const resource of activeResources) {
+                A.push([]);
+                b.push(resource.amount);
+                
+                // Dla każdego produktu dodajemy jego zużycie tego zasobu
+                for (const product of activeProducts) {
+                    const resourceUsage = product.resourceUsage[resourceIndex] || 0;
+                    A[A.length - 1].push(resourceUsage);
+                }
+                
+                resourceIndex++;
+            }
+            
+            // Przygotuj wektor zysków
             for (const product of activeProducts) {
-                if (product.resourceUsage.length < activeResourceCount) {
-                    // Uzupełnij brakujące wartości zerami
-                    while (product.resourceUsage.length < activeResourceCount) {
-                        product.resourceUsage.push(0);
-                    }
-                }
+                c.push(product.profit);
             }
             
-            // Wybierz typ optymalizacji
-            const optimizationType = document.getElementById('optimizationType')?.value || 'max';
-            
-            // Utwórz model optymalizacji
-            const model = {
-                optimize: optimizationType === 'max' ? 'profit' : 'cost',
-                opType: optimizationType,
-                constraints: {},
-                variables: {}
-            };
-            
-            // Dodaj zmienne decyzyjne (produkty)
-            for (let i = 0; i < activeProducts.length; i++) {
-                const product = activeProducts[i];
-                const varName = `x${i}`;
-                
-                model.variables[varName] = {};
-                
-                // Ustaw współczynnik funkcji celu
-                model.variables[varName][model.optimize] = optimizationType === 'max' ? 
-                    product.profit : -product.profit;
-                
-                // Dodaj ograniczenie nieujemności
-                model.variables[varName][`nonNegative${i}`] = 1;
-                model.constraints[`nonNegative${i}`] = { min: 0 };
-            }
-            
-            // Dodaj ograniczenia zasobów
-            for (let j = 0; j < activeResources.length; j++) {
-                const resource = activeResources[j];
-                const resourceName = `resource${j}`;
-                
-                // Dla każdego produktu dodaj jego zużycie zasobu
-                for (let i = 0; i < activeProducts.length; i++) {
-                    const product = activeProducts[i];
-                    const varName = `x${i}`;
+            // Rozwiązanie problemu
+            setTimeout(() => {
+                try {
+                    const solution = ProductionOpt.solveLinearProgram(A, b, c);
+                    ProductionOpt.solution = solution;
                     
-                    model.variables[varName][resourceName] = product.resourceUsage[j];
-                }
-                
-                // Ustaw ograniczenie dostępności zasobu
-                model.constraints[resourceName] = { max: resource.amount };
-            }
-            
-            console.log("Model optymalizacji:", model);
-            
-            // Rozwiąż problem optymalizacji
-            const result = solver.Solve(model);
-            console.log("Wynik optymalizacji:", result);
-            
-            // Ukryj wskaźnik ładowania
-            Utils.hideElement('productionOptLoadingIndicator');
-            
-            // Sprawdź, czy znaleziono wykonalne rozwiązanie
-            if (!result.feasible) {
-                // Wyświetl informację o braku rozwiązania
-                ProductionOpt.displayNoSolutionMessage();
-                return;
-            }
-            
-            // Przygotuj dane do wyświetlenia
-            const solutionData = {
-                optimizationType: optimizationType,
-                objective: result.result,
-                products: [],
-                resources: []
-            };
-            
-            // Przygotuj dane produktów
-            for (let i = 0; i < activeProducts.length; i++) {
-                const product = activeProducts[i];
-                const quantity = result[`x${i}`] || 0;
-                
-                solutionData.products.push({
-                    name: product.name,
-                    profit: product.profit,
-                    quantity: quantity,
-                    contribution: product.profit * quantity
-                });
-            }
-            
-            // Przygotuj dane zasobów
-            for (let j = 0; j < activeResources.length; j++) {
-                const resource = activeResources[j];
-                const resourceName = `resource${j}`;
-                
-                // Oblicz wykorzystanie zasobu
-                let usage = 0;
-                for (let i = 0; i < activeProducts.length; i++) {
-                    const product = activeProducts[i];
-                    const quantity = result[`x${i}`] || 0;
+                    // Wyświetl wyniki
+                    ProductionOpt.displayResults(activeProducts, activeResources, solution);
                     
-                    usage += product.resourceUsage[j] * quantity;
+                    // Wizualizuj wyniki
+                    ProductionOpt.visualizeResults(activeProducts, solution);
+                } catch (error) {
+                    Utils.hideElement('productionOptLoadingIndicator');
+                    Utils.displayResults('productionOptResults', `Błąd: ${error.message}`, true);
+                    console.error("Error solving production optimization:", error);
                 }
-                
-                solutionData.resources.push({
-                    name: resource.name,
-                    available: resource.amount,
-                    used: usage,
-                    utilization: (usage / resource.amount) * 100
-                });
-            }
-            
-            // Zapisz rozwiązanie
-            ProductionOpt.solution = solutionData;
-            
-            // Wyświetl wyniki
-            ProductionOpt.displayResults();
-            
-            // Wizualizuj wyniki
-            ProductionOpt.visualizeResults();
-            
+            }, 100);
         } catch (error) {
-            console.error("Błąd podczas optymalizacji:", error);
             Utils.hideElement('productionOptLoadingIndicator');
-            
-            // Próba użycia metody fallback w przypadku błędu
-            try {
-                console.log("Próba użycia metody fallback po błędzie...");
-                ProductionOpt.calculateFallback();
-            } catch (fallbackError) {
-                console.error("Błąd podczas używania metody fallback:", fallbackError);
-                const resultsContainer = document.getElementById('productionOptResults');
-                if (resultsContainer) {
-                    resultsContainer.innerHTML = `
-                        <div class="error-message">
-                            <h3>Błąd podczas optymalizacji</h3>
-                            <p>${error.message}</p>
-                            <p>Próba użycia metody awaryjnej również nie powiodła się: ${fallbackError.message}</p>
-                        </div>
-                    `;
-                }
-            }
+            Utils.displayResults('productionOptResults', `Błąd: ${error.message}`, true);
+            console.error("Error in ProductionOpt.calculate():", error);
         }
     },
     
@@ -931,10 +829,9 @@ const ProductionOpt = {
         `;
     },
     
-    displayResults: () => {
-        if (!ProductionOpt.solution) return;
+    displayResults: (activeProducts, activeResources, solution) => {
+        if (!solution) return;
         
-        const solution = ProductionOpt.solution;
         const resultsContainer = document.getElementById('productionOptResults');
         
         const isMaximization = solution.optimizationType === 'max';
@@ -1013,7 +910,7 @@ const ProductionOpt = {
                     <td>${resource.available.toFixed(2)}</td>
                     <td>${resource.used.toFixed(2)}</td>
                     <td>${utilization.toFixed(2)}%</td>
-                    <td>${status}</td>
+                <td>${status}</td>
                 </tr>
             `;
         }
@@ -1035,20 +932,19 @@ const ProductionOpt = {
         resultsContainer.innerHTML = html;
     },
     
-    visualizeResults: () => {
-        if (!ProductionOpt.solution) return;
+    visualizeResults: (activeProducts, solution) => {
+        if (!solution) return;
         
-        const solution = ProductionOpt.solution;
         const visualizationContainer = document.getElementById('productionOptVisualization');
         visualizationContainer.innerHTML = '';
         
         // Przygotuj dane do wykresów
-        const productNames = solution.products.map(p => p.name);
-        const productQuantities = solution.products.map(p => p.quantity);
-        const productContributions = solution.products.map(p => p.contribution);
+        const productNames = activeProducts.map(p => p.name);
+        const productQuantities = activeProducts.map(p => p.quantity);
+        const productContributions = activeProducts.map(p => p.contribution);
         
-        const resourceNames = solution.resources.map(r => r.name);
-        const resourceUtilizations = solution.resources.map(r => r.utilization);
+        const resourceNames = activeResources.map(r => r.name);
+        const resourceUtilizations = activeResources.map(r => r.utilization);
         
         // Utwórz kontener dla wykresu ilości produkcji
         const quantityChartDiv = document.createElement('div');
@@ -1200,6 +1096,170 @@ const ProductionOpt = {
         } catch (error) {
             console.error("Błąd podczas eksportu wyników:", error);
             alert("Wystąpił błąd podczas eksportu wyników: " + error.message);
+        }
+    },
+
+    // Nowa funkcja do odtwarzania interfejsu z istniejących danych
+    rebuildInterface: () => {
+        console.log("Rebuilding ProductionOpt interface from existing data");
+        
+        const productsList = document.getElementById('productsList');
+        const resourcesList = document.getElementById('resourcesList');
+        
+        if (!productsList || !resourcesList) return;
+        
+        // Wyczyść listy
+        productsList.innerHTML = '';
+        resourcesList.innerHTML = '';
+        
+        // Najpierw odtwórz listę zasobów
+        const activeResources = ProductionOpt.resources.filter(r => r && r.active);
+        
+        if (activeResources.length === 0) {
+            // Jeśli nie ma żadnych zasobów, dodaj domyślny
+            ProductionOpt.resourceRows = 0;
+            ProductionOpt.addResourceRow();
+            } else {
+            // Odtwórz istniejące zasoby
+            for (let i = 0; i < ProductionOpt.resources.length; i++) {
+                const resource = ProductionOpt.resources[i];
+                if (!resource || !resource.active) continue;
+                
+                const resourceRow = document.createElement('div');
+                resourceRow.id = `resource-row-${i}`;
+                resourceRow.className = 'input-row resource-row';
+                
+                // Nazwa zasobu
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'input-field-container';
+                
+                const nameLabel = document.createElement('label');
+                nameLabel.textContent = 'Nazwa:';
+                nameLabel.htmlFor = `resource-name-${i}`;
+                
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.id = `resource-name-${i}`;
+                nameInput.placeholder = 'np. Surowiec 1';
+                nameInput.value = resource.name || `Zasób ${i + 1}`;
+                
+                nameContainer.appendChild(nameLabel);
+                nameContainer.appendChild(nameInput);
+                
+                // Dostępna ilość
+                const amountContainer = document.createElement('div');
+                amountContainer.className = 'input-field-container';
+                
+                const amountLabel = document.createElement('label');
+                amountLabel.textContent = 'Dostępna ilość:';
+                amountLabel.htmlFor = `resource-amount-${i}`;
+                
+                const amountInput = document.createElement('input');
+                amountInput.type = 'number';
+                amountInput.id = `resource-amount-${i}`;
+                amountInput.step = '1';
+                amountInput.min = '0';
+                amountInput.placeholder = 'np. 100';
+                amountInput.value = resource.amount || 100;
+                
+                amountContainer.appendChild(amountLabel);
+                amountContainer.appendChild(amountInput);
+                
+                // Przycisk usuwania
+                const removeButton = document.createElement('button');
+                removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń';
+                removeButton.className = 'small-button';
+                removeButton.onclick = () => ProductionOpt.removeResourceRow(i);
+                removeButton.title = 'Usuń ten zasób';
+                
+                // Dodaj elementy do wiersza
+                resourceRow.appendChild(nameContainer);
+                resourceRow.appendChild(amountContainer);
+                resourceRow.appendChild(removeButton);
+                
+                // Dodaj wiersz do listy zasobów
+                resourcesList.appendChild(resourceRow);
+            }
+        }
+        
+        // Teraz odtwórz listę produktów
+        const activeProducts = ProductionOpt.products.filter(p => p && p.active);
+        
+        if (activeProducts.length === 0) {
+            // Jeśli nie ma żadnych produktów, dodaj domyślny
+            ProductionOpt.productRows = 0;
+            ProductionOpt.addProductRow();
+        } else {
+            // Odtwórz istniejące produkty
+            for (let i = 0; i < ProductionOpt.products.length; i++) {
+                const product = ProductionOpt.products[i];
+                if (!product || !product.active) continue;
+                
+                const productRow = document.createElement('div');
+                productRow.id = `product-row-${i}`;
+                productRow.className = 'input-row product-row';
+                
+                // Nazwa produktu
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'input-field-container';
+                
+                const nameLabel = document.createElement('label');
+                nameLabel.textContent = 'Nazwa:';
+                nameLabel.htmlFor = `product-name-${i}`;
+                
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.id = `product-name-${i}`;
+                nameInput.placeholder = 'np. Produkt A';
+                nameInput.value = product.name || `Produkt ${String.fromCharCode(65 + i)}`;
+                
+                nameContainer.appendChild(nameLabel);
+                nameContainer.appendChild(nameInput);
+                
+                // Zysk/koszt jednostkowy
+                const profitContainer = document.createElement('div');
+                profitContainer.className = 'input-field-container';
+                
+                const profitLabel = document.createElement('label');
+                profitLabel.textContent = 'Zysk/szt:';
+                profitLabel.htmlFor = `product-profit-${i}`;
+                
+                const profitInput = document.createElement('input');
+                profitInput.type = 'number';
+                profitInput.id = `product-profit-${i}`;
+                profitInput.step = '0.1';
+                profitInput.placeholder = 'np. 10';
+                profitInput.value = product.profit || 10;
+                
+                profitContainer.appendChild(profitLabel);
+                profitContainer.appendChild(profitInput);
+                
+                // Dodaj elementy do wiersza
+                productRow.appendChild(nameContainer);
+                productRow.appendChild(profitContainer);
+                
+                // Dodaj pola dla zużycia zasobów
+                const resourceUsageContainer = document.createElement('div');
+                resourceUsageContainer.className = 'resource-usage-container';
+                resourceUsageContainer.id = `resource-usage-${i}`;
+                productRow.appendChild(resourceUsageContainer);
+                
+                // Przycisk usuwania
+                const removeButton = document.createElement('button');
+                removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń';
+                removeButton.className = 'small-button';
+                removeButton.onclick = () => ProductionOpt.removeProductRow(i);
+                removeButton.title = 'Usuń ten produkt';
+                
+                // Dodaj przycisk usuwania
+                productRow.appendChild(removeButton);
+                
+                // Dodaj wiersz do listy produktów
+                productsList.appendChild(productRow);
+                
+                // Aktualizuj pola zużycia zasobów
+                ProductionOpt.updateResourceUsageFields(i);
+            }
         }
     }
 }; 

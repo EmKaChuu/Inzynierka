@@ -1,0 +1,126 @@
+/* Style dla sekcji udostępniania danych */
+.share-section-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.share-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Nowe style dla zakładek */
+.share-tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+}
+
+.share-tab-button {
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    margin-right: 2px;
+    font-size: 14px;
+    color: #555;
+    transition: all 0.2s ease;
+}
+
+.share-tab-button:hover {
+    background-color: #e0e0e0;
+}
+
+.share-tab-button.active {
+    background-color: #4caf50;
+    color: white;
+}
+
+.share-tab-content {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 0 0 4px 4px;
+    border: 1px solid #ddd;
+    border-top: none;
+}
+
+/* Style dla przycisku akcji */
+.action-button {
+    padding: 8px 16px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 5px 0;
+    transition: background-color 0.3s;
+}
+
+.action-button:hover {
+    background-color: #388e3c;
+}
+
+/* Kontener dla przycisków udostępniania */
+.share-buttons-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+/* Style dla pola z kodem */
+.share-code-wrapper {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    resize: vertical;
+}
+
+/* Style dla kontenera wyników */
+.result-container {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.result-container.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.result-container.error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Style dla ekranów mobilnych */
+@media (max-width: 768px) {
+    .share-tabs {
+        flex-direction: column;
+        border-bottom: none;
+    }
+    
+    .share-tab-button {
+        border-radius: 4px;
+        margin-bottom: 4px;
+    }
+    
+    .share-buttons-container {
+        flex-direction: column;
+    }
+    
+    .action-button {
+        width: 100%;
+    }
+} 

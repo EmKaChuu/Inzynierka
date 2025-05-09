@@ -8,27 +8,33 @@ const CuttingStock = {
     init: () => {
         console.log("Executing CuttingStock.init()");
         
-        // Przygotuj interfejs
-        CuttingStock.orderRows = 0;
-        CuttingStock.orders = [];
+        // Przygotuj interfejs, ale NIE resetuj wszystkich danych od zera
+        // Zmiana: zachowujemy dane z poprzednich uruchomień modułu
         
-        // Wyczyść poprzednie wyniki
+        // Wyczyść poprzednie wyniki, ale zachowaj dane wejściowe
         Utils.clearElement('cuttingStockResults');
         Utils.clearElement('cuttingStockVisualization');
         Utils.hideElement('cuttingStockLoadingIndicator');
         
-        // Przygotuj listę zamówień
+        // Przygotuj listę zamówień TYLKO jeśli jest pusta
         const ordersList = document.getElementById('ordersList');
-        ordersList.innerHTML = '';
-        
-        // Dodaj pierwszy wiersz zamówienia
-        CuttingStock.addOrderRow();
+        if (!ordersList || ordersList.children.length === 0) {
+            // Inicjalizacja, jeśli nie ma jeszcze zamówień
+            if (CuttingStock.orders.length === 0) {
+                CuttingStock.orderRows = 0;
+                // Dodaj pierwszy wiersz zamówienia
+                CuttingStock.addOrderRow();
+            } else {
+                // Odtwórz interfejs z istniejących danych
+                CuttingStock.rebuildOrdersInterface();
+            }
+        }
         
         // Dodaj przyciski do ładowania przykładowych wartości, zapisywania i wczytywania zamówień
-        const inputGroup = document.querySelector('#tool-cutting-stock .input-group');
-        
-        // Sprawdź, czy przyciski już istnieją, aby uniknąć duplikacji
+        // Sprawdzamy, czy przyciski już istnieją, aby uniknąć duplikacji
         if (!document.getElementById('loadSampleDataButton')) {
+            const inputGroup = document.querySelector('#tool-cutting-stock .input-group');
+            
             const buttonRow = document.createElement('div');
             buttonRow.className = 'input-row button-row';
             buttonRow.style.marginTop = '20px';
@@ -68,6 +74,102 @@ const CuttingStock = {
             fileInput.style.display = 'none';
             fileInput.addEventListener('change', CuttingStock.handleFileSelect);
             inputGroup.appendChild(fileInput);
+        }
+    },
+    
+    // Nowa funkcja do odtwarzania interfejsu z istniejących danych zamówień
+    rebuildOrdersInterface: () => {
+        const ordersList = document.getElementById('ordersList');
+        if (!ordersList) return;
+        
+        // Wyczyść listę zamówień
+        ordersList.innerHTML = '';
+        
+        // Jeśli nie ma żadnych zamówień, dodaj pusty wiersz
+        if (CuttingStock.orders.length === 0) {
+            CuttingStock.orderRows = 0;
+            CuttingStock.addOrderRow();
+            return;
+        }
+        
+        // Odtwórz wiersze na podstawie danych zamówień
+        CuttingStock.orders.forEach((order, index) => {
+            const rowId = order.id || index;
+            CuttingStock.orderRows = Math.max(CuttingStock.orderRows, rowId + 1);
+            
+            const orderRow = document.createElement('div');
+            orderRow.id = `order-row-${rowId}`;
+            orderRow.className = 'input-row order-row';
+            
+            // Etykieta zamówienia
+            const orderLabel = document.createElement('span');
+            orderLabel.textContent = `Zamówienie ${rowId + 1}:`;
+            orderLabel.style.minWidth = '100px';
+            orderLabel.className = 'order-label';
+            
+            // Długość elementu
+            const lengthContainer = document.createElement('div');
+            lengthContainer.className = 'input-field-container';
+            
+            const lengthLabel = document.createElement('label');
+            lengthLabel.textContent = 'Długość:';
+            lengthLabel.htmlFor = `order-length-${rowId}`;
+            
+            const lengthInput = document.createElement('input');
+            lengthInput.type = 'number';
+            lengthInput.id = `order-length-${rowId}`;
+            lengthInput.step = '0.1';
+            lengthInput.min = '0.1';
+            lengthInput.placeholder = 'np. 1.2';
+            lengthInput.value = order.length || '';
+            
+            lengthContainer.appendChild(lengthLabel);
+            lengthContainer.appendChild(lengthInput);
+            
+            // Ilość sztuk
+            const quantityContainer = document.createElement('div');
+            quantityContainer.className = 'input-field-container';
+            
+            const quantityLabel = document.createElement('label');
+            quantityLabel.textContent = 'Ilość:';
+            quantityLabel.htmlFor = `order-quantity-${rowId}`;
+            
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.id = `order-quantity-${rowId}`;
+            quantityInput.min = '1';
+            quantityInput.placeholder = 'np. 10';
+            quantityInput.value = order.quantity || '';
+            
+            quantityContainer.appendChild(quantityLabel);
+            quantityContainer.appendChild(quantityInput);
+            
+            // Przycisk usuwania
+            const removeButton = document.createElement('button');
+            removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń';
+            removeButton.className = 'small-button';
+            removeButton.onclick = () => CuttingStock.removeOrderRow(rowId);
+            removeButton.title = 'Usuń to zamówienie';
+            
+            // Dodaj elementy do wiersza
+            orderRow.appendChild(orderLabel);
+            orderRow.appendChild(lengthContainer);
+            orderRow.appendChild(quantityContainer);
+            orderRow.appendChild(removeButton);
+            
+            // Dodaj wiersz do listy zamówień
+            ordersList.appendChild(orderRow);
+        });
+        
+        // Ustaw długość kłody i opcję dokładnych cięć, jeśli były zapisane
+        const storedLogLength = localStorage.getItem('cuttingStock_logLength');
+        if (storedLogLength) {
+            document.getElementById('logLength').value = storedLogLength;
+        }
+        
+        const storedExactCuts = localStorage.getItem('cuttingStock_exactCuts');
+        if (storedExactCuts !== null) {
+            document.getElementById('exactCuts').checked = storedExactCuts === 'true';
         }
     },
     
@@ -161,6 +263,13 @@ const CuttingStock = {
                 throw new Error('Nieprawidłowa długość kłody.');
             }
             
+            // Zapisz długość kłody do localStorage
+            localStorage.setItem('cuttingStock_logLength', logLength);
+            
+            // Zapisz stan opcji dokładnych cięć
+            const exactCuts = document.getElementById('exactCuts').checked;
+            localStorage.setItem('cuttingStock_exactCuts', exactCuts);
+            
             // Zbierz zamówienia
             CuttingStock.orders = [];
             const orderRows = document.querySelectorAll('[id^="order-row-"]');
@@ -188,9 +297,6 @@ const CuttingStock = {
                 throw new Error('Brak zamówień. Dodaj co najmniej jedno zamówienie.');
             }
             
-            // Sprawdź, czy wymagana jest dokładna liczba sztuk
-            const exactCuts = document.getElementById('exactCuts').checked;
-            
             // Rozwiąż problem rozkroju
             setTimeout(() => {
                 try {
@@ -198,14 +304,15 @@ const CuttingStock = {
                     CuttingStock.displayResults();
                     CuttingStock.visualizeResults();
                 } catch (error) {
-                    Utils.displayResults('cuttingStockResults', `Błąd podczas obliczania: ${error.message}`, true);
-                } finally {
                     Utils.hideElement('cuttingStockLoadingIndicator');
+                    Utils.displayResults('cuttingStockResults', `Błąd: ${error.message}`, true);
+                    console.error("Error solving cutting stock problem:", error);
                 }
-            }, 100); // Małe opóźnienie, aby interfejs mógł się odświeżyć
+            }, 100);
         } catch (error) {
             Utils.hideElement('cuttingStockLoadingIndicator');
             Utils.displayResults('cuttingStockResults', `Błąd: ${error.message}`, true);
+            console.error("Error in CuttingStock.calculate():", error);
         }
     },
     
@@ -996,6 +1103,9 @@ const CuttingStock = {
         
         // Wyemituj zdarzenie po zakończeniu wizualizacji
         document.dispatchEvent(new Event('calculation-complete'));
+        
+        // Ukryj wskaźnik ładowania po zakończeniu wizualizacji
+        Utils.hideElement('cuttingStockLoadingIndicator');
     },
     
     // Nowa funkcja do tworzenia wykresu kołowego pokazującego wykorzystanie materiału
