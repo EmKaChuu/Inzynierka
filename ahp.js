@@ -30,9 +30,14 @@ const AHP = {
             Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
         );
         
-        // Inicjalizacja nazw kryteriów i opcji
-        AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => `Kryterium ${i+1}`);
-        AHP.optionNames = Array(AHP.numOptions).fill().map((_, i) => `Opcja ${i+1}`);
+        // Inicjalizacja nazw kryteriów i opcji tylko jeśli tablice są puste
+        if (!AHP.criteriaNames || AHP.criteriaNames.length === 0) {
+            AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => `Kryterium ${i+1}`);
+        }
+        
+        if (!AHP.optionNames || AHP.optionNames.length === 0) {
+            AHP.optionNames = Array(AHP.numOptions).fill().map((_, i) => `Opcja ${i+1}`);
+        }
         
         // Ustawienie przycisków w interfejsie
         AHP.setupInterfaceButtons();
@@ -125,16 +130,26 @@ const AHP = {
             const oldNames = AHP.criteriaNames || [];
             
             // Inicjalizacja nowej tablicy nazw
-            AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => {
-                // Zachowaj istniejące nazwy, jeśli są dostępne
-                if (i < oldNames.length) {
-                    return oldNames[i];
+            const newNames = [];
+            
+            // Zachowaj istniejące nazwy lub utwórz nowe
+            for (let i = 0; i < AHP.numCriteria; i++) {
+                if (i < oldNames.length && oldNames[i] && !oldNames[i].startsWith('Kryterium ')) {
+                    // Zachowaj niestandardową nazwę
+                    newNames.push(oldNames[i]);
+                } else if (i < oldNames.length && oldNames[i]) {
+                    // Zastąp domyślną nazwę nową domyślną
+                    newNames.push(`Kryterium ${i+1}`);
                 } else {
-                    return `Kryterium ${i+1}`;
+                    // Dodaj nową domyślną nazwę
+                    newNames.push(`Kryterium ${i+1}`);
                 }
-            });
+            }
+            
+            AHP.criteriaNames = newNames;
         }
         
+        // Tworzenie pól formularza dla nazw kryteriów
         for (let i = 0; i < AHP.numCriteria; i++) {
             const inputRow = document.createElement('div');
             inputRow.className = 'input-row';
@@ -146,11 +161,21 @@ const AHP = {
             input.type = 'text';
             input.id = `criteria-name-${i}`;
             input.placeholder = `Kryterium ${i+1}`;
-            input.value = AHP.criteriaNames[i] || `Kryterium ${i+1}`;
+            
+            // Ustaw wartość zgodnie z modelem danych
+            input.value = AHP.criteriaNames[i];
             
             // Zmodyfikowana obsługa onchange
             input.onchange = () => {
-                AHP.criteriaNames[i] = input.value || `Kryterium ${i+1}`;
+                // Aktualizuj model tylko jeśli pole nie jest puste
+                if (input.value.trim() !== '') {
+                    AHP.criteriaNames[i] = input.value;
+                } else {
+                    // Jeśli pole jest puste, przywróć domyślną nazwę
+                    input.value = `Kryterium ${i+1}`;
+                    AHP.criteriaNames[i] = `Kryterium ${i+1}`;
+                }
+                
                 // Aktualizuj interfejs porównań bez wpływania na nawę
                 AHP.updateComparisonInterface();
             };
@@ -224,27 +249,41 @@ const AHP = {
         AHP.numOptions = newNumOptions;
 
         // Zapisz nazwy kryteriów
-        AHP.criteriaNames = [];
         for (let i = 0; i < AHP.numCriteria; i++) {
             const input = document.getElementById(`criteria-name-${i}`);
-            AHP.criteriaNames.push(input ? input.value || `Kryterium ${i+1}` : `Kryterium ${i+1}`);
+            if (input && input.value.trim() !== '') {
+                AHP.criteriaNames[i] = input.value;
+            } else if (AHP.criteriaNames[i] && AHP.criteriaNames[i].startsWith('Kryterium ')) {
+                AHP.criteriaNames[i] = `Kryterium ${i+1}`;
+            }
         }
         
         // Zachowaj istniejące nazwy opcji i dodaj nowe, jeśli potrzeba
-        // Upewnij się, że tablica optionNames istnieje
         if (!AHP.optionNames) {
             AHP.optionNames = [];
         }
         
+        // Tymczasowa kopia starych nazw
         const oldOptionNames = [...AHP.optionNames];
-        AHP.optionNames = Array(AHP.numOptions).fill().map((_, i) => {
-            // Zachowaj istniejące nazwy, jeśli są dostępne
-            if (i < oldOptionNames.length) {
-                return oldOptionNames[i];
+        
+        // Inicjalizacja nowej tablicy nazw
+        const newOptionNames = [];
+        
+        // Zachowaj istniejące nazwy lub utwórz nowe
+        for (let i = 0; i < AHP.numOptions; i++) {
+            if (i < oldOptionNames.length && oldOptionNames[i] && !oldOptionNames[i].startsWith('Opcja ')) {
+                // Zachowaj niestandardową nazwę
+                newOptionNames.push(oldOptionNames[i]);
+            } else if (i < oldOptionNames.length && oldOptionNames[i]) {
+                // Zastąp domyślną nazwę nową domyślną
+                newOptionNames.push(`Opcja ${i+1}`);
             } else {
-                return `Opcja ${i+1}`;
+                // Dodaj nową domyślną nazwę
+                newOptionNames.push(`Opcja ${i+1}`);
             }
-        });
+        }
+        
+        AHP.optionNames = newOptionNames;
         
         // Przygotuj pola na nazwy opcji
         const optionsContainer = document.querySelector('#ahpOptionNames .options-inputs-container');
@@ -267,16 +306,23 @@ const AHP = {
             input.type = 'text';
             input.id = `option-name-${i}`;
             input.placeholder = `Opcja ${i+1}`;
-            input.value = AHP.optionNames[i] || `Opcja ${i+1}`;
-            // Dodaj obsługę onchange
+            
+            // Ustaw wartość zgodnie z modelem danych
+            input.value = AHP.optionNames[i];
+            
+            // Zmodyfikowana obsługa onchange
             input.onchange = () => {
-                AHP.optionNames[i] = input.value || `Opcja ${i+1}`;
-                // Aktualizacja interfejsu porównań
-                if (AHP.interfaceMode === 'matrix') {
-                    AHP.createMatrixOptionComparisons();
-                } else if (AHP.interfaceMode === 'simplified') {
-                    AHP.createSimplifiedInterface();
+                // Aktualizuj model tylko jeśli pole nie jest puste
+                if (input.value.trim() !== '') {
+                    AHP.optionNames[i] = input.value;
+                } else {
+                    // Jeśli pole jest puste, przywróć domyślną nazwę
+                    input.value = `Opcja ${i+1}`;
+                    AHP.optionNames[i] = `Opcja ${i+1}`;
                 }
+                
+                // Aktualizacja interfejsu porównań
+                AHP.updateComparisonInterface();
             };
             
             inputRow.appendChild(label);
