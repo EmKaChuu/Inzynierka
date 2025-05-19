@@ -118,12 +118,17 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 15px 0;
-    padding: 15px;
-    background-color: var(--white);
+    margin-bottom: 15px;
+    padding: 10px;
+    background: linear-gradient(
+        135deg,
+        #3498db 0%,
+        #3498db 48%,
+        #e74c3c 52%,
+        #e74c3c 100%
+    );
     border-radius: 8px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--dark-brown);
+    color: white;
 }
 
 .criterion, 
@@ -778,4 +783,110 @@
 #tool-ahp .tool-header h2 {
     margin: 0;
     flex: 0 0 auto;
+}
+
+/* Gradient dla kontenerów skali w uproszczonym interfejsie AHP */
+.simplified-comparison-row .scale-container {
+    background: transparent;
+    padding: 12px 8px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 15px;
+}
+
+.simplified-comparison-row .scale-container .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.simplified-comparison-row .scale-container .scale-labels span {
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
+    font-weight: bold;
+    font-size: 1.1em;
+    flex: 1;
+    text-align: center;
+}
+
+.simplified-comparison-row .scale-container .scale-options {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+}
+
+/* Minimalne style dla radio, aby nie psuły wyglądu na tle gradientu */
+.simplified-comparison-row .scale-container .scale-options input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border: 1px solid white;
+    border-radius: 50%;
+    background-color: transparent;
+    margin: 0 2px;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+}
+
+.simplified-comparison-row .scale-container .scale-options input[type="radio"]::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.1s ease-in-out;
+}
+
+.simplified-comparison-row .scale-container .scale-options input[type="radio"]:checked::before {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Dodatkowe style dla lepszego ułożenia elementów w simplified-comparison-row */
+.simplified-comparison-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: linear-gradient(
+        135deg,
+        #3498db 0%,
+        #3498db 48%,
+        #e74c3c 52%,
+        #e74c3c 100%
+    );
+    border-radius: 8px;
+    color: white;
+}
+
+.simplified-comparison-row .left-criterion,
+.simplified-comparison-row .right-criterion {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    padding: 5px;
+    background-color: transparent;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
+}
+
+.simplified-comparison-row .left-criterion {
+    text-align: right;
+    margin-right: 5px;
+}
+
+.simplified-comparison-row .right-criterion {
+    text-align: left;
+    margin-left: 5px;
 } 
