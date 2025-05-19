@@ -7,7 +7,7 @@ const ProductionOpt = {
     solution: null,
     
     init: () => {
-        console.log("Executing ProductionOpt.init()");
+        Logger.log('INFO', "Executing ProductionOpt.init()");
         
         // Wyczyść poprzednie wyniki, ale zachowaj dane wejściowe
         Utils.clearElement('productionOptResults');
@@ -64,6 +64,99 @@ const ProductionOpt = {
         }
     },
 
+    getCurrentData: () => {
+        const optimizationTypeElement = document.getElementById('optimizationType');
+        const optimizationType = optimizationTypeElement ? optimizationTypeElement.value : 'maximize';
+        
+        const products = [];
+        const productElements = document.querySelectorAll('#productsList .product-row');
+        productElements.forEach(productElement => {
+            const productIdString = productElement.id.split('-').pop();
+            if (productIdString === undefined) return;
+            const productId = parseInt(productIdString);
+
+            // Sprawdź, czy produkt jest aktywny w modelu danych
+            if (ProductionOpt.products[productId] && ProductionOpt.products[productId].active === false) return; 
+
+            const nameInput = document.getElementById(`product-name-${productId}`);
+            const profitInput = document.getElementById(`product-profit-${productId}`);
+            
+            if (nameInput && profitInput && nameInput.value && profitInput.value) {
+                const productData = {
+                    id: productId,
+                    name: nameInput.value,
+                    profit: parseFloat(profitInput.value),
+                    resourceUsage: []
+                };
+                
+                // Pobierz zużycie zasobów dla tego produktu
+                // Zakładamy, że kolejność pól zużycia odpowiada kolejności aktywnych zasobów
+                const activeResources = ProductionOpt.resources.filter(r => r.active);
+                for (let i = 0; i < activeResources.length; i++) {
+                    const usageInputElement = document.getElementById(`resource-usage-${productId}-${i}`); // ID może wymagać weryfikacji
+                    if (usageInputElement) {
+                        productData.resourceUsage.push(parseFloat(usageInputElement.value) || 0);
+                    } else {
+                        productData.resourceUsage.push(0); // Domyślne zużycie jeśli pole nie istnieje
+                    }
+                }
+                products.push(productData);
+            }
+        });
+
+        const resources = [];
+        const resourceElements = document.querySelectorAll('#resourcesList .resource-row');
+        resourceElements.forEach(resourceElement => {
+            const resourceIdString = resourceElement.id.split('-').pop();
+            if (resourceIdString === undefined) return;
+            const resourceId = parseInt(resourceIdString);
+
+            // Sprawdź, czy zasób jest aktywny w modelu danych
+            if (ProductionOpt.resources[resourceId] && ProductionOpt.resources[resourceId].active === false) return;
+
+            const nameInput = document.getElementById(`resource-name-${resourceId}`);
+            const amountInput = document.getElementById(`resource-amount-${resourceId}`);
+
+            if (nameInput && amountInput && nameInput.value && amountInput.value) {
+                resources.push({
+                    id: resourceId,
+                    name: nameInput.value,
+                    amount: parseFloat(amountInput.value)
+                });
+            }
+        });
+        
+        return {
+            optimizationType: optimizationType,
+            products: products,
+            resources: resources
+        };
+    },
+
+    loadData: (data) => {
+        if (!data) return;
+
+        const optimizationTypeElement = document.getElementById('optimizationType');
+        if (data.optimizationType && optimizationTypeElement) {
+            optimizationTypeElement.value = data.optimizationType;
+        }
+
+        // Przywróć produkty i zasoby do modelu danych
+        // Upewnij się, że zachowujemy informację o 'active'
+        ProductionOpt.products = (data.products || []).map(p => ({ ...p, active: true })); // Domyślnie aktywne po załadowaniu
+        ProductionOpt.resources = (data.resources || []).map(r => ({ ...r, active: true }));
+
+        ProductionOpt.productRows = ProductionOpt.products.length > 0 ? Math.max(...ProductionOpt.products.map(p => p.id)) + 1 : 0;
+        ProductionOpt.resourceRows = ProductionOpt.resources.length > 0 ? Math.max(...ProductionOpt.resources.map(r => r.id)) + 1 : 0;
+        
+        const productsList = document.getElementById('productsList');
+        if (productsList) productsList.innerHTML = '';
+        const resourcesList = document.getElementById('resourcesList');
+        if (resourcesList) resourcesList.innerHTML = '';
+        
+        ProductionOpt.rebuildInterface(); 
+    },
+
     addProductRow: () => {
         const productsList = document.getElementById('productsList');
         const rowId = ProductionOpt.productRows++;
@@ -89,12 +182,12 @@ const ProductionOpt = {
         nameContainer.appendChild(nameLabel);
         nameContainer.appendChild(nameInput);
         
-        // Zysk/koszt jednostkowy
+        // Zysk/koszt jednostkowy (pozostaje jako zysk)
         const profitContainer = document.createElement('div');
         profitContainer.className = 'input-field-container';
         
         const profitLabel = document.createElement('label');
-        profitLabel.textContent = 'Zysk/szt:';
+        profitLabel.textContent = 'Zysk/szt.:'; // Utrzymujemy to jako zysk
         profitLabel.htmlFor = `product-profit-${rowId}`;
         
         const profitInput = document.createElement('input');
@@ -106,6 +199,61 @@ const ProductionOpt = {
         
         profitContainer.appendChild(profitLabel);
         profitContainer.appendChild(profitInput);
+
+        // Koszt jednostkowy (nowe pole)
+        const costContainer = document.createElement('div');
+        costContainer.className = 'input-field-container';
+
+        const costLabel = document.createElement('label');
+        costLabel.textContent = 'Koszt/szt.:';
+        costLabel.htmlFor = `product-cost-${rowId}`;
+
+        const costInput = document.createElement('input');
+        costInput.type = 'number';
+        costInput.id = `product-cost-${rowId}`;
+        costInput.step = '0.1';
+        costInput.min = '0';
+        costInput.placeholder = 'np. 5';
+        costInput.value = '5'; // Domyślna wartość
+
+        costContainer.appendChild(costLabel);
+        costContainer.appendChild(costInput);
+
+        // Min ilość (nowe pole)
+        const minQtyContainer = document.createElement('div');
+        minQtyContainer.className = 'input-field-container';
+
+        const minQtyLabel = document.createElement('label');
+        minQtyLabel.textContent = 'Min. ilość:';
+        minQtyLabel.htmlFor = `product-min-qty-${rowId}`;
+
+        const minQtyInput = document.createElement('input');
+        minQtyInput.type = 'number';
+        minQtyInput.id = `product-min-qty-${rowId}`;
+        minQtyInput.step = '1';
+        minQtyInput.min = '0';
+        minQtyInput.placeholder = '(opcjonalnie)';
+
+        minQtyContainer.appendChild(minQtyLabel);
+        minQtyContainer.appendChild(minQtyInput);
+
+        // Max ilość (nowe pole)
+        const maxQtyContainer = document.createElement('div');
+        maxQtyContainer.className = 'input-field-container';
+
+        const maxQtyLabel = document.createElement('label');
+        maxQtyLabel.textContent = 'Max. ilość:';
+        maxQtyLabel.htmlFor = `product-max-qty-${rowId}`;
+
+        const maxQtyInput = document.createElement('input');
+        maxQtyInput.type = 'number';
+        maxQtyInput.id = `product-max-qty-${rowId}`;
+        maxQtyInput.step = '1';
+        maxQtyInput.min = '0';
+        maxQtyInput.placeholder = '(opcjonalnie)';
+
+        maxQtyContainer.appendChild(maxQtyLabel);
+        maxQtyContainer.appendChild(maxQtyInput);
         
         // Przycisk usuwania
         const removeButton = document.createElement('button');
@@ -117,6 +265,9 @@ const ProductionOpt = {
         // Dodaj elementy do wiersza
         productRow.appendChild(nameContainer);
         productRow.appendChild(profitContainer);
+        productRow.appendChild(costContainer); // Dodajemy nowe pole
+        productRow.appendChild(minQtyContainer); // Dodajemy nowe pole
+        productRow.appendChild(maxQtyContainer); // Dodajemy nowe pole
         
         // Dodaj pola dla zużycia zasobów (początkowo żadne, zostaną dodane później)
         const resourceUsageContainer = document.createElement('div');
@@ -138,6 +289,9 @@ const ProductionOpt = {
             active: true,
             name: `Produkt ${String.fromCharCode(65 + rowId)}`,
             profit: 10,
+            cost: 5, // Domyślny koszt
+            minQuantity: null, // Domyślnie brak limitu
+            maxQuantity: null, // Domyślnie brak limitu
             resourceUsage: Array(Math.max(1, ProductionOpt.resourceRows)).fill(1)
         };
     },
@@ -318,10 +472,20 @@ const ProductionOpt = {
             
             const nameInput = document.getElementById(`product-name-${i}`);
             const profitInput = document.getElementById(`product-profit-${i}`);
+            const costInput = document.getElementById(`product-cost-${i}`); // NOWE
+            const minQtyInput = document.getElementById(`product-min-qty-${i}`); // NOWE
+            const maxQtyInput = document.getElementById(`product-max-qty-${i}`); // NOWE
             
-            if (nameInput && profitInput) {
+            if (nameInput && profitInput && costInput && minQtyInput && maxQtyInput) { // Upewniamy się, że wszystkie nowe inputy istnieją
                 ProductionOpt.products[i].name = nameInput.value || `Produkt ${i+1}`;
                 ProductionOpt.products[i].profit = parseFloat(profitInput.value) || 0;
+                ProductionOpt.products[i].cost = parseFloat(costInput.value) || 0; // NOWE
+                
+                const minQty = parseInt(minQtyInput.value);
+                ProductionOpt.products[i].minQuantity = isNaN(minQty) ? null : minQty; // NOWE
+                
+                const maxQty = parseInt(maxQtyInput.value);
+                ProductionOpt.products[i].maxQuantity = isNaN(maxQty) ? null : maxQty; // NOWE
             }
             
             // Zbierz dane zużycia zasobów
@@ -360,9 +524,8 @@ const ProductionOpt = {
     },
     
     loadSampleData: () => {
-        console.log("Ładowanie przykładowych danych do optymalizacji produkcji");
+        Logger.log('INFO', "Ładowanie przykładowych danych Egzaminacyjnych (Optymalizacja Produkcji)");
         
-        // Wyczyść istniejące dane
         const productsList = document.getElementById('productsList');
         const resourcesList = document.getElementById('resourcesList');
         
@@ -374,161 +537,149 @@ const ProductionOpt = {
         ProductionOpt.resourceRows = 0;
         ProductionOpt.resources = [];
         
-        // Przykładowe dane produktów
-        const sampleProducts = [
-            { name: "Produkt A", profit: 8, resourceUsage: [2, 1] },
-            { name: "Produkt B", profit: 6, resourceUsage: [1, 2] },
-            { name: "Produkt C", profit: 5, resourceUsage: [2, 3] }
+        // Dane Egzaminacyjne
+        const sampleProductsData = [
+            { name: "Produkt A", profit: 40, cost: 350, minQuantity: null, maxQuantity: null, resourceUsage: [1, 350] }, // Zużycie: [powierzchnia, koszt_jednostkowy_dla_budzetu]
+            { name: "Produkt B", profit: 140, cost: 800, minQuantity: null, maxQuantity: null, resourceUsage: [3, 800] },
+            { name: "Produkt C", profit: 80, cost: 600, minQuantity: 30, maxQuantity: 100, resourceUsage: [2, 600] }
         ];
         
-        // Przykładowe dane zasobów
-        const sampleResources = [
-            { name: "Surowiec 1", amount: 100 },
-            { name: "Maszyna 2", amount: 80 }
+        const sampleResourcesData = [
+            { name: "Powierzchnia", amount: 400 },
+            { name: "Budżet", amount: 150000 } // Ograniczenie na całkowity koszt
         ];
+        
+        // Ustaw typ optymalizacji na maksymalizację zysku dla tych danych
+        const optimizationTypeElement = document.getElementById('optimizationType');
+        if (optimizationTypeElement) {
+            optimizationTypeElement.value = 'max';
+        }
         
         // Dodaj przykładowe zasoby
-        for (const resource of sampleResources) {
+        sampleResourcesData.forEach((resourceData, index) => {
             const rowId = ProductionOpt.resourceRows++;
+            ProductionOpt.resources[rowId] = {
+                id: rowId, 
+                active: true,
+                name: resourceData.name,
+                amount: resourceData.amount
+            };
             
             const resourceRow = document.createElement('div');
             resourceRow.id = `resource-row-${rowId}`;
             resourceRow.className = 'input-row resource-row';
             
-            // Nazwa zasobu
             const nameContainer = document.createElement('div');
             nameContainer.className = 'input-field-container';
-            
             const nameLabel = document.createElement('label');
-            nameLabel.textContent = 'Nazwa:';
-            nameLabel.htmlFor = `resource-name-${rowId}`;
-            
+            nameLabel.textContent = 'Nazwa:'; nameLabel.htmlFor = `resource-name-${rowId}`;
             const nameInput = document.createElement('input');
-            nameInput.type = 'text';
-            nameInput.id = `resource-name-${rowId}`;
-            nameInput.value = resource.name;
+            nameInput.type = 'text'; nameInput.id = `resource-name-${rowId}`; nameInput.value = resourceData.name;
+            nameContainer.appendChild(nameLabel); nameContainer.appendChild(nameInput);
             
-            nameContainer.appendChild(nameLabel);
-            nameContainer.appendChild(nameInput);
-            
-            // Dostępna ilość
             const amountContainer = document.createElement('div');
             amountContainer.className = 'input-field-container';
-            
             const amountLabel = document.createElement('label');
-            amountLabel.textContent = 'Dostępna ilość:';
-            amountLabel.htmlFor = `resource-amount-${rowId}`;
-            
+            amountLabel.textContent = 'Dostępna ilość:'; amountLabel.htmlFor = `resource-amount-${rowId}`;
             const amountInput = document.createElement('input');
-            amountInput.type = 'number';
-            amountInput.id = `resource-amount-${rowId}`;
-            amountInput.step = '1';
-            amountInput.min = '0';
-            amountInput.value = resource.amount;
+            amountInput.type = 'number'; amountInput.id = `resource-amount-${rowId}`; amountInput.step = '1'; amountInput.min = '0'; amountInput.value = resourceData.amount;
+            amountContainer.appendChild(amountLabel); amountContainer.appendChild(amountInput);
             
-            amountContainer.appendChild(amountLabel);
-            amountContainer.appendChild(amountInput);
-            
-            // Przycisk usuwania
             const removeButton = document.createElement('button');
-            removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń';
-            removeButton.className = 'small-button';
+            removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń'; removeButton.className = 'small-button';
             removeButton.onclick = () => ProductionOpt.removeResourceRow(rowId);
             
-            // Dodaj elementy do wiersza
-            resourceRow.appendChild(nameContainer);
-            resourceRow.appendChild(amountContainer);
-            resourceRow.appendChild(removeButton);
-            
-            // Dodaj wiersz do listy zasobów
+            resourceRow.appendChild(nameContainer); resourceRow.appendChild(amountContainer); resourceRow.appendChild(removeButton);
             resourcesList.appendChild(resourceRow);
-            
-            // Dodaj ten zasób do listy
-            ProductionOpt.resources[rowId] = {
-                active: true,
-                name: resource.name,
-                amount: resource.amount
-            };
-        }
+        });
         
         // Dodaj przykładowe produkty
-        for (const product of sampleProducts) {
+        sampleProductsData.forEach((productData, index) => {
             const rowId = ProductionOpt.productRows++;
+            ProductionOpt.products[rowId] = {
+                id: rowId, 
+                active: true,
+                name: productData.name,
+                profit: productData.profit,
+                cost: productData.cost, 
+                minQuantity: productData.minQuantity,
+                maxQuantity: productData.maxQuantity,
+                resourceUsage: [...productData.resourceUsage]
+            };
             
             const productRow = document.createElement('div');
             productRow.id = `product-row-${rowId}`;
             productRow.className = 'input-row product-row';
             
-            // Nazwa produktu
             const nameContainer = document.createElement('div');
             nameContainer.className = 'input-field-container';
-            
             const nameLabel = document.createElement('label');
-            nameLabel.textContent = 'Nazwa:';
-            nameLabel.htmlFor = `product-name-${rowId}`;
-            
+            nameLabel.textContent = 'Nazwa:'; nameLabel.htmlFor = `product-name-${rowId}`;
             const nameInput = document.createElement('input');
-            nameInput.type = 'text';
-            nameInput.id = `product-name-${rowId}`;
-            nameInput.value = product.name;
+            nameInput.type = 'text'; nameInput.id = `product-name-${rowId}`; nameInput.value = productData.name;
+            nameContainer.appendChild(nameLabel); nameContainer.appendChild(nameInput);
             
-            nameContainer.appendChild(nameLabel);
-            nameContainer.appendChild(nameInput);
-            
-            // Zysk/koszt jednostkowy
             const profitContainer = document.createElement('div');
             profitContainer.className = 'input-field-container';
-            
             const profitLabel = document.createElement('label');
-            profitLabel.textContent = 'Zysk/szt:';
-            profitLabel.htmlFor = `product-profit-${rowId}`;
-            
+            profitLabel.textContent = 'Zysk/szt.:'; profitLabel.htmlFor = `product-profit-${rowId}`;
             const profitInput = document.createElement('input');
-            profitInput.type = 'number';
-            profitInput.id = `product-profit-${rowId}`;
-            profitInput.step = '0.1';
-            profitInput.value = product.profit;
+            profitInput.type = 'number'; profitInput.id = `product-profit-${rowId}`; profitInput.step = '0.1'; profitInput.value = productData.profit;
+            profitContainer.appendChild(profitLabel); profitContainer.appendChild(profitInput);
+
+            const costContainer = document.createElement('div');
+            costContainer.className = 'input-field-container';
+            const costLabel = document.createElement('label');
+            costLabel.textContent = 'Koszt/szt.:'; costLabel.htmlFor = `product-cost-${rowId}`;
+            const costInputElem = document.createElement('input'); // Zmieniona nazwa zmiennej, aby uniknąć konfliktu
+            costInputElem.type = 'number'; costInputElem.id = `product-cost-${rowId}`; costInputElem.step = '0.1'; costInputElem.min = '0'; costInputElem.value = productData.cost;
+            costContainer.appendChild(costLabel); costContainer.appendChild(costInputElem);
+
+            const minQtyContainer = document.createElement('div');
+            minQtyContainer.className = 'input-field-container';
+            const minQtyLabel = document.createElement('label');
+            minQtyLabel.textContent = 'Min. ilość:'; minQtyLabel.htmlFor = `product-min-qty-${rowId}`;
+            const minQtyInput = document.createElement('input');
+            minQtyInput.type = 'number'; minQtyInput.id = `product-min-qty-${rowId}`; minQtyInput.step = '1'; minQtyInput.min = '0';
+            minQtyInput.value = productData.minQuantity === null || productData.minQuantity === undefined ? '' : productData.minQuantity;
+            minQtyInput.placeholder = '(opcjonalnie)';
+            minQtyContainer.appendChild(minQtyLabel); minQtyContainer.appendChild(minQtyInput);
+
+            const maxQtyContainer = document.createElement('div');
+            maxQtyContainer.className = 'input-field-container';
+            const maxQtyLabel = document.createElement('label');
+            maxQtyLabel.textContent = 'Max. ilość:'; maxQtyLabel.htmlFor = `product-max-qty-${rowId}`;
+            const maxQtyInput = document.createElement('input');
+            maxQtyInput.type = 'number'; maxQtyInput.id = `product-max-qty-${rowId}`; maxQtyInput.step = '1'; maxQtyInput.min = '0';
+            maxQtyInput.value = productData.maxQuantity === null || productData.maxQuantity === undefined ? '' : productData.maxQuantity;
+            maxQtyInput.placeholder = '(opcjonalnie)';
+            maxQtyContainer.appendChild(maxQtyLabel); maxQtyContainer.appendChild(maxQtyInput);
             
-            profitContainer.appendChild(profitLabel);
-            profitContainer.appendChild(profitInput);
-            
-            // Przycisk usuwania
             const removeButton = document.createElement('button');
-            removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń';
-            removeButton.className = 'small-button';
+            removeButton.innerHTML = '<i class="fas fa-trash"></i> Usuń'; removeButton.className = 'small-button';
             removeButton.onclick = () => ProductionOpt.removeProductRow(rowId);
             
-            // Dodaj elementy do wiersza
             productRow.appendChild(nameContainer);
             productRow.appendChild(profitContainer);
+            productRow.appendChild(costContainer);
+            productRow.appendChild(minQtyContainer);
+            productRow.appendChild(maxQtyContainer);
             
-            // Dodaj pola dla zużycia zasobów
             const resourceUsageContainer = document.createElement('div');
             resourceUsageContainer.className = 'resource-usage-container';
             resourceUsageContainer.id = `resource-usage-${rowId}`;
             productRow.appendChild(resourceUsageContainer);
             
-            // Dodaj przycisk usuwania
             productRow.appendChild(removeButton);
-            
-            // Dodaj wiersz do listy produktów
             productsList.appendChild(productRow);
             
-            // Dodaj ten produkt do listy
-            ProductionOpt.products[rowId] = {
-                active: true,
-                name: product.name,
-                profit: product.profit,
-                resourceUsage: [...product.resourceUsage]
-            };
-            
-            // Aktualizuj pola zużycia zasobów
             ProductionOpt.updateResourceUsageFields(rowId);
-        }
+        });
+        Utils.showToast("Przykładowe dane egzaminacyjne zostały załadowane.");
     },
     
     calculateFallback: () => {
-        console.log("Uruchomiono funkcję fallback dla obliczania optymalizacji produkcji");
+        Logger.log('INFO', "Uruchomiono funkcję fallback dla obliczania optymalizacji produkcji");
         
         try {
             // Przygotuj dane na podstawie tego, co mamy w formularzach
@@ -726,7 +877,7 @@ const ProductionOpt = {
             };
             
         } catch (error) {
-            console.error("Błąd podczas wykonywania funkcji calculateFallback:", error);
+            Logger.log('ERROR', "Błąd podczas wykonywania funkcji calculateFallback:", error);
             const resultsContainer = document.getElementById('productionOptResults');
             if (resultsContainer) {
                 resultsContainer.innerHTML = `
@@ -740,78 +891,55 @@ const ProductionOpt = {
     },
     
     calculate: () => {
-        console.log("Executing ProductionOpt.calculate()");
+        Logger.log('INFO', "Executing ProductionOpt.calculate() with new solver logic");
         
-        try {
-            // Wyczyść poprzednie wyniki
             Utils.clearElement('productionOptResults');
             Utils.clearElement('productionOptVisualization');
-            
-            // Pokaż wskaźnik ładowania
             Utils.showElement('productionOptLoadingIndicator');
             
-            // Zbierz dane produktów i zasobów
-            ProductionOpt.collectProductData();
-            ProductionOpt.collectResourceData();
-            
-            // Przygotuj dane dla algorytmu optymalizacji
-            const activeResources = ProductionOpt.resources.filter(r => r && r.active);
-            if (activeResources.length === 0) {
-                throw new Error('Brak zdefiniowanych zasobów.');
-            }
-            
-            const activeProducts = ProductionOpt.products.filter(p => p && p.active);
-            if (activeProducts.length === 0) {
-                throw new Error('Brak zdefiniowanych produktów.');
-            }
-            
-            // Przygotuj macierz współczynników
-            const A = []; // Macierz zużycia zasobów
-            const b = []; // Wektor dostępnych zasobów
-            const c = []; // Wektor zysków
-            
-            // Dla każdego zasobu tworzymy wiersz macierzy A i element wektora b
-            let resourceIndex = 0;
-            for (const resource of activeResources) {
-                A.push([]);
-                b.push(resource.amount);
+        // Małe opóźnienie, aby UI zdążył pokazać wskaźnik ładowania
+        setTimeout(() => {
+            try {
+                // Wywołanie nowej funkcji solveLinearProgram, która sama zbiera dane
+                const solution = ProductionOpt.solveLinearProgram(); 
                 
-                // Dla każdego produktu dodajemy jego zużycie tego zasobu
-                for (const product of activeProducts) {
-                    const resourceUsage = product.resourceUsage[resourceIndex] || 0;
-                    A[A.length - 1].push(resourceUsage);
+                // Zapisujemy surowy wynik (lub obiekt błędu) do ProductionOpt.solution
+                // To jest używane np. przez exportResults()
+                ProductionOpt.solution = solution; 
+                
+                if (solution && solution.feasible) {
+                    // Pobierz świeże activeProducts/activeResources, które były użyte do rozwiązania,
+                    // na wypadek gdyby solveLinearProgram je modyfikowała (chociaż nie powinna)
+                    // lub dla pewności, że displayResults dostaje dokładnie to, co było rozwiązane.
+                    // Jednak nowa solveLinearProgram sama pobiera te dane, więc są one już 'świeże' wewnątrz niej.
+                    // Dla displayResults/visualizeResults potrzebujemy list produktów/zasobów, które odpowiadają danym w solution.
+                    const currentActiveProducts = ProductionOpt.products.filter(p => p && p.active);
+                    const currentActiveResources = ProductionOpt.resources.filter(r => r && r.active);
+
+                    ProductionOpt.displayResults(currentActiveProducts, currentActiveResources, solution);
+                    ProductionOpt.visualizeResults(currentActiveProducts, currentActiveResources, solution);
+                } else {
+                    ProductionOpt.displayNoSolutionMessage(); 
+                    if (solution && solution.error) {
+                         Logger.log('WARN', `[ProductionOpt Calculate] Solver failed or no feasible solution: ${solution.error}`, solution.details ? JSON.stringify(solution.details) : '');
+                         Utils.showToast(solution.error, true);
+                    } else {
+                         Logger.log('WARN', "[ProductionOpt Calculate] No solution or unknown solver error.");
+                         Utils.showToast("Nie udało się znaleźć rozwiązania.", true);
+                    }
                 }
-                
-                resourceIndex++;
-            }
-            
-            // Przygotuj wektor zysków
-            for (const product of activeProducts) {
-                c.push(product.profit);
-            }
-            
-            // Rozwiązanie problemu
-            setTimeout(() => {
-                try {
-                    const solution = ProductionOpt.solveLinearProgram(A, b, c);
-                    ProductionOpt.solution = solution;
-                    
-                    // Wyświetl wyniki
-                    ProductionOpt.displayResults(activeProducts, activeResources, solution);
-                    
-                    // Wizualizuj wyniki
-                    ProductionOpt.visualizeResults(activeProducts, solution);
-                } catch (error) {
+            } catch (err) { 
+                Logger.log('ERROR', "[ProductionOpt Calculate] Critical error during optimization process:", err, err.stack ? err.stack : '');
+                Utils.showToast("Wystąpił krytyczny błąd podczas optymalizacji.", true);
+                // Wyświetl bardziej szczegółowy komunikat błędu, jeśli to możliwe
+                const resultsContainer = document.getElementById('productionOptResults');
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = `<div class="error-message"><h3>Krytyczny błąd optymalizacji</h3><p>${err.message || 'Nieznany błąd'}</p>${err.stack ? `<pre>${err.stack}</pre>` : ''}</div>`;
+                }
+            } finally {
                     Utils.hideElement('productionOptLoadingIndicator');
-                    Utils.displayResults('productionOptResults', `Błąd: ${error.message}`, true);
-                    console.error("Error solving production optimization:", error);
-                }
-            }, 100);
-        } catch (error) {
-            Utils.hideElement('productionOptLoadingIndicator');
-            Utils.displayResults('productionOptResults', `Błąd: ${error.message}`, true);
-            console.error("Error in ProductionOpt.calculate():", error);
-        }
+            }
+        }, 50); // Opóźnienie dla UI
     },
     
     displayNoSolutionMessage: () => {
@@ -932,19 +1060,44 @@ const ProductionOpt = {
         resultsContainer.innerHTML = html;
     },
     
-    visualizeResults: (activeProducts, solution) => {
+    visualizeResults: (activeProducts, activeResources, solution) => {
         if (!solution) return;
+        
+        // Odczytaj typ optymalizacji z solution, aby ustawić isMaximization
+        const optimizationType = solution.optimizationType || 'maximize'; // Domyślnie maximize, jeśli brak
+        const isMaximization = optimizationType === 'maximize';
         
         const visualizationContainer = document.getElementById('productionOptVisualization');
         visualizationContainer.innerHTML = '';
         
         // Przygotuj dane do wykresów
         const productNames = activeProducts.map(p => p.name);
-        const productQuantities = activeProducts.map(p => p.quantity);
-        const productContributions = activeProducts.map(p => p.contribution);
+        const productQuantities = activeProducts.map(p => {
+            const solvedProduct = solution.products.find(sp => sp.name === p.name);
+            return solvedProduct ? solvedProduct.quantity : 0; 
+        });
+        const productContributions = activeProducts.map(p => {
+            const solvedProduct = solution.products.find(sp => sp.name === p.name);
+            return solvedProduct ? solvedProduct.contribution : 0; 
+        });
         
         const resourceNames = activeResources.map(r => r.name);
-        const resourceUtilizations = activeResources.map(r => r.utilization);
+        const resourceUtilizations = activeResources.map(r => {
+            const solvedResource = solution.resources.find(sr => sr.name === r.name);
+            // Dodatkowe zabezpieczenie: upewnij się, że solvedResource i solvedResource.utilization istnieją i są liczbami
+            if (solvedResource && typeof solvedResource.utilization === 'number') {
+                return solvedResource.utilization;
+            }
+            Logger.log('WARN', `[VisualizeResults] Brak danych o wykorzystaniu dla zasobu: ${r.name}. Używam 0.`);
+            return 0; // Zwróć 0, jeśli czegoś brakuje
+        });
+        
+        // Logowanie danych wejściowych dla wykresów produktów
+        Logger.log('DEBUG', "[VisualizeResults Data] productNames:", JSON.parse(JSON.stringify(productNames)));
+        Logger.log('DEBUG', "[VisualizeResults Data] productQuantities:", JSON.parse(JSON.stringify(productQuantities)));
+        Logger.log('DEBUG', "[VisualizeResults Data] productContributions:", JSON.parse(JSON.stringify(productContributions)));
+        Logger.log('DEBUG', "[VisualizeResults Data] resourceNames:", JSON.parse(JSON.stringify(resourceNames)));
+        Logger.log('DEBUG', "[VisualizeResults Data] resourceUtilizations:", JSON.parse(JSON.stringify(resourceUtilizations)));
         
         // Utwórz kontener dla wykresu ilości produkcji
         const quantityChartDiv = document.createElement('div');
@@ -952,6 +1105,21 @@ const ProductionOpt = {
         quantityChartDiv.className = 'chart-container';
         visualizationContainer.appendChild(quantityChartDiv);
         
+        // Utwórz kontener dla wykresu wkładu do funkcji celu
+        const contributionChartDiv = document.createElement('div');
+        contributionChartDiv.id = 'contribution-chart';
+        contributionChartDiv.className = 'chart-container';
+        visualizationContainer.appendChild(contributionChartDiv);
+        
+        // Utwórz kontener dla wykresu wykorzystania zasobów
+        const utilizationChartDiv = document.createElement('div');
+        utilizationChartDiv.id = 'utilization-chart';
+        utilizationChartDiv.className = 'chart-container';
+        visualizationContainer.appendChild(utilizationChartDiv);
+
+        // Opóźnienie renderowania wykresów, aby DOM był na pewno gotowy
+        setTimeout(() => {
+            try {
         // Wykres ilości produkcji
         const quantityTrace = {
             x: productNames,
@@ -967,20 +1135,12 @@ const ProductionOpt = {
             name: 'Ilość'
         };
         
-        const isMaximization = solution.optimizationType === 'max';
-        
         Plotly.newPlot('quantity-chart', [quantityTrace], {
             title: 'Optymalne ilości produkcji',
             xaxis: { title: 'Produkty' },
             yaxis: { title: 'Ilość' },
             margin: { t: 40, b: 80, l: 60, r: 40 }
         }, { responsive: true });
-        
-        // Utwórz kontener dla wykresu wkładu do funkcji celu
-        const contributionChartDiv = document.createElement('div');
-        contributionChartDiv.id = 'contribution-chart';
-        contributionChartDiv.className = 'chart-container';
-        visualizationContainer.appendChild(contributionChartDiv);
         
         // Wykres wkładu do funkcji celu
         const contributionTrace = {
@@ -994,21 +1154,15 @@ const ProductionOpt = {
                     width: 1
                 }
             },
-            name: isMaximization ? 'Zysk' : 'Koszt'
+                    name: isMaximization ? 'Zysk' : 'Koszt' // Tutaj używamy isMaximization
         };
         
         Plotly.newPlot('contribution-chart', [contributionTrace], {
-            title: isMaximization ? 'Wkład do całkowitego zysku' : 'Udział w całkowitym koszcie',
+                    title: isMaximization ? 'Wkład do całkowitego zysku' : 'Udział w całkowitym koszcie', // Tutaj używamy isMaximization
             xaxis: { title: 'Produkty' },
             yaxis: { title: isMaximization ? 'Zysk' : 'Koszt' },
             margin: { t: 40, b: 80, l: 60, r: 40 }
         }, { responsive: true });
-        
-        // Utwórz kontener dla wykresu wykorzystania zasobów
-        const utilizationChartDiv = document.createElement('div');
-        utilizationChartDiv.id = 'utilization-chart';
-        utilizationChartDiv.className = 'chart-container';
-        visualizationContainer.appendChild(utilizationChartDiv);
         
         // Wykres wykorzystania zasobów
         const utilizationTrace = {
@@ -1042,8 +1196,21 @@ const ProductionOpt = {
             margin: { t: 40, b: 60, l: 120, r: 40 }
         }, { responsive: true });
         
-        // Wyemituj zdarzenie po zakończeniu wizualizacji
+            } catch (plotlyError) {
+                Logger.log('ERROR', "[Plotly] Błąd podczas renderowania wykresu (próba logowania przez Logger):", plotlyError);
+                // Bezpośrednie logowanie do konsoli przeglądarki dla surowego obiektu błędu Plotly
+                console.error("[Plotly DEBUG] Surowy obiekt błędu Plotly:", plotlyError);
+                console.dir(plotlyError); 
+                // Można tutaj dodać komunikat dla użytkownika, jeśli wykresy się nie załadują
+                Utils.showToast("Wystąpił błąd podczas renderowania wykresów.", true);
+            }
+        }, 50); // Małe opóźnienie, np. 50ms
+        
+        // Wyemituj zdarzenie po zakończeniu wizualizacji (pozostaje bez zmian)
         document.dispatchEvent(new Event('calculation-complete'));
+        
+        // Ukryj wskaźnik ładowania po zakończeniu wizualizacji
+        Utils.hideElement('productionOptLoadingIndicator');
     },
     
     exportResults: () => {
@@ -1094,14 +1261,14 @@ const ProductionOpt = {
             }, 100);
             
         } catch (error) {
-            console.error("Błąd podczas eksportu wyników:", error);
+            Logger.log('ERROR', "Błąd podczas eksportu wyników:", error);
             alert("Wystąpił błąd podczas eksportu wyników: " + error.message);
         }
     },
 
     // Nowa funkcja do odtwarzania interfejsu z istniejących danych
     rebuildInterface: () => {
-        console.log("Rebuilding ProductionOpt interface from existing data");
+        Logger.log('INFO', "Rebuilding ProductionOpt interface from existing data");
         
         const productsList = document.getElementById('productsList');
         const resourcesList = document.getElementById('resourcesList');
@@ -1221,7 +1388,7 @@ const ProductionOpt = {
                 profitContainer.className = 'input-field-container';
                 
                 const profitLabel = document.createElement('label');
-                profitLabel.textContent = 'Zysk/szt:';
+                profitLabel.textContent = 'Zysk/szt.:';
                 profitLabel.htmlFor = `product-profit-${i}`;
                 
                 const profitInput = document.createElement('input');
@@ -1233,10 +1400,65 @@ const ProductionOpt = {
                 
                 profitContainer.appendChild(profitLabel);
                 profitContainer.appendChild(profitInput);
+
+                // Koszt jednostkowy (NOWE)
+                const costContainer = document.createElement('div');
+                costContainer.className = 'input-field-container';
+                const costLabel = document.createElement('label');
+                costLabel.textContent = 'Koszt/szt.:';
+                costLabel.htmlFor = `product-cost-${i}`;
+                const costInput = document.createElement('input');
+                costInput.type = 'number';
+                costInput.id = `product-cost-${i}`;
+                costInput.step = '0.1';
+                costInput.min = '0';
+                costInput.placeholder = 'np. 5';
+                costInput.value = product.cost || 5;
+                costContainer.appendChild(costLabel);
+                costContainer.appendChild(costInput);
+
+                // Min ilość (NOWE)
+                const minQtyContainer = document.createElement('div');
+                minQtyContainer.className = 'input-field-container';
+                const minQtyLabel = document.createElement('label');
+                minQtyLabel.textContent = 'Min. ilość:';
+                minQtyLabel.htmlFor = `product-min-qty-${i}`;
+                const minQtyInput = document.createElement('input');
+                minQtyInput.type = 'number';
+                minQtyInput.id = `product-min-qty-${i}`;
+                minQtyInput.step = '1';
+                minQtyInput.min = '0';
+                minQtyInput.placeholder = '(opcjonalnie)';
+                if (product.minQuantity !== null && product.minQuantity !== undefined) {
+                    minQtyInput.value = product.minQuantity;
+                }
+                minQtyContainer.appendChild(minQtyLabel);
+                minQtyContainer.appendChild(minQtyInput);
+
+                // Max ilość (NOWE)
+                const maxQtyContainer = document.createElement('div');
+                maxQtyContainer.className = 'input-field-container';
+                const maxQtyLabel = document.createElement('label');
+                maxQtyLabel.textContent = 'Max. ilość:';
+                maxQtyLabel.htmlFor = `product-max-qty-${i}`;
+                const maxQtyInput = document.createElement('input');
+                maxQtyInput.type = 'number';
+                maxQtyInput.id = `product-max-qty-${i}`;
+                maxQtyInput.step = '1';
+                maxQtyInput.min = '0'; // Powinno być co najmniej min. ilość, ale to obsłuży walidacja/solver
+                maxQtyInput.placeholder = '(opcjonalnie)';
+                if (product.maxQuantity !== null && product.maxQuantity !== undefined) {
+                    maxQtyInput.value = product.maxQuantity;
+                }
+                maxQtyContainer.appendChild(maxQtyLabel);
+                maxQtyContainer.appendChild(maxQtyInput);
                 
                 // Dodaj elementy do wiersza
                 productRow.appendChild(nameContainer);
                 productRow.appendChild(profitContainer);
+                productRow.appendChild(costContainer); // NOWE
+                productRow.appendChild(minQtyContainer); // NOWE
+                productRow.appendChild(maxQtyContainer); // NOWE
                 
                 // Dodaj pola dla zużycia zasobów
                 const resourceUsageContainer = document.createElement('div');
@@ -1261,5 +1483,346 @@ const ProductionOpt = {
                 ProductionOpt.updateResourceUsageFields(i);
             }
         }
-    }
+    },
+
+    // NOWE FUNKCJE DLA linkHandler.js
+    exportDataForLink: () => {
+        Logger.log('DEBUG', "[ProductionOpt] Exporting data for link");
+        let dataParts = [];
+
+        const optimizationTypeElement = document.getElementById('optimizationType');
+        const optimizationType = optimizationTypeElement ? optimizationTypeElement.value : 'maximize';
+        dataParts.push(optimizationType);
+
+        const productsData = [];
+        if (ProductionOpt.collectProductData) ProductionOpt.collectProductData();
+        if (ProductionOpt.collectResourceData) ProductionOpt.collectResourceData();
+
+        (ProductionOpt.products || []).forEach(product => {
+            if (product && product.active) {
+                const name = encodeURIComponent(product.name || '');
+                const profit = product.profit || 0;
+                const cost = product.cost || 0; // NOWE
+                const minQty = product.minQuantity === null || product.minQuantity === undefined ? '' : product.minQuantity; // NOWE
+                const maxQty = product.maxQuantity === null || product.maxQuantity === undefined ? '' : product.maxQuantity; // NOWE
+                const usages = (product.resourceUsage || []).join('^');
+                // Format: name^profit^cost_minQty_maxQty_usages
+                productsData.push(`${name}^${profit}^${cost}_${minQty}_${maxQty}_${usages}`);
+            }
+        });
+        dataParts.push(productsData.join('~'));
+
+        const resourcesData = [];
+        (ProductionOpt.resources || []).forEach(resource => {
+            if (resource && resource.active) {
+                const name = encodeURIComponent(resource.name || '');
+                const amount = resource.amount || 0;
+                resourcesData.push(`${name}^${amount}`);
+            }
+        });
+        dataParts.push(resourcesData.join('~'));
+
+        return dataParts.join('§');
+    },
+
+    importDataFromLinkString: (dataString) => {
+        Logger.log('DEBUG', `[ProductionOpt] Importing data from string: ${dataString}`);
+        if (!dataString) return false;
+
+        const parts = dataString.split('§');
+        if (parts.length < 3) { // Oczekujemy typu, produktów, zasobów
+            Logger.log('ERROR', "[ProductionOpt] Nieprawidłowy format danych z linku (za mało części).");
+            Utils.showToast('Błąd przetwarzania danych Optymalizacji Produkcji z linku.', true);
+            return false;
+        }
+
+        try {
+            const optimizationType = parts[0];
+            const productsStrings = parts[1] && parts[1].trim() !== "" ? parts[1].split('~') : [];
+            const resourcesStrings = parts[2] && parts[2].trim() !== "" ? parts[2].split('~') : [];
+
+            const optimizationTypeElement = document.getElementById('optimizationType');
+            if (optimizationTypeElement) {
+                if (optimizationType === 'max' || optimizationType === 'min') {
+                    optimizationTypeElement.value = optimizationType;
+                } else {
+                    Logger.warn("[ProductionOpt] Nieznany typ optymalizacji w linku: ", optimizationType, " Ustawiam na max.");
+                    optimizationTypeElement.value = 'max';
+                }
+            }
+
+            ProductionOpt.products = [];
+            productsStrings.forEach((pStr, index) => {
+                if (!pStr.trim()) return; 
+                const pData = pStr.split('^');
+                // Oczekujemy teraz co najmniej 3 części: name^profit^cost_min_max_usages
+                // gdzie cost_min_max_usages może być jedną częścią, jeśli usages jest puste
+                if (pData.length >= 3) { 
+                    const name = decodeURIComponent(pData[0]);
+                    const profit = parseFloat(pData[1]);
+                    
+                    // Rozdzielenie cost_minQty_maxQty_usages
+                    const extraDataAndUsages = pData[2].split('_');
+                    let cost = 0;
+                    let minQuantity = null;
+                    let maxQuantity = null;
+                    let resourceUsage = [];
+
+                    if (extraDataAndUsages.length >= 3) { // Oczekujemy co najmniej cost, min, max
+                        cost = parseFloat(extraDataAndUsages[0]);
+                        const minQtyStr = extraDataAndUsages[1];
+                        minQuantity = minQtyStr === '' ? null : parseInt(minQtyStr);
+                        const maxQtyStr = extraDataAndUsages[2];
+                        maxQuantity = maxQtyStr === '' ? null : parseInt(maxQtyStr);
+                        
+                        // Reszta to usages (jeśli istnieją)
+                        if (extraDataAndUsages.length > 3 && extraDataAndUsages[3].trim() !== '') {
+                            resourceUsage = extraDataAndUsages[3].split('^').map(val => {
+                                const num = parseFloat(val);
+                                return isNaN(num) ? 0 : num;
+                            });
+                        } else if (extraDataAndUsages.length > 3) { // pusta część usages
+                             resourceUsage = [];
+                        }
+                    } else {
+                        Logger.warn(`[ProductionOpt] Niekompletne dane cost_min_max dla produktu: ${pStr}. Używam domyślnych.`);
+                    }
+
+                    if (name.trim() !== "" && !isNaN(profit) && !isNaN(cost)) {
+                        ProductionOpt.products.push({
+                            id: index, 
+                            active: true,
+                            name: name,
+                            profit: profit,
+                            cost: cost, // NOWE
+                            minQuantity: isNaN(minQuantity) ? null : minQuantity, // NOWE
+                            maxQuantity: isNaN(maxQuantity) ? null : maxQuantity, // NOWE
+                            resourceUsage: resourceUsage
+                        });
+                    } else {
+                        Logger.warn(`[ProductionOpt] Pomijam produkt z linku z powodu nieprawidłowych danych: ${pStr}`);
+                    }
+                } else {
+                     Logger.warn(`[ProductionOpt] Nieprawidłowy format danych produktu w linku (za mało części ^): ${pStr}`);
+                }
+            });
+
+            ProductionOpt.resources = [];
+            resourcesStrings.forEach((rStr, index) => {
+                if (!rStr.trim()) return; // Pomiń puste stringi
+                const rData = rStr.split('^');
+                if (rData.length === 2) {
+                    const name = decodeURIComponent(rData[0]);
+                    const amount = parseFloat(rData[1]);
+                    if (name.trim() !== "" && !isNaN(amount) && amount >= 0) {
+                        ProductionOpt.resources.push({
+                            id: index,
+                            active: true,
+                            name: name,
+                            amount: amount
+                        });
+                    } else {
+                        Logger.warn(`[ProductionOpt] Pomijam zasób z linku z powodu nieprawidłowych danych: ${rStr}`);
+                    }
+                }
+            });
+            
+            ProductionOpt.productRows = ProductionOpt.products.length;
+            ProductionOpt.resourceRows = ProductionOpt.resources.length;
+
+            const productsList = document.getElementById('productsList');
+            if (productsList) productsList.innerHTML = '';
+            const resourcesList = document.getElementById('resourcesList');
+            if (resourcesList) resourcesList.innerHTML = '';
+
+            if (ProductionOpt.rebuildInterface) {
+                ProductionOpt.rebuildInterface(); 
+            }
+            
+            Utils.showToast("Dane dla Optymalizacji Produkcji zostały zaimportowane.");
+            return true; // Sukces
+
+        } catch (error) {
+            Logger.log('ERROR', '[ProductionOpt] Błąd podczas importowania danych:', error, error.stack);
+            Utils.showToast('Błąd przetwarzania danych Optymalizacji Produkcji z linku.', true);
+            ProductionOpt.products = []; ProductionOpt.resources = []; 
+            if (ProductionOpt.rebuildInterface) {
+                ProductionOpt.rebuildInterface();
+            }
+            return false; // Błąd
+        }
+    },
+
+    // importDataFromLinkString: (dataString) => { ... }, // Poprzednia funkcja bez zmian
+
+    // NOWA IMPLEMENTACJA solveLinearProgram wykorzystująca javascript-lp-solver
+    solveLinearProgram: () => {
+        Logger.log('INFO', "[ProductionOpt] Starting new solveLinearProgram with javascript-lp-solver.");
+
+        const optimizationTypeElement = document.getElementById('optimizationType');
+        const optimizationType = optimizationTypeElement ? optimizationTypeElement.value : 'max'; 
+        const objectiveFieldName = optimizationType === 'max' ? 'profitToMaximize' : 'costToMinimize';
+
+        ProductionOpt.collectProductData();
+        ProductionOpt.collectResourceData();
+
+        const activeProducts = ProductionOpt.products.filter(p => p && p.active);
+        const activeResources = ProductionOpt.resources.filter(r => r && r.active);
+
+        if (activeProducts.length === 0) {
+            Logger.log('ERROR', "[ProductionOpt SolveLP] No active products to optimize.");
+            Utils.showToast("Brak aktywnych produktów do optymalizacji.", true);
+            return { feasible: false, error: "Brak aktywnych produktów." };
+        }
+        
+        const productsRequireResources = activeProducts.some(p => 
+            p.resourceUsage && p.resourceUsage.some(usage => typeof usage === 'number' && usage > 0)
+        );
+
+        if (productsRequireResources && activeResources.length === 0) {
+            Logger.log('ERROR', "[ProductionOpt SolveLP] No active resources defined, but products require them.");
+            Utils.showToast("Brak aktywnych zasobów, a produkty ich wymagają.", true);
+            return { feasible: false, error: "Brak aktywnych zasobów potrzebnych dla produktów." };
+        }
+
+        const model = {
+            optimize: objectiveFieldName, 
+            opType: optimizationType,
+            constraints: {},
+            variables: {},
+            ints: {}
+        };
+
+        const resourceSolverNameMap = new Map(); 
+
+        activeResources.forEach((resource, index) => {
+            const originalResourceName = resource.name || `Resource${index}`;
+            const solverConstraintName = `res_${Utils.sanitizeForSolver(originalResourceName)}`;
+            model.constraints[solverConstraintName] = { max: resource.amount };
+            resourceSolverNameMap.set(index, solverConstraintName); 
+            Logger.log('DEBUG', `[Solver Model] Constraint: ${solverConstraintName} <= ${resource.amount}`);
+        });
+
+        activeProducts.forEach((product, productIdx) => {
+            const originalProductName = product.name || `Product${productIdx}`;
+            const productSolverName = `prod_${Utils.sanitizeForSolver(originalProductName)}`;
+            
+            model.variables[productSolverName] = {};
+            model.variables[productSolverName][objectiveFieldName] = optimizationType === 'max' ? (product.profit || 0) : (product.cost || 0);
+            model.ints[productSolverName] = 1; 
+
+            Logger.log('DEBUG', `[Solver Model] Variable: ${productSolverName}, ${objectiveFieldName}: ${model.variables[productSolverName][objectiveFieldName]}`);
+
+            if (product.resourceUsage && product.resourceUsage.length > 0) {
+                product.resourceUsage.forEach((usageValue, activeResourceIndex) => {
+                    if (activeResourceIndex < activeResources.length) { 
+                        // POPRAWIONA LITERÓWKA TUTAJ:
+                        const resourceSolverName = resourceSolverNameMap.get(activeResourceIndex);
+                        if (resourceSolverName && typeof usageValue === 'number' && usageValue > 0) {
+                            model.variables[productSolverName][resourceSolverName] = usageValue;
+                            Logger.log('DEBUG', `[Solver Model] ${productSolverName} uses ${usageValue} of ${resourceSolverName}`);
+                        }
+                    }
+                });
+            }
+
+            if (typeof product.minQuantity === 'number' && product.minQuantity > 0) {
+                const minConstrName = `${productSolverName}_min_constr`;
+                model.constraints[minConstrName] = { min: product.minQuantity };
+                model.variables[productSolverName][minConstrName] = 1;
+                 Logger.log('DEBUG', `[Solver Model] Min Qty: ${productSolverName} >= ${product.minQuantity} (Constraint: ${minConstrName})`);
+            }
+            if (typeof product.maxQuantity === 'number' && product.maxQuantity >= 0) { 
+                const maxConstrName = `${productSolverName}_max_constr`;
+                model.constraints[maxConstrName] = { max: product.maxQuantity };
+                model.variables[productSolverName][maxConstrName] = 1;
+                Logger.log('DEBUG', `[Solver Model] Max Qty: ${productSolverName} <= ${product.maxQuantity} (Constraint: ${maxConstrName})`);
+            }
+        });
+
+        Logger.log('INFO', "[ProductionOpt SolveLP] Model prepared for solver:", JSON.parse(JSON.stringify(model)));
+
+        let solverRawResults;
+        try {
+            if (typeof solver === 'undefined' || typeof solver.Solve !== 'function') {
+                Logger.log('ERROR', "[ProductionOpt SolveLP] javascript-lp-solver is not loaded or not a function!");
+                Utils.showToast("Błąd: Biblioteka solvera nie jest załadowana. Odśwież stronę.", true);
+                return { feasible: false, error: "Solver not loaded." };
+            }
+            solverRawResults = solver.Solve(model);
+            Logger.log('INFO', "[ProductionOpt SolveLP] Raw solver results:", JSON.parse(JSON.stringify(solverRawResults)));
+        } catch (e) {
+            Logger.log('ERROR', "[ProductionOpt SolveLP] Error during solver.Solve():", e, e.stack ? e.stack : '');
+            Utils.showToast("Wystąpił błąd podczas działania solvera.", true);
+            return { feasible: false, error: "Solver execution error.", details: e.toString() };
+        }
+        
+        if (!solverRawResults || typeof solverRawResults.feasible !== 'boolean') {
+             Logger.log('ERROR', "[ProductionOpt SolveLP] Solver returned invalid results structure:", solverRawResults);
+             Utils.showToast("Solver zwrócił nieprawidłowe wyniki.", true);
+             return { feasible: false, error: "Invalid solver results."};
+        }
+
+        if (!solverRawResults.feasible) {
+            let message = "Nie znaleziono wykonalnego rozwiązania.";
+            if (solverRawResults.hasOwnProperty('bounded') && solverRawResults.bounded === false) {
+                message = "Problem jest nieograniczony (unbounded). Sprawdź ograniczenia i dane wejściowe.";
+            } else if (solverRawResults.result === -1 && !solverRawResults.feasible) { 
+                 message = "Nie znaleziono wykonalnego rozwiązania (infeasible). Sprawdź sprzeczności w ograniczeniach.";
+            }
+            Logger.log('WARN', `[ProductionOpt SolveLP] Solution not feasible. Message: ${message}`, solverRawResults);
+            return { feasible: false, error: message, details: solverRawResults };
+        }
+        
+        const solutionOutput = {
+            optimizationType: optimizationType,
+            objective: solverRawResults.result,
+            products: [],
+            resources: []
+        };
+
+        activeProducts.forEach((product, productIdx) => {
+            const originalProductName = product.name || `Product${productIdx}`;
+            const productSolverName = `prod_${Utils.sanitizeForSolver(originalProductName)}`;
+            const quantity = solverRawResults[productSolverName] || 0;
+            const objectiveValuePerUnit = optimizationType === 'max' ? (product.profit || 0) : (product.cost || 0);
+
+            solutionOutput.products.push({
+                name: product.name,
+                quantity: quantity,
+                profit: product.profit || 0, 
+                cost: product.cost || 0,     
+                objectiveValuePerUnit: objectiveValuePerUnit, 
+                contribution: quantity * objectiveValuePerUnit 
+            });
+        });
+
+        activeResources.forEach((resource, activeResourceIndex) => {
+            let totalResourceUsed = 0;
+            solutionOutput.products.forEach(solvedProduct => {
+                const originalProduct = activeProducts.find(p => p.name === solvedProduct.name);
+                if (originalProduct && originalProduct.resourceUsage && originalProduct.resourceUsage.length > activeResourceIndex) {
+                    const usagePerUnit = originalProduct.resourceUsage[activeResourceIndex] || 0;
+                    totalResourceUsed += solvedProduct.quantity * usagePerUnit;
+                }
+            });
+            
+            totalResourceUsed = Math.max(0, totalResourceUsed);
+            if (Math.abs(totalResourceUsed - resource.amount) < 1e-6 && totalResourceUsed > resource.amount) {
+                 totalResourceUsed = resource.amount; 
+            }
+
+            solutionOutput.resources.push({
+                name: resource.name,
+                available: resource.amount,
+                used: totalResourceUsed,
+                utilization: resource.amount > 0 ? Math.min(100, (totalResourceUsed / resource.amount) * 100) : 0 
+            });
+        });
+        
+        Logger.log('INFO', "[ProductionOpt SolveLP] Solution processed and ready for display:", JSON.parse(JSON.stringify(solutionOutput)));
+        return { feasible: true, ...solutionOutput };
+    },
+
+    // calculate: () => { ... } // Ta funkcja zostanie zmodyfikowana w następnym kroku
 }; 

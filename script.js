@@ -1,171 +1,94 @@
 // --- Global Namespace ---
 // Wersja: 1.0.5 - Przycisk pulsujący niewidoczny od początku
-const Utils = {
-    showElement: (id) => {
-        document.getElementById(id).style.display = 'block';
-    },
-    
-    hideElement: (id) => {
-        document.getElementById(id).style.display = 'none';
-    },
-    
-    clearElement: (id) => {
-        const element = document.getElementById(id);
-        if (element) element.innerHTML = '';
-    },
-    
-    displayResults: (containerId, content, isError = false) => {
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.innerHTML = isError ? 
-                `<div class="error-message">${content}</div>` : 
-                content;
-            container.style.display = 'block';
-        }
-    },
-    
-    showActiveToolContent: (tool) => {
-        // Ukryj wszystkie narzędzia
-        document.querySelectorAll('.tool-content').forEach(el => {
-            el.classList.remove('active');
-        });
-        
-        // Pokaż wybrane narzędzie
-        document.getElementById(`tool-${tool}`).classList.add('active');
-        
-        // Aktualizuj aktywny przycisk w nawigacji
-        document.querySelectorAll('nav button').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.getElementById(`nav-${tool}`).classList.add('active');
-        
-        // Dostosuj zawartość nawy bocznej do aktualnego narzędzia
-        const sidebar = document.getElementById('app-sidebar');
-        const sidebarContent = document.getElementById('ahp-sidebar-content');
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        
-        // Pokazuj nawę boczną tylko dla AHP
-        if (tool === 'ahp') {
-            sidebar.style.display = 'block';
-            if (sidebarContent) sidebarContent.style.display = 'block';
-            sidebarToggle.style.display = 'flex';
-            
-            // Nie wymuszaj rozwinięcia nawy przy każdym przełączeniu
-            if (!sidebar.classList.contains('sidebar-minimized')) {
-                sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-            }
-        } else {
-            sidebar.style.display = 'none';
-            sidebarToggle.style.display = 'none';
-        }
-    },
-    
-    validatePositiveInteger: (value, min, max) => {
-        value = parseInt(value);
-        return !isNaN(value) && value >= min && value <= max;
-    },
-    
-    validatePositiveFloat: (value, min, max) => {
-        value = parseFloat(value);
-        return !isNaN(value) && value >= min && (max === undefined || value <= max);
-    },
-    
-    formatNumber: (number, maxDecimals = 2) => {
-        if (isNaN(number)) return "-";
-        return Math.abs(number) < 0.001 ? 
-            number.toExponential(maxDecimals) : 
-            number.toFixed(maxDecimals).replace(/\.?0+$/, "");
-    },
-    
-    formatPercent: (number, maxDecimals = 1) => {
-        if (isNaN(number)) return "-";
-        return (number * 100).toFixed(maxDecimals).replace(/\.?0+$/, "") + "%";
-    },
-    
-    // Nowa funkcja do dostosowywania wysokości
-    adjustContainerHeights: () => {
-        // Daj czas na renderowanie zawartości
-        setTimeout(() => {
-            console.log("Dostosowywanie wysokości kontenerów...");
-            
-            // Upewnij się, że wszystkie wykresy Plotly są poprawnie załadowane
-            window.dispatchEvent(new Event('resize'));
-        }, 100);
-    }
-};
+// Usunięto zduplikowaną definicję obiektu Utils, ponieważ jest on teraz ładowany z pliku utils.js
 
 // Główna klasa aplikacji
 const App = {
     // Aktualnie wybrane narzędzie
     currentTool: null,
+    maximizedEditor: false,
+    activeModal: null,
+    plotlyLoaded: false,
     
-    // Funkcja inicjalizująca
-    initialize: () => {
-        console.log("Inicjalizacja aplikacji...");
-        
-        // Sprawdzamy, czy pole liczby opcji ma prawidłowe event listenery
-        const optionsInput = document.getElementById('ahpNumOptions');
-        if (optionsInput) {
-            // Usuwamy istniejące event listenery i dodajemy nowe
-            const clonedInput = optionsInput.cloneNode(true);
-            optionsInput.parentNode.replaceChild(clonedInput, optionsInput);
-            
-            // Dodajemy nowe event listenery
-            clonedInput.addEventListener('input', function() {
-                if (typeof AHP !== 'undefined' && AHP.setupOptions) {
-                    AHP.setupOptions();
-                }
-            });
-            
-            clonedInput.addEventListener('change', function() {
-                if (typeof AHP !== 'undefined' && AHP.setupOptions) {
-                    AHP.setupOptions();
-                }
-            });
+    init: () => {
+        Logger.init();
+        Logger.log('INFO', "App initializing...");
+
+        // App.initThemeSwitcher(); // TODO: Sprawdzić, czy ta funkcja jest potrzebna lub ją zaimplementować
+
+        // Domyślne narzędzie przy starcie
+        const initialTool = 'ahp'; 
+        App.switchToTool(initialTool);
+        // Utils.setActiveButton(document.querySelector(`.nav-button[onclick*="switchToTool(\'${initialTool}\')"]`)); // TODO: Sprawdzić, czy ta funkcja jest potrzebna lub ją zaimplementować
+
+        // Nasłuchuj na załadowanie Plotly
+        if (typeof Plotly !== 'undefined') {
+            App.plotlyLoaded = true;
+            Logger.log('INFO', 'Plotly library already loaded.');
+        } else {
+            Logger.log('INFO', 'Plotly library not yet loaded, will check on demand.');
+        }
+
+        // Automatyczny import z URL, jeśli są dane
+        if (typeof LinkHandler !== 'undefined' && LinkHandler.processImportFromUrl) {
+            LinkHandler.processImportFromUrl();
+        } else {
+            Logger.log('WARN', 'LinkHandler or LinkHandler.processImportFromUrl not found during App.init');
         }
         
-        // Domyślnie pokaż kalkulator AHP
-        App.switchToTool('ahp');
+        Logger.log('INFO', "App initialized.");
     },
     
     // Przełączanie między narzędziami
     switchToTool: (tool) => {
         if (App.currentTool === tool) return;
         
-        console.log(`Przełączanie na narzędzie: ${tool}`);
+        Logger.log('INFO', `Przełączanie na narzędzie: ${tool}`);
         App.currentTool = tool;
         
         Utils.showActiveToolContent(tool);
         
-        // Inicjalizacja narzędzia
+        // Inicjalizacja narzędzia i interfejsu udostępniania
+        let moduleKeyForLinkHandler = '';
+        let shareInterfaceContainerId = '';
+
         switch(tool) {
             case 'ahp':
                 if (typeof AHP !== 'undefined') {
-                    if (AHP.init) {
-                        AHP.init();
-                    } else if (AHP.initialize) {
-                        AHP.initialize();
-                    }
+                    if (AHP.init) AHP.init();
+                    else if (AHP.initialize) AHP.initialize();
                 }
+                moduleKeyForLinkHandler = 'a';
+                shareInterfaceContainerId = 'ahp-share-container';
                 break;
             case 'cutting-stock':
                 if (typeof CuttingStock !== 'undefined') {
-                    if (CuttingStock.init) {
-                        CuttingStock.init();
-                    } else if (CuttingStock.initialize) {
-                        CuttingStock.initialize();
-                    }
+                    if (CuttingStock.init) CuttingStock.init();
+                    else if (CuttingStock.initialize) CuttingStock.initialize();
                 }
+                moduleKeyForLinkHandler = 'c';
+                shareInterfaceContainerId = 'cutting-stock-share-container';
                 break;
             case 'production-opt':
                 if (typeof ProductionOpt !== 'undefined') {
-                    if (ProductionOpt.init) {
-                        ProductionOpt.init();
-                    } else if (ProductionOpt.initialize) {
-                        ProductionOpt.initialize();
-                    }
+                    if (ProductionOpt.init) ProductionOpt.init();
+                    else if (ProductionOpt.initialize) ProductionOpt.initialize();
                 }
+                moduleKeyForLinkHandler = 'p';
+                shareInterfaceContainerId = 'production-opt-share-container';
                 break;
+        }
+
+        // Utwórz/zaktualizuj interfejs udostępniania dla nowego narzędzia
+        if (typeof LinkHandler !== 'undefined' && LinkHandler.createShareInterface && moduleKeyForLinkHandler && shareInterfaceContainerId) {
+            // Małe opóźnienie, aby dać czas na inicjalizację modułu i ewentualne stworzenie kontenera
+            setTimeout(() => {
+                 LinkHandler.createShareInterface(shareInterfaceContainerId, moduleKeyForLinkHandler);
+            }, 100); // 100ms powinno wystarczyć
+        } else {
+            if (typeof LinkHandler === 'undefined') Logger.log('WARN', '[App.switchToTool] LinkHandler jest niezdefiniowany.');
+            if (!moduleKeyForLinkHandler) Logger.log('WARN', '[App.switchToTool] Nie udało się ustalić moduleKeyForLinkHandler.');
+            if (!shareInterfaceContainerId) Logger.log('WARN', '[App.switchToTool] Nie udało się ustalić shareInterfaceContainerId.');
         }
         
         Utils.adjustContainerHeights();
@@ -176,11 +99,11 @@ const App = {
 document.addEventListener('calculation-complete', Utils.adjustContainerHeights);
 
 // Inicjalizacja po załadowaniu dokumentu
-document.addEventListener('DOMContentLoaded', App.initialize);
+document.addEventListener('DOMContentLoaded', App.init);
 
 // Obsługa przycisków pomocy i okienek modalnych
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Inicjalizacja systemu pomocy...");
+    Logger.log('INFO', "Inicjalizacja systemu pomocy...");
     
     // Przyciski pomocy
     const helpAhpBtn = document.getElementById('help-ahp');
@@ -500,4 +423,19 @@ document.addEventListener('DOMContentLoaded', function() {
             closeHelpModal(e.target);
         }
     });
+
+    // Obsługa przycisków logowania
+    const downloadLogsButton = document.getElementById('downloadLogsButton');
+    if (downloadLogsButton) {
+        downloadLogsButton.addEventListener('click', () => {
+            Logger.downloadLogs();
+        });
+    }
+
+    const clearLogsButton = document.getElementById('clearLogsButton');
+    if (clearLogsButton) {
+        clearLogsButton.addEventListener('click', () => {
+            Logger.clearLogs();
+        });
+    }
 }); 

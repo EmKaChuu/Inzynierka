@@ -19,7 +19,6 @@
                     script.onload = function() {
                         console.log('Plotly załadowany z alternatywnego źródła');
                         
-                        // Po wczytaniu Plotly, sprawdź czy funkcja visualizeResults powinna być uruchomiona
                         if (typeof AHP !== 'undefined' && AHP.shouldVisualizeResults) {
                             console.log('Uruchamianie odroczonej wizualizacji wyników...');
                             AHP.visualizeResults();
@@ -28,7 +27,7 @@
                     };
                     document.head.appendChild(script);
                 }
-            }, 1000); // Czekamy 1 sekundę, aby dać szansę głównej bibliotece
+            }, 1000); 
         });
     </script>
     <!-- Załaduj solver.js z CDN -->
@@ -40,7 +39,7 @@
                 if (typeof solver === 'undefined') {
                     console.log('Próba załadowania solver.js z lokalnego pliku...');
                     var script = document.createElement('script');
-                    script.src = 'solver.js';
+                    script.src = 'solver.js'; // Ten lokalny solver.js powinien istnieć
                     script.onload = function() {
                         console.log('Solver.js załadowany z lokalnego pliku');
                     };
@@ -53,13 +52,10 @@
     </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Font Awesome dla ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Zapasowe źródło dla Font Awesome (tylko to jest dodane w celu naprawy ikon) -->
     <script>
         window.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
-                // Sprawdzenie, czy Font Awesome został załadowany poprawnie
                 if (!document.querySelector('.fas')) {
                     console.log('Próba załadowania Font Awesome z alternatywnego źródła...');
                     var link = document.createElement('link');
@@ -71,14 +67,12 @@
         });
     </script>
     
-    <!-- Własne styles -->
     <link href="css/styles.css?v=1.4" rel="stylesheet">
     <link href="css/ahp.css?v=1.4" rel="stylesheet">
     <link href="css/cuttingstock.css?v=1.4" rel="stylesheet">
     <link rel="stylesheet" href="css/optimalization.css">
     <link rel="stylesheet" href="css/main.css">
     
-    <!-- Bezpośrednie styles dla tła i przycisków -->
     <style>
         body, .app-content, .app-main, .tool-content, .input-group, .main-result, .diagnostics-section, .detailed-results {
             background-image: url('asfalt-dark.png') !important;
@@ -88,14 +82,13 @@
         .help-button {
             position: fixed !important;
             right: 20px !important;
-            top: 23vh !important; /* Na tej samej wysokości co strzałka nawy */
+            top: 23vh !important;
             z-index: 1000 !important;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Nagłówek / Menu - od krawędzi do krawędzi -->
         <header class="app-header">
             <h1>Optymalizator</h1>
             <nav class="app-nav">
@@ -107,47 +100,31 @@
             </nav>
         </header>
 
-        <!-- Główny kontener treści - od krawędzi do krawędzi -->
         <div class="app-content">
-            <!-- Nawa boczna - lewa strona -->
             <aside id="app-sidebar" class="app-sidebar">
-                <!-- AHP Sidebar -->
                 <div id="ahp-sidebar-content" class="sidebar-content">
-                    <!-- Sekcja kryteriów -->
                     <div class="sidebar-main-section">
                         <h3>Kryteria</h3>
-                        
-                        <!-- Sekcja z liczbą kryteriów -->
                         <div class="sidebar-section">
                             <div class="input-row">
                                 <label>Liczba kryteriów (3-6):</label>
                                 <input type="number" id="ahpNumCriteria" min="3" max="6" value="3">
                             </div>
                         </div>
-                        
-                        <!-- Sekcja z nazwami kryteriów -->
                         <div id="ahpCriteriaNames" class="sidebar-section">
                             <h3>Nazwy kryteriów</h3>
                             <div class="criteria-inputs-container"></div>
                         </div>
                     </div>
-                    
-                    <!-- Linia oddzielająca sekcje -->
                     <div class="sidebar-divider"></div>
-                    
-                    <!-- Sekcja opcji -->
                     <div class="sidebar-main-section">
                         <h3>Opcje</h3>
-                        
-                        <!-- Sekcja z liczbą opcji -->
                         <div class="sidebar-section">
                             <div class="input-row">
                                 <label>Liczba opcji (2-6):</label>
                                 <input type="number" id="ahpNumOptions" min="2" max="6" value="2">
                             </div>
                         </div>
-                        
-                        <!-- Sekcja z nazwami opcji -->
                         <div id="ahpOptionNames" class="sidebar-section">
                             <h3>Nazwy opcji</h3>
                             <div class="options-inputs-container"></div>
@@ -156,19 +133,14 @@
                 </div>
             </aside>
             
-            <!-- Przycisk do minimalizacji/maksymalizacji nawy -->
             <button id="sidebar-toggle" class="sidebar-toggle">
                 <span class="arrow-icon"></span>
             </button>
             
-            <!-- Główna treść - prawa strona -->
             <main class="app-main">
-                <!-- AHP Tool -->
                 <div id="tool-ahp" class="tool-content">
                     <div class="tool-header">
                         <h2>Kalkulator AHP</h2>
-                        
-                        <!-- Przełącznik interfejsu -->
                         <div id="ahp-interface-switch" class="interface-switch-container">
                             <div class="interface-switch">
                                 <label>Wybierz tryb interfejsu:</label>
@@ -179,33 +151,21 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Przycisk pomocy AHP -->
                     <button id="help-ahp" class="help-button" title="Pomoc AHP">?</button>
-                    
-                    <!-- Formularze porównań -->
                     <div id="ahpCriteriaComparisonMatrix" class="full-width-form"></div>
                     <div id="ahpOptionsComparisonSection" class="full-width-form"></div>
-                    
-                    <!-- Przycisk do obliczenia wyników -->
                     <div class="calculate-button-container">
                         <button id="calculate-ahp" class="calculate-button" onclick="AHP.calculate()">Oblicz wyniki AHP</button>
                     </div>
-                    
-                    <!-- Wyniki -->
                     <div class="results-area">
                         <div id="ahpResults" class="results"></div>
                         <div id="ahpVisualization" class="visualization-container"></div>
                     </div>
                 </div>
 
-                <!-- Cutting Stock Problem -->
                 <div id="tool-cutting-stock" class="tool-content">
                     <h2>Problem Rozkroju</h2>
-                    
-                    <!-- Przycisk pomocy Problem Rozkroju -->
                     <button id="help-cutting-stock" class="help-button" title="Pomoc Problem Rozkroju">?</button>
-                    
                     <div class="input-group">
                         <div class="input-row">
                             <label>Długość kłody (m):</label>
@@ -234,13 +194,9 @@
                     </div>
                 </div>
 
-                <!-- Production Optimization -->
                 <div id="tool-production-opt" class="tool-content">
                     <h2>Optymalizacja Produkcji</h2>
-                    
-                    <!-- Przycisk pomocy Optymalizacja Produkcji -->
                     <button id="help-production-opt" class="help-button" title="Pomoc Optymalizacja Produkcji">?</button>
-                    
                     <div class="input-group">
                         <div class="input-row">
                             <label for="optimizationType">Typ optymalizacji:</label>
@@ -250,13 +206,11 @@
                             </select>
                             <span class="input-hint">Wybierz, czy chcesz maksymalizować zysk czy minimalizować koszty</span>
                         </div>
-                        
                         <h3 class="section-title">Lista produktów</h3>
                         <div id="productsList"></div>
                         <button onclick="ProductionOpt.addProductRow()" class="add-order-button">
                             <i class="fas fa-plus"></i> Dodaj produkt
                         </button>
-                        
                         <h3 class="section-title">Lista zasobów</h3>
                         <div id="resourcesList"></div>
                         <button onclick="ProductionOpt.addResourceRow()" class="add-order-button">
@@ -276,19 +230,16 @@
             </main>
         </div>
 
-        <!-- Stopka - od krawędzi do krawędzi -->
         <footer class="app-footer">
             <p>Michał Kopeć 2025</p>
         </footer>
     </div>
 
-    <!-- Okienka modalne pomocy -->
     <div id="help-modal-ahp" class="help-modal">
         <div class="help-modal-content">
             <button class="close-help-modal">&times;</button>
             <h3>Jak korzystać z Kalkulatora AHP</h3>
             <p>Analityczny Proces Hierarchiczny (AHP) to metoda wspomagania podejmowania decyzji wielokryterialnych. Oto jak korzystać z tego narzędzia:</p>
-            
             <ol>
                 <li><strong>Zdefiniuj kryteria</strong> - W lewym panelu wprowadź liczbę kryteriów (od 3 do 6) i nadaj im nazwy odpowiadające aspektom Twojej decyzji. (np. Cena, Jakość, Dostępność)</li>
                 <li><strong>Zdefiniuj opcje</strong> - Wprowadź liczbę opcji (od 2 do 6) i nadaj im nazwy odpowiadające dostępnym wariantom wyboru. <br>(np. Produkt A, Produkt B, Samochód osobowy, Samochód ciężarowy)</li>
@@ -296,7 +247,6 @@
                 <li><strong>Porównaj opcje</strong> - Dla każdego kryterium określ, jak dobrze każda opcja spełnia dane kryterium w porównaniu z innymi opcjami.<br> (np. Produkt A jest lepszy od Produktu B)</li>
                 <li><strong>Oblicz wyniki</strong> - Kliknij przycisk "Oblicz wyniki AHP", aby uzyskać ranking opcji i wizualizacje.</li>
             </ol>
-
             <h4>Wskazówki:</h4>
             <ul>
                 <li>Skala porównań od 1 do 9 oznacza: 1 - równe znaczenie, 9 - skrajnie większe znaczenie.</li>
@@ -313,7 +263,6 @@
             <button class="close-help-modal">&times;</button>
             <h3>Jak korzystać z narzędzia Problem Rozkroju</h3>
             <p>Problem rozkroju to optymalizacja cięcia materiału (np. kłód drewna) na mniejsze elementy, minimalizując odpady. Narzędzie to pomaga znaleźć najbardziej efektywny sposób podziału materiału.</p>
-            
             <h4>Jak korzystać z narzędzia:</h4>
             <ol>
                 <li><strong>Określ długość kłody</strong> - Wprowadź długość dostępnego materiału (np. 2.0m).</li>
@@ -326,7 +275,6 @@
                 </li>
                 <li><strong>Oblicz optymalny podział</strong> - Kliknij przycisk, aby uruchomić algorytm optymalizacji.</li>
             </ol>
-            
             <h4>Wyniki:</h4>
             <p>Po obliczeniu otrzymasz:</p>
             <ul>
@@ -335,7 +283,6 @@
                 <li><strong>Wizualizacje</strong> - graficzne przedstawienie optymalnego podziału</li>
                 <li><strong>Nadprogramowe kawałki</strong> - jeśli występują, informacja o dodatkowych elementach</li>
             </ul>
-            
             <h4>Wskazówki:</h4>
             <ul>
                 <li>Możesz załadować przykładowe dane, aby zobaczyć jak działa narzędzie.</li>
@@ -397,129 +344,66 @@
         </div>
     </div>
 
-    <!-- Własne skrypty -->
-    <script src="solver.js"></script>
-    <script src="script.js"></script>
-    <script src="ahp.js"></script>
-    <script src="cuttingStock.js"></script>
-    <script src="productionOpt.js"></script>
-    <script src="dataShare.js"></script>
     <!-- Dodatkowy skrypt do naprawy kontenerów udostępniania -->
     <script>
-        // Ten skrypt jest dodany tylko w celu naprawy kontenerów udostępniania na GitHub Pages
         document.addEventListener('DOMContentLoaded', function() {
-            // Opóźnione sprawdzenie, czy DataShare jest dostępny
             setTimeout(function() {
                 console.log("Sprawdzam status kontenerów udostępniania...");
-                
-                // Sprawdź, czy kontenery udostępniania są widoczne - jeśli nie, dodaj je ponownie
                 ['ahp', 'cutting-stock', 'production-opt'].forEach(function(tool) {
                     const containerId = `${tool}-share-container`;
                     const container = document.getElementById(containerId);
                     const toolContainer = document.getElementById(`tool-${tool}`);
-                    
                     if ((!container || !container.offsetParent) && toolContainer) {
                         console.log(`Kontener ${containerId} nie jest widoczny, próbuję go odtworzyć...`);
-                        
-                        // Jeśli kontener już istnieje, usuń go
                         if (container) {
                             container.remove();
                         }
-                        
-                        // Stwórz nowy kontener udostępniania
                         const shareSection = document.createElement('div');
                         shareSection.id = containerId;
                         shareSection.className = 'share-section-container';
-                        
                         const header = document.createElement('h3');
                         header.textContent = 'Udostępnianie danych';
                         shareSection.appendChild(header);
-                        
                         toolContainer.appendChild(shareSection);
-                        
-                        // Jeśli DataShare istnieje, użyj jego metody do utworzenia interfejsu
-                        if (typeof DataShare !== 'undefined' && typeof DataShare.createShareInterface === 'function') {
-                            DataShare.createShareInterface(containerId);
-                        }
                     }
                 });
             }, 1500);
         });
     </script>
     
-    <!-- Skrypt obsługujący zwijanie/rozwijanie nawy bocznej -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('app-sidebar');
             const sidebarToggle = document.getElementById('sidebar-toggle');
-            const mainContent = document.querySelector('.app-main');
-            
-            // Naprawiona obsługa przycisku zwijania/rozwijania
             if (sidebarToggle) {
                 sidebarToggle.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
                     if (sidebar) {
-                        // Przełączamy stan nawy niezależnie od urządzenia
                         sidebar.classList.toggle('sidebar-minimized');
-                        if (sidebar.classList.contains('sidebar-minimized')) {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
-                        } else {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-                        }
+                        sidebarToggle.querySelector('.arrow-icon').innerHTML = sidebar.classList.contains('sidebar-minimized') ? '▶' : '◀';
                     }
                 });
-                
-                // Dodanie obsługi zdarzeń dotykowych
                 sidebarToggle.addEventListener('touchstart', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
                     if (sidebar) {
                         sidebar.classList.toggle('sidebar-minimized');
-                        if (sidebar.classList.contains('sidebar-minimized')) {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '▶';
-                        } else {
-                            sidebarToggle.querySelector('.arrow-icon').innerHTML = '◀';
-                        }
+                        sidebarToggle.querySelector('.arrow-icon').innerHTML = sidebar.classList.contains('sidebar-minimized') ? '▶' : '◀';
                     }
                 }, { passive: false });
             }
-            
-            // Zapobiegaj zamykaniu nawy podczas kliknięcia wewnątrz niej
             if (sidebar) {
-                sidebar.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-                
-                // Zapobiegaj zamykaniu nawy podczas wpisywania tekstu w polach formularzy
+                sidebar.addEventListener('click', function(e) { e.stopPropagation(); });
                 const formInputs = sidebar.querySelectorAll('input, select, textarea');
                 formInputs.forEach(function(input) {
-                    input.addEventListener('focus', function(e) {
-                        e.stopPropagation();
-                    });
-                    
-                    input.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                    });
-                    
-                    input.addEventListener('touchstart', function(e) {
-                        e.stopPropagation();
-                    });
+                    input.addEventListener('focus', function(e) { e.stopPropagation(); });
+                    input.addEventListener('click', function(e) { e.stopPropagation(); });
+                    input.addEventListener('touchstart', function(e) { e.stopPropagation(); });
                 });
             }
-            
-            // Funkcja dostosowująca UI na urządzeniach mobilnych
-            function adjustMobileUI() {
-                // Usuwamy automatyczne rozwijanie nawy na urządzeniach mobilnych
-                // aby użytkownik mógł kontrolować stan nawy
-            }
-            
-            // Wywołaj funkcję od razu i przy zmianie rozmiaru okna
+            function adjustMobileUI() {}
             adjustMobileUI();
-            
-            // Throttle dla event resize
             let resizeTimeout;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimeout);
@@ -528,7 +412,6 @@
         });
     </script>
     
-    <!-- Kod sprawdzający załadowanie Plotly -->
     <script>
         window.addEventListener('load', function() {
             if (typeof Plotly === 'undefined') {
@@ -543,21 +426,14 @@
         });
     </script>
     
-    <!-- Dodatkowy skrypt naprawiający przycisk obliczania w optymalizacji produkcji -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Inicjalizacja naprawy przycisku optymalizacji produkcji');
-            
-            // Bezpośrednie podpięcie obsługi przycisku do funkcji calculate
             const prodOptButton = document.getElementById('production-calculate-button');
             if (prodOptButton) {
                 console.log('Znaleziono przycisk do podpięcia');
-                
-                // Usunięcie starych handlerów, które mogą kolidować
                 const newButton = prodOptButton.cloneNode(true);
                 prodOptButton.parentNode.replaceChild(newButton, prodOptButton);
-                
-                // Dodanie nowego handlera
                 newButton.addEventListener('click', function() {
                     console.log('Kliknięto przycisk obliczania (z naprawczego skryptu)');
                     if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculate === 'function') {
@@ -571,9 +447,7 @@
                         } catch (error) {
                             console.error('Błąd podczas wywoływania ProductionOpt.calculate():', error);
                             alert('Wystąpił błąd podczas obliczania. Próbuję alternatywną metodę...');
-                            try {
-                                ProductionOpt.calculateFallback();
-                            } catch (fallbackError) {
+                            try { ProductionOpt.calculateFallback(); } catch (fallbackError) {
                                 console.error('Błąd podczas trybu awaryjnego:', fallbackError);
                                 alert('Nie udało się wykonać obliczeń. Sprawdź konsolę przeglądarki.');
                             }
@@ -581,9 +455,7 @@
                     } else {
                         console.error('Funkcja ProductionOpt.calculate nie jest dostępna!');
                         alert('Nie można znaleźć funkcji obliczającej. Używam trybu awaryjnego...');
-                        try {
-                            ProductionOpt.calculateFallback();
-                        } catch (fallbackError) {
+                        try { ProductionOpt.calculateFallback(); } catch (fallbackError) {
                             console.error('Błąd podczas trybu awaryjnego:', fallbackError);
                             alert('Nie udało się wykonać obliczeń. Sprawdź konsolę przeglądarki.');
                         }
@@ -591,99 +463,86 @@
                 });
             } else {
                 console.error('Nie znaleziono przycisku "production-calculate-button"!');
-                
-                // Jeśli nie znaleziono przycisku, spróbuj znaleźć go z opóźnieniem
                 setTimeout(function() {
                     const laterButton = document.getElementById('production-calculate-button') || document.querySelector('#tool-production-opt .calculate-button');
                     if (laterButton) {
                         console.log('Znaleziono przycisk z opóźnieniem');
                         laterButton.addEventListener('click', function() {
                             console.log('Kliknięto przycisk (znaleziony z opóźnieniem)');
-                            try {
-                                if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') {
-                                    ProductionOpt.calculateFallback();
-                                }
-                            } catch (error) {
-                                console.error('Błąd podczas obliczania:', error);
-                            }
+                            try { if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') { ProductionOpt.calculateFallback(); } } catch (error) { console.error('Błąd podczas obliczania:', error); }
                         });
                     }
                 }, 1000);
             }
-            
-            // Dodatkowe sprawdzenie po pewnym czasie
             setTimeout(function() {
-                // Sprawdź, czy solver jest dostępny
                 if (typeof solver === 'undefined') {
                     console.warn('Solver.js nie został załadowany! Próba alternatywnej inicjalizacji...');
-                    
-                    // Próba ręcznego załadowania z CDN
                     const script = document.createElement('script');
                     script.src = 'https://cdn.jsdelivr.net/npm/javascript-lp-solver@0.4.24/prod/solver.js';
-                    script.onload = function() {
-                        console.log('Solver.js został pomyślnie załadowany z CDN w trybie awaryjnym!');
-                    };
+                    script.onload = function() { console.log('Solver.js został pomyślnie załadowany z CDN w trybie awaryjnym!'); };
                     document.head.appendChild(script);
                 }
             }, 2000);
         });
     </script>
     
-    <!-- Najprostszy możliwy sposób bezpośredniego powiązania przycisku z funkcją -->
     <script>
-        // Dodanie bezpośredniego handlera kliknięcia do przycisku
         setTimeout(function() {
             const button = document.getElementById('production-calculate-button');
             if (button) {
                 button.onclick = function(e) {
                     e.preventDefault();
                     console.log("Bezpośrednie kliknięcie przycisku!");
-                    
                     if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') {
                         ProductionOpt.calculateFallback();
-                    } else {
-                        alert("Nie znaleziono funkcji obliczającej!");
-                    }
-                    
+                    } else { alert("Nie znaleziono funkcji obliczającej!"); }
                     return false;
                 };
                 console.log("Dodano bezpośredni handler do przycisku!");
-            } else {
-                console.error("Nie znaleziono przycisku obliczania!");
-            }
-        }, 3000); // Daj stronie czas na pełne załadowanie
+            } else { console.error("Nie znaleziono przycisku obliczania!"); }
+        }, 3000);
     </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Inicjalizacja gwarantowanego działania przycisku obliczania optymalizacji produkcji.');
-            
-            // Bezpośrednie podpięcie kliku do przycisku
             setTimeout(function() {
                 const calcButton = document.getElementById('production-calculate-button');
                 if (calcButton) {
                     console.log('Znaleziono przycisk obliczania - podpinam event listener');
-                    
-                    // Usuń wszystkie istniejące handlery (czysty element)
                     const newButton = calcButton.cloneNode(true);
                     calcButton.parentNode.replaceChild(newButton, calcButton);
-                    
-                    // Dodaj nowy handler
                     newButton.addEventListener('click', function(e) {
                         console.log('Kliknięto przycisk obliczeń z bezpośredniego handlera!');
                         e.preventDefault();
-                        
                         if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculate === 'function') {
                             ProductionOpt.calculate();
                         } else if (typeof ProductionOpt !== 'undefined' && typeof ProductionOpt.calculateFallback === 'function') {
                             ProductionOpt.calculateFallback();
-                        } else {
-                            alert('Nie znaleziono funkcji obliczającej!');
-                        }
+                        } else { alert('Nie znaleziono funkcji obliczającej!'); }
                     });
                 }
             }, 500);
         });
     </script>
+
+    <!-- Skrypty aplikacji -->
+    <script src="logger.js"></script>
+    <script src="utils.js"></script>
+    <script src="ahp.js"></script>
+    <script src="ahpUI.js"></script>
+    <script src="ahpLogic.js"></script>
+    <script src="ahpIO.js"></script>
+    <script src="ahpExportFile.js"></script>
+    <script src="cuttingStock.js"></script>
+    <script src="productionOpt.js"></script>
+    <script src="linkHandler.js"></script>
+    <script src="script.js"></script>
+
+    <!-- Przyciski do zarządzania logami -->
+    <div class="footer-log-buttons" style="position: fixed; bottom: 10px; right: 10px; z-index: 2000; display: flex; gap: 10px;">
+        <button id="downloadLogsButton" class="btn btn-secondary btn-sm">Pobierz Logi</button>
+        <button id="clearLogsButton" class="btn btn-danger btn-sm">Wyczyść Logi</button>
+    </div>
 </body>
 </html> 

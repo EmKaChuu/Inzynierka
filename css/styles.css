@@ -191,8 +191,6 @@ body {
     transition: margin-left 0.3s ease;
     min-height: calc(100vh - 150px);
     background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
-    background-repeat: repeat;
     width: 100%;
 }
 
@@ -211,9 +209,7 @@ body {
     position: relative;
     display: none;
     padding: 20px;
-    background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
-    background-repeat: repeat;
+    background-color: var(--cream);
     border-radius: 8px;
     margin-top: 20px;
     overflow: visible;
@@ -249,9 +245,13 @@ body {
     padding: 15px;
     border: 1px solid var(--dark-brown);
     border-radius: 8px;
-    background-color: var(--background);
-    background-image: url('../asfalt-dark.png');
-    background-repeat: repeat;
+    background-color: var(--cream);
+}
+
+.input-group h3 {
+    margin: 0;
+    color: var(--dark-brown);
+    font-size: 1.2rem;
 }
 
 .input-row {

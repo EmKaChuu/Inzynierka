@@ -6,7 +6,7 @@ const CuttingStock = {
     solution: null,
     
     init: () => {
-        console.log("Executing CuttingStock.init()");
+        Logger.log('INFO', "Executing CuttingStock.init()");
         
         // Przygotuj interfejs, ale NIE resetuj wszystkich danych od zera
         // Zmiana: zachowujemy dane z poprzednich uruchomień modułu
@@ -246,8 +246,64 @@ const CuttingStock = {
         }
     },
     
+    getCurrentData: () => {
+        const logLengthInput = document.getElementById('logLength');
+        const logLength = logLengthInput ? parseFloat(logLengthInput.value) : null;
+        const exactCutsCheckbox = document.getElementById('exactCuts');
+        const exactCuts = exactCutsCheckbox ? exactCutsCheckbox.checked : false;
+        
+        const orders = [];
+        const orderRowsElements = document.querySelectorAll('#ordersList .order-row');
+        orderRowsElements.forEach(rowElement => {
+            const rowIdString = rowElement.id.split('-').pop();
+            if (rowIdString === undefined) return;
+            const rowId = parseInt(rowIdString);
+
+            const lengthInput = document.getElementById(`order-length-${rowId}`);
+            const quantityInput = document.getElementById(`order-quantity-${rowId}`);
+            
+            if (lengthInput && quantityInput && lengthInput.value && quantityInput.value) {
+                orders.push({
+                    id: rowId, 
+                    length: parseFloat(lengthInput.value),
+                    quantity: parseInt(quantityInput.value)
+                });
+            }
+        });
+        
+        return {
+            logLength: logLength,
+            exactCuts: exactCuts,
+            orders: orders
+        };
+    },
+
+    loadData: (data) => {
+        if (!data) return;
+
+        const logLengthInput = document.getElementById('logLength');
+        if (data.logLength && logLengthInput) {
+            logLengthInput.value = data.logLength;
+        }
+        const exactCutsCheckbox = document.getElementById('exactCuts');
+        if (typeof data.exactCuts === 'boolean' && exactCutsCheckbox) {
+            exactCutsCheckbox.checked = data.exactCuts;
+        }
+
+        CuttingStock.orders = data.orders || [];
+        CuttingStock.orderRows = 0; 
+        
+        const ordersList = document.getElementById('ordersList');
+        if (ordersList) ordersList.innerHTML = ''; 
+        
+        CuttingStock.rebuildOrdersInterface();
+        
+        if (data.logLength) localStorage.setItem('cuttingStock_logLength', data.logLength);
+        if (typeof data.exactCuts === 'boolean') localStorage.setItem('cuttingStock_exactCuts', data.exactCuts.toString());
+    },
+    
     calculate: () => {
-        console.log("Executing CuttingStock.calculate()");
+        Logger.log('INFO', "Executing CuttingStock.calculate()");
         
         try {
             // Wyczyść poprzednie wyniki
@@ -306,18 +362,18 @@ const CuttingStock = {
                 } catch (error) {
                     Utils.hideElement('cuttingStockLoadingIndicator');
                     Utils.displayResults('cuttingStockResults', `Błąd: ${error.message}`, true);
-                    console.error("Error solving cutting stock problem:", error);
+                    Logger.log('ERROR', "Error solving cutting stock problem:", error);
                 }
             }, 100);
         } catch (error) {
             Utils.hideElement('cuttingStockLoadingIndicator');
             Utils.displayResults('cuttingStockResults', `Błąd: ${error.message}`, true);
-            console.error("Error in CuttingStock.calculate():", error);
+            Logger.log('ERROR', "Error in CuttingStock.calculate():", error);
         }
     },
     
     solveCuttingStock: (stockLength, orders, exact = false) => {
-        console.log("Solving cutting stock problem:", { stockLength, orders, exact });
+        Logger.log('INFO', "Solving cutting stock problem:", { stockLength, orders, exact });
         
         // Oblicz teoretyczne minimum kłód potrzebnych do wyprodukowania wszystkich elementów
         let totalOrderLength = 0;
@@ -325,7 +381,7 @@ const CuttingStock = {
             totalOrderLength += order.length * order.quantity;
         }
         const theoreticalMinLogs = Math.ceil(totalOrderLength / stockLength);
-        console.log(`Teoretyczne minimum kłód: ${theoreticalMinLogs} (całkowita długość zamówionych elementów: ${totalOrderLength}m)`);
+        Logger.log('DEBUG', `Teoretyczne minimum kłód: ${theoreticalMinLogs} (całkowita długość zamówionych elementów: ${totalOrderLength}m)`);
         
         // Generuj wzory cięcia
         CuttingStock.patterns = CuttingStock.generateCuttingPatterns(stockLength, orders);
@@ -333,7 +389,7 @@ const CuttingStock = {
             throw new Error('Nie udało się wygenerować wzorów cięcia.');
         }
         
-        console.log(`Generated ${CuttingStock.patterns.length} cutting patterns.`);
+        Logger.log('DEBUG', `Generated ${CuttingStock.patterns.length} cutting patterns.`);
         
         // Utwórz model optymalizacji
         const model = {
@@ -379,9 +435,9 @@ const CuttingStock = {
         });
         
         // Rozwiąż problem
-        console.log("Solving model:", model);
+        Logger.log('DEBUG', "Solving model:", model);
         const solution = solver.Solve(model);
-        console.log("Solution:", solution);
+        Logger.log('DEBUG', "Solution:", solution);
         
         if (!solution.feasible) {
             throw new Error('Nie znaleziono wykonalnego rozwiązania. Spróbuj zmienić parametry.');
@@ -396,12 +452,12 @@ const CuttingStock = {
         }
         
         // Porównaj obliczoną liczbę kłód z teoretycznym minimum
-        console.log(`Obliczona liczba kłód: ${calculatedStockUsed}, teoretyczne minimum: ${theoreticalMinLogs}`);
+        Logger.log('DEBUG', `Obliczona liczba kłód: ${calculatedStockUsed}, teoretyczne minimum: ${theoreticalMinLogs}`);
         
         // Jeśli obliczona liczba kłód jest znacząco mniejsza niż teoretyczne minimum,
         // istnieje prawdopodobieństwo błędu w obliczeniach solvera
         if (calculatedStockUsed < theoreticalMinLogs * 0.9) {
-            console.warn(`Uwaga: Obliczona liczba kłód (${calculatedStockUsed}) jest mniejsza niż 90% teoretycznego minimum (${theoreticalMinLogs}). Używam teoretycznego minimum.`);
+            Logger.log('WARN', `Uwaga: Obliczona liczba kłód (${calculatedStockUsed}) jest mniejsza niż 90% teoretycznego minimum (${theoreticalMinLogs}). Używam teoretycznego minimum.`);
             // Zwiększ liczbę kłód dla każdego wzoru proporcjonalnie
             const scaleFactor = theoreticalMinLogs / calculatedStockUsed;
             for (const key in solution) {
@@ -700,7 +756,7 @@ const CuttingStock = {
         // Pobierz długość kłody
         let stockLength = parseFloat(document.getElementById('logLength').value);
         if (isNaN(stockLength) || stockLength <= 0) {
-            console.error('Nieprawidłowa długość kłody w visualizeResults. Używam wartości domyślnej.');
+            Logger.log('ERROR', 'Nieprawidłowa długość kłody w visualizeResults. Używam wartości domyślnej.');
             // Spróbuj pobrać wartość z ostatniego wywołania solveCuttingStock
             for (const patternResult of CuttingStock.solution.patterns) {
                 const pattern = patternResult.pattern;
@@ -712,7 +768,7 @@ const CuttingStock = {
                 
                 if (totalLengthInPattern > 0) {
                     stockLength = totalLengthInPattern;
-                    console.log('Używam odtworzonej długości kłody:', stockLength);
+                    Logger.log('DEBUG', 'Używam odtworzonej długości kłody:', stockLength);
                     break;
                 }
             }
@@ -720,7 +776,7 @@ const CuttingStock = {
             // Jeśli nadal nie mamy wartości, użyj wartości domyślnej 2.0m
             if (isNaN(stockLength) || stockLength <= 0) {
                 stockLength = 2.0;
-                console.log('Używam domyślnej długości kłody:', stockLength);
+                Logger.log('DEBUG', 'Używam domyślnej długości kłody:', stockLength);
             }
         }
         
@@ -1425,7 +1481,7 @@ const CuttingStock = {
     },
     
     loadSampleData: () => {
-        console.log("Loading sample cutting stock data");
+        Logger.log('INFO', "Loading sample cutting stock data");
         
         // Ustaw długość kłody
         document.getElementById('logLength').value = '2.2';
@@ -1583,5 +1639,104 @@ const CuttingStock = {
         
         // Pokaż komunikat o sukcesie
         alert('Zamówienie zostało pomyślnie wczytane.');
+    },
+
+    // NOWE FUNKCJE DLA linkHandler.js
+    exportDataForLink: () => {
+        Logger.log('DEBUG', "[CuttingStock] Exporting data for link");
+        let dataParts = [];
+
+        const logLengthInput = document.getElementById('logLength');
+        const logLength = logLengthInput ? parseFloat(logLengthInput.value) : 0;
+        dataParts.push(logLength);
+
+        const exactCutsCheckbox = document.getElementById('exactCuts');
+        const exactCuts = exactCutsCheckbox ? (exactCutsCheckbox.checked ? 1 : 0) : 0;
+        dataParts.push(exactCuts);
+
+        const ordersData = [];
+        const orderRowsElements = document.querySelectorAll('#ordersList .order-row');
+        orderRowsElements.forEach(rowElement => {
+            const rowIdString = rowElement.id.split('-').pop();
+            if (rowIdString === undefined) return;
+            const rowId = parseInt(rowIdString);
+
+            const lengthInput = document.getElementById(`order-length-${rowId}`);
+            const quantityInput = document.getElementById(`order-quantity-${rowId}`);
+            
+            if (lengthInput && quantityInput && lengthInput.value && quantityInput.value) {
+                ordersData.push(`${parseFloat(lengthInput.value)}^${parseInt(quantityInput.value)}`);
+            }
+        });
+        dataParts.push(ordersData.join('~'));
+
+        return dataParts.join('§');
+    },
+
+    importDataFromLinkString: (dataString) => {
+        Logger.log('DEBUG', `[CuttingStock] Importing data from string: ${dataString}`);
+        if (!dataString) return false; // Zwróć false, jeśli brak danych
+
+        const parts = dataString.split('§');
+        if (parts.length < 3) {
+            Logger.log('ERROR', "[CuttingStock] Nieprawidłowy format danych z linku.");
+            Utils.showToast('Błąd przetwarzania danych Rozkroju z linku.', true);
+            return false; // Zwróć false przy błędzie formatu
+        }
+
+        try {
+            const logLength = parseFloat(parts[0]);
+            const exactCuts = parseInt(parts[1]) === 1;
+            const ordersStrings = parts[2].split('~');
+
+            const logLengthInput = document.getElementById('logLength');
+            if (logLengthInput) logLengthInput.value = logLength;
+            const exactCutsCheckbox = document.getElementById('exactCuts');
+            if (exactCutsCheckbox) exactCutsCheckbox.checked = exactCuts;
+
+            CuttingStock.orders = []; 
+            if (parts[2] && parts[2].trim() !== "") { // Sprawdź, czy są dane zamówień
+                 ordersStrings.forEach((orderStr, index) => {
+                    if (!orderStr.trim()) return; // Pomiń puste stringi zamówień
+                    const orderData = orderStr.split('^');
+                    if (orderData.length === 2) {
+                        const length = parseFloat(orderData[0]);
+                        const quantity = parseInt(orderData[1]);
+                        if (!isNaN(length) && length > 0 && !isNaN(quantity) && quantity > 0) {
+                            CuttingStock.orders.push({
+                                id: index, 
+                                length: length,
+                                quantity: quantity
+                            });
+                        }
+                    }
+                });
+            }
+           
+            CuttingStock.orderRows = 0; 
+            
+            const ordersList = document.getElementById('ordersList');
+            if (ordersList) ordersList.innerHTML = ''; 
+            
+            if (CuttingStock.rebuildOrdersInterface) {
+                CuttingStock.rebuildOrdersInterface(); // Ta funkcja powinna obsłużyć dodanie pustego wiersza, jeśli orders jest puste
+            }
+            
+            localStorage.setItem('cuttingStock_logLength', logLength.toString()); // Zapisz jako string
+            localStorage.setItem('cuttingStock_exactCuts', exactCuts.toString());
+
+            Utils.showToast("Dane dla Problemu Rozkroju zostały zaimportowane."); // Przeniesiono toast tutaj
+            return true; // Sukces
+
+        } catch (error) {
+            Logger.log('ERROR', '[CuttingStock] Błąd podczas importowania danych:', error, error.stack);
+            Utils.showToast('Błąd przetwarzania danych Rozkroju z linku.', true);
+            CuttingStock.orders = []; 
+            // CuttingStock.init(); // Rozważ, czy pełna inicjalizacja jest potrzebna, może wystarczy odbudowa interfejsu
+            if (CuttingStock.rebuildOrdersInterface) {
+                CuttingStock.rebuildOrdersInterface(); // Zapewnij czysty interfejs po błędzie
+            }
+            return false; // Błąd podczas przetwarzania
+        }
     }
 }
