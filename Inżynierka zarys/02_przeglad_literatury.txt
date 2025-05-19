@@ -1,0 +1,71 @@
+# ROZDZIAŁ 2: PRZEGLĄD LITERATURY I PODSTAWY TEORETYCZNE
+
+## 2.1 Metoda AHP (Analityczny Proces Hierarchiczny)
+
+Analityczny Proces Hierarchiczny (AHP) został opracowany przez Thomasa L. Saaty'ego w latach 70. XX wieku jako metoda wspomagania podejmowania złożonych decyzji wielokryterialnych. Metoda ta opiera się na dekompozycji problemu decyzyjnego na mniejsze, łatwiejsze do oceny elementy, które następnie są porównywane parami w celu ustalenia ich względnej ważności.
+
+Fundamentalne prace w tej dziedzinie to "The Analytic Hierarchy Process" (Saaty, 1980) oraz "Decision Making for Leaders: The Analytic Hierarchy Process for Decisions in a Complex World" (Saaty, 1999). Według Vargas (1990), AHP znalazł szerokie zastosowanie w sektorach od przemysłu po sektor publiczny, szczególnie w przypadkach, gdy decyzje muszą uwzględniać zarówno czynniki ilościowe, jak i jakościowe.
+
+Kluczowe etapy procesu AHP obejmują:
+1. Strukturyzację problemu w postaci hierarchii
+2. Dokonanie porównań parami elementów na każdym poziomie hierarchii
+3. Obliczenie wag (priorytetów) dla każdego elementu
+4. Sprawdzenie spójności ocen
+5. Syntezę wyników w celu uzyskania globalnych priorytetów opcji decyzyjnych
+
+Badania potwierdzają skuteczność metody AHP w wielu dziedzinach, m.in. w zarządzaniu projektami (Al-Harbi, 2001), selekcji dostawców (Nydick & Hill, 1992), alokacji zasobów (Ramanathan & Ganesh, 1995) oraz planowaniu strategicznym (Wind & Saaty, 1980).
+
+## 2.2 Problem rozkroju materiałów (Cutting Stock Problem)
+
+Problem rozkroju materiałów (CSP) stanowi klasyczny problem optymalizacji kombinatorycznej, po raz pierwszy sformułowany przez Kantorovich w 1939 roku. W podstawowej formie dotyczy on znalezienia optymalnego sposobu podziału materiałów o standardowych wymiarach (np. belki, arkusze, rolki) na mniejsze części o określonych wymiarach, tak aby zminimalizować ilość odpadów.
+
+Gilmore i Gomory (1961, 1963) opracowali przełomowe podejście do rozwiązywania tego problemu, wprowadzając metodę generacji kolumn, która umożliwiła efektywne rozwiązywanie dużych instancji problemu. Przegląd różnych wariantów problemu rozkroju i metod ich rozwiązywania można znaleźć w pracy Dyckhoffa (1990) "A typology of cutting and packing problems".
+
+Problem rozkroju można sformułować jako problem programowania liniowego całkowitoliczbowego:
+
+Minimalizuj: Σ yi (suma użytych standardowych materiałów)
+Przy ograniczeniach:
+- Σ aij * xj ≥ bi dla wszystkich i (spełnienie zapotrzebowania na elementy typu i)
+- xj ≥ 0 i całkowite dla wszystkich j (liczba wykorzystań wzoru cięcia j)
+- yi ≥ 0 i całkowite dla wszystkich i (liczba użytych standardowych materiałów)
+
+gdzie:
+- aij - liczba elementów typu i we wzorze cięcia j
+- bi - zapotrzebowanie na elementy typu i
+- xj - liczba wykorzystań wzoru cięcia j
+- yi - liczba użytych standardowych materiałów
+
+Współczesne podejścia do rozwiązywania problemu rozkroju często łączą metody programowania matematycznego z heurystykami i metaheurystykami, co pozwala na uzyskanie wysokiej jakości rozwiązań w rozsądnym czasie (Wäscher et al., 2007).
+
+## 2.3 Programowanie liniowe w optymalizacji produkcji
+
+Programowanie liniowe (LP) stanowi fundament metod optymalizacji stosowanych w problemach produkcyjnych. Początki tej dziedziny sięgają prac Leonida Kantorovich (1939) oraz George'a Dantziga, który w 1947 roku opracował metodę sympleks, umożliwiającą efektywne rozwiązywanie problemów programowania liniowego.
+
+Model programowania liniowego składa się z:
+- Funkcji celu (maksymalizacja zysku lub minimalizacja kosztów)
+- Zmiennych decyzyjnych (np. ilości produkowanych wyrobów)
+- Ograniczeń liniowych (np. dostępność surowców, czas pracy maszyn)
+
+Formalnie problem programowania liniowego można zapisać jako:
+
+Maksymalizuj (lub minimalizuj): c^T x
+Przy ograniczeniach:
+- Ax ≤ b (ograniczenia zasobów)
+- x ≥ 0 (zmienne nieujemne)
+
+gdzie:
+- x - wektor zmiennych decyzyjnych
+- c - wektor współczynników funkcji celu
+- A - macierz współczynników ograniczeń
+- b - wektor prawych stron ograniczeń
+
+Przegląd zastosowań programowania liniowego w planowaniu produkcji można znaleźć w pracy Williama et al. (2000). Współczesne pakiety optymalizacyjne, takie jak CPLEX, Gurobi czy GLPK, umożliwiają efektywne rozwiązywanie rozbudowanych modeli programowania liniowego i całkowitoliczbowego.
+
+Programowanie liniowe znalazło szerokie zastosowanie w optymalizacji produkcji, w szczególności w:
+- Planowaniu produkcji i harmonogramowaniu
+- Mieszaniu składników (np. w przemyśle spożywczym)
+- Optymalizacji cięcia materiałów
+- Zarządzaniu łańcuchem dostaw
+- Planowaniu transportu i dystrybucji
+
+Podsumowując, metody programowania liniowego stanowią potężne narzędzie wspierające podejmowanie decyzji w obszarze optymalizacji produkcji, umożliwiając efektywne wykorzystanie dostępnych zasobów. 
