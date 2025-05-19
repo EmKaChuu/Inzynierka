@@ -1,0 +1,39 @@
+# ROZDZIAŁ 1: WSTĘP I CEL PRACY
+
+## 1.1 Wprowadzenie do tematyki badań operacyjnych
+
+Badania operacyjne stanowią interdyscyplinarną dziedzinę nauki, która koncentruje się na zastosowaniu zaawansowanych metod analitycznych, matematycznych i statystycznych do wspomagania procesów decyzyjnych. W dobie rosnącej złożoności systemów gospodarczych, technologicznych i społecznych, umiejętność podejmowania optymalnych decyzji staje się kluczowym czynnikiem sukcesu. Badania operacyjne dostarczają narzędzi umożliwiających modelowanie, analizę oraz optymalizację złożonych problemów decyzyjnych, zarówno o charakterze deterministycznym, jak i stochastycznym. Historia tej dziedziny sięga okresu II wojny światowej, kiedy to zespoły naukowców po raz pierwszy zastosowały systematyczne podejście naukowe do rozwiązywania strategicznych problemów militarnych i logistycznych. Współcześnie, dynamiczny rozwój technologii informatycznych oraz algorytmiki znacząco rozszerzył spektrum zastosowań metod badań operacyjnych, które znajdują implementację w niemal każdym sektorze gospodarki – od zarządzania łańcuchem dostaw, przez planowanie produkcji, inżynierię finansową, aż po optymalizację systemów opieki zdrowotnej i zarządzanie zasobami naturalnymi. Wykorzystanie metod heurystycznych oraz algorytmów optymalizacyjnych pozwala na znajdowanie rozwiązań bliskich optimum lub optymalnych, nawet dla problemów o dużej skali i złożoności obliczeniowej.
+
+## 1.2 Cel i zakres pracy
+
+Głównym celem niniejszej pracy inżynierskiej jest zaprojektowanie, implementacja oraz weryfikacja wielomodułowej aplikacji webowej, służącej jako interaktywne narzędzie edukacyjno-analityczne wspomagające podejmowanie decyzji w wybranych problemach z zakresu badań operacyjnych. Praca koncentruje się na implementacji trzech kluczowych modułów funkcjonalnych:
+
+1.  **Kalkulator Analitycznego Procesu Hierarchicznego (AHP)** – narzędzie przeznaczone do strukturyzacji i rozwiązywania złożonych problemów decyzyjnych wielokryterialnych, umożliwiające dekompozycję problemu na hierarchię celów, kryteriów i wariantów, a następnie agregację subiektywnych ocen porównawczych decydenta w celu wyznaczenia globalnych wag preferencji dla analizowanych opcji. Moduł zapewnia również możliwość analizy spójności macierzy porównań parzystych oraz wizualizację hierarchii problemu i wyników końcowych.
+
+2.  **Moduł do rozwiązywania Problemu Rozkroju (Cutting Stock Problem)** – narzędzie optymalizujące wykorzystanie surowców (np. belek, arkuszy, zwojów) poprzez minimalizację odpadu produkcyjnego powstającego podczas cięcia większych jednostek materiału na mniejsze elementy o zadanych wymiarach i licznościach, z uwzględnieniem różnych wzorców cięcia i prezentacją graficzną optymalnych schematów rozkroju.
+
+3.  **Moduł Optymalizacji Produkcji** – narzędzie pozwalające na modelowanie i rozwiązywanie problemów programowania liniowego, typowych dla zagadnień planowania produkcji. Umożliwia użytkownikowi definiowanie zmiennych decyzyjnych (np. ilości produkowanych wyrobów), funkcji celu (np. maksymalizacja zysku lub minimalizacja kosztów) oraz zestawu ograniczeń technologicznych, zasobowych i rynkowych.
+
+Zakres pracy obejmuje następujące etapy:
+*   Przeprowadzenie analizy teoretycznej metod matematycznych i algorytmów stosowanych w ramach implementowanych modułów.
+*   Zaprojektowanie architektury aplikacji w modelu Single Page Application (SPA) oraz intuicyjnych, responsywnych interfejsów użytkownika dla każdego z modułów, z uwzględnieniem zasad User Experience (UX).
+*   Implementację algorytmów obliczeniowych dla metody AHP, problemu rozkroju oraz optymalizacji produkcji z wykorzystaniem programowania liniowego.
+*   Opracowanie efektywnych metod wizualizacji danych wejściowych i wyników obliczeń, z wykorzystaniem biblioteki `Plotly.js`.
+*   Integrację zaimplementowanych modułów w ramach jednej, spójnej aplikacji webowej.
+*   Implementację zaawansowanego mechanizmu udostępniania i importowania danych konfiguracyjnych poszczególnych modułów za pomocą unikalnych linków URL, co ułatwia współpracę i archiwizację scenariuszy.
+*   Opracowanie centralnego systemu logowania zdarzeń w aplikacji (`logger.js`) na potrzeby diagnostyki, monitorowania działania i potencjalnej analizy zachowań użytkowników.
+*   Przeprowadzenie testów funkcjonalnych, weryfikujących poprawność działania zaimplementowanych algorytmów, oraz testów użyteczności, oceniających ergonomię i intuicyjność interfejsu.
+*   Przygotowanie dokumentacji technicznej w formie niniejszej pracy inżynierskiej oraz, w ograniczonym zakresie, wskazówek dla użytkownika końcowego.
+
+## 1.3 Uzasadnienie podjęcia tematu
+
+Wybór tematyki niniejszej pracy inżynierskiej podyktowany jest obserwacją rosnącego zapotrzebowania na dostępne i łatwe w obsłudze narzędzia informatyczne, które mogą efektywnie wspierać procesy decyzyjne w organizacjach różnej wielkości oraz w edukacji. Pomimo istnienia na rynku zaawansowanych, komercyjnych systemów wspomagania decyzji, ich dostępność dla małych i średnich przedsiębiorstw (MŚP) oraz użytkowników indywidualnych (w tym studentów) jest często ograniczona z uwagi na wysokie koszty licencji, konieczność instalacji specjalistycznego oprogramowania oraz stromą krzywą uczenia się. Ponadto, wiele istniejących rozwiązań charakteryzuje się wysoką specjalizacją, koncentrując się na wąskim zakresie problemów, co może wymuszać na użytkowniku korzystanie z wielu odrębnych, niekompatybilnych narzędzi.
+
+Prezentowana w pracy aplikacja webowa stanowi próbę odpowiedzi na zidentyfikowane potrzeby, oferując następujące korzyści:
+*   **Dostępność i uniwersalność:** Jako aplikacja działająca w przeglądarce internetowej, jest niezależna od platformy systemowej użytkownika i nie wymaga instalacji dodatkowego oprogramowania, co znacząco obniża barierę wejścia.
+*   **Intuicyjność obsługi:** Projekt interfejsu użytkownika kładzie nacisk na prostotę i przejrzystość, umożliwiając korzystanie z aplikacji również osobom nieposiadającym zaawansowanej wiedzy z zakresu badań operacyjnych.
+*   **Zintegrowane podejście:** Aplikacja integruje trzy różne, lecz często komplementarne, metody wspomagania decyzji w ramach jednego, spójnego środowiska, co ułatwia kompleksową analizę problemów.
+*   **Efektywna wizualizacja:** Zastosowanie interaktywnych wykresów i diagramów znacząco ułatwia interpretację wyników obliczeń oraz zrozumienie struktury problemu.
+*   **Innowacyjny system udostępniania danych:** Możliwość łatwego zapisywania i współdzielenia konfiguracji problemów oraz wyników za pomocą linków URL stanowi istotną wartość dodaną, szczególnie w kontekście pracy zespołowej, prezentacji oraz zastosowań dydaktycznych.
+
+Dodatkowo, opracowane rozwiązanie może pełnić rolę cennego narzędzia dydaktycznego dla studentów kierunków technicznych i ekonomicznych, umożliwiając im praktyczne zapoznanie się z wybranymi metodami badań operacyjnych oraz eksperymentowanie z różnymi scenariuszami decyzyjnymi w interaktywnym środowisku. 

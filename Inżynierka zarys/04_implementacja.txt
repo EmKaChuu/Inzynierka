@@ -1,0 +1,167 @@
+# ROZDZIAŁ 4: IMPLEMENTACJA MODUŁÓW APLIKACJI
+
+## 4.1 Moduł Kalkulatora AHP (Analitycznego Procesu Hierarchicznego)
+
+Moduł Analitycznego Procesu Hierarchicznego (AHP) stanowi jeden z kluczowych komponentów aplikacji, umożliwiając użytkownikom strukturyzację i analizę złożonych problemów decyzyjnych opartych na wielokryterialnej ocenie. Implementacja modułu została przeprowadzona z naciskiem na intuicyjność interfejsu oraz wierność metodyce opracowanej przez T. Saaty'ego. W toku prac moduł przeszedł znaczącą refaktoryzację, prowadzącą do wydzielenia logiki biznesowej, obsługi interfejsu użytkownika oraz operacji wejścia/wyjścia do oddzielnych plików (`ahpLogic.js`, `ahpUI.js`, `ahpIO.js`, `ahpExportFile.js`), co znacząco poprawiło czytelność i zarządzanie kodem.
+
+### 4.1.1 Interfejs Użytkownika Modułu AHP
+
+Interfejs użytkownika modułu AHP został zaprojektowany tak, aby prowadzić użytkownika krok po kroku przez proces analizy.
+
+*   **Definiowanie Struktury Problemu:**
+    *   Użytkownik rozpoczyna od zdefiniowania celu głównego decyzji.
+    *   Następnie wprowadza nazwy kryteriów oceny oraz analizowanych opcji (alternatyw decyzyjnych). Interfejs dynamicznie dostosowuje liczbę pól do wprowadzania nazw opcji w zależności od wartości podanej przez użytkownika w polu `ahpNumOptions`, dzięki zaimplementowanym nasłuchiwaczom zdarzeń (`input` i `change`).
+    *   Możliwe jest dynamiczne dodawanie i usuwanie kryteriów oraz opcji.
+
+*   **Wprowadzanie Ocen Porównawczych:**
+    *   Aplikacja oferuje dwa tryby wprowadzania ocen porównawczych:
+        *   **Tryb Macierzowy:** Tradycyjny sposób wprowadzania ocen, gdzie użytkownik wypełnia macierze porównań parzystych dla kryteriów względem celu oraz dla opcji względem każdego z kryteriów. Wartości wzajemnie odwrotne są uzupełniane automatycznie.
+        *   **Tryb Uproszczony (Skala Graficzna):** Bardziej intuicyjny interfejs, szczególnie dla użytkowników mniej zaznajomionych z metodą AHP. Dla każdej pary porównywanych elementów (np. Kryterium 1 vs Kryterium 2 lub Opcja A vs Opcja B względem danego kryterium) wyświetlana jest graficzna skala (suwak/przyciski radio) od 9 (znaczna przewaga pierwszego elementu) do 1 (równoważność) i do 9 (znaczna przewaga drugiego elementu). Ostatnio wprowadzono stylizację tej skali z gradientem niebiesko-czerwonym (`#3498db` do `#e74c3c`) na całym tle kontenera porównania, z powiększonymi cyframi i dodanym cieniem dla lepszej czytelności.
+    *   Wykorzystywana jest standardowa 9-stopniowa skala ocen Saaty'ego.
+
+*   **Prezentacja Wyników Pośrednich i Końcowych:**
+    *   Po wprowadzeniu danych, użytkownik inicjuje obliczenia.
+    *   Wyświetlane są obliczone wagi (lokalne i globalne) dla kryteriów i opcji w formie tabelarycznej.
+    *   Prezentowany jest wskaźnik spójności (CR) dla każdej macierzy porównań, z ostrzeżeniem, jeśli przekracza on akceptowalny poziom (standardowo 0.1).
+    *   Wskazywana jest najlepsza opcja (o najwyższej wadze globalnej).
+
+### 4.1.2 Implementacja Algorytmu Metody AHP
+
+Logika obliczeniowa modułu AHP (`ahpLogic.js`) realizuje kluczowe etapy metodyczne:
+*   **Normalizacja Macierzy Porównań Parzystych:** Obliczanie sum kolumn macierzy, a następnie dzielenie każdego elementu macierzy przez sumę jego kolumny.
+*   **Obliczanie Wektorów Priorytetów (Wag Lokalnych):** Standardowo stosowana jest metoda aproksymacyjna polegająca na uśrednianiu wartości w wierszach znormalizowanej macierzy. Rozważano (lub zaimplementowano alternatywnie) metodę wektora własnego, np. z wykorzystaniem potęgowania macierzy (jeśli dotyczy).
+*   **Obliczanie Maksymalnej Wartości Własnej (λmax):** Niezbędnej do wyznaczenia wskaźników spójności.
+*   **Obliczanie Indeksu Spójności (CI):** Według wzoru CI = (λmax - n) / (n - 1), gdzie n to rozmiar macierzy.
+*   **Obliczanie Wskaźnika Spójności (CR):** CR = CI / RI, gdzie RI to wskaźnik losowej spójności zależny od rozmiaru macierzy (wartości RI są stablicowane).
+*   **Agregacja Wag:** Obliczanie globalnych wag dla opcji poprzez mnożenie macierzy wag opcji (względem kryteriów) przez wektor wag kryteriów.
+
+### 4.1.3 Wizualizacja Wyników
+
+Do prezentacji graficznej wyników analizy AHP wykorzystywana jest biblioteka `Plotly.js`. Generowane są następujące typy wykresów:
+*   **Wykresy Słupkowe:** Przedstawiające wagi poszczególnych kryteriów oraz globalne wagi opcji decyzyjnych, co ułatwia ich porównanie.
+*   **Wykresy Radarowe (Pajęczynowe):** Mogą być wykorzystywane do prezentacji profilu ocen poszczególnych opcji względem wszystkich kryteriów.
+*   (Opcjonalnie, jeśli zaimplementowano) Wykresy hierarchii problemu.
+
+### 4.1.4 Import i Eksport Danych (Funkcje `ahpIO.js` i `ahpExportFile.js`)
+
+Moduł AHP został zintegrowany z centralnym systemem obsługi linków (`linkHandler.js`) oraz posiada funkcje eksportu:
+*   **Eksport/Import przez Link URL:** Funkcje `AHP.exportDataForLink()` serializuje aktualny stan modułu AHP (nazwy kryteriów, opcji, wprowadzone oceny) do postaci ciągu znaków, który jest następnie dołączany do URL. Funkcja `AHP.importDataFromLinkString()` odtwarza stan modułu na podstawie danych z linku.
+*   **Eksport do Plików:** Zaimplementowano możliwość eksportu wyników i danych wejściowych do plików w formatach:
+    *   `.txt`: Podsumowanie tekstowe analizy.
+    *   `.csv`: Dane tabelaryczne (np. macierze porównań, wagi) w formacie CSV.
+    *   `.json`: Pełny zrzut stanu modułu w formacie JSON.
+*   (Opcjonalnie) Rozważano lub zaimplementowano eksport do formatu umożliwiającego dalszą analizę w specjalistycznym oprogramowaniu lub skryptach Pythona.
+
+W celu debugowania i śledzenia procesu obliczeniowego, w module AHP zaimplementowano szczegółowe logowanie z użyciem `Logger.log()` (np. komunikaty z prefiksem `[AHP DEBUG]`).
+
+## 4.2 Moduł Problemu Rozkroju (Cutting Stock Problem)
+
+Moduł Problemu Rozkroju został zaimplementowany w celu optymalizacji wykorzystania materiału wsadowego (np. belek, rur) poprzez minimalizację odpadów powstających przy cięciu na elementy o określonych długościach i ilościach.
+
+### 4.2.1 Interfejs Użytkownika Modułu Problemu Rozkroju
+
+Interfejs modułu umożliwia użytkownikowi zdefiniowanie parametrów problemu:
+*   **Długość surowca (kłody):** Użytkownik podaje standardową długość materiału wsadowego, który będzie cięty. Wartość ta przechowywana jest w `CuttingStock.currentLogLength`.
+*   **Zamówienia na elementy:** Użytkownik specyfikuje listę potrzebnych elementów, podając dla każdego z nich wymaganą długość oraz liczbę sztuk. Dane te są zarządzane w strukturze `CuttingStock.orders`.
+*   **Opcje rozwiązania:** Dostępna jest opcja (`exactCuts`) pozwalająca zdecydować, czy system ma dążyć do uzyskania dokładnie określonej liczby sztuk (co może generować więcej odpadu, ale spełnia zamówienie precyzyjnie), czy też minimalnej wymaganej liczby sztuk (co zazwyczaj prowadzi do mniejszego odpadu).
+
+### 4.2.2 Algorytm Generowania Wzorów Cięcia
+
+Kluczowym elementem modułu jest algorytm odpowiedzialny za wygenerowanie wszystkich możliwych, unikalnych wzorów pocięcia pojedynczej jednostki surowca na zamówione elementy, tak aby odpad z tej jednostki był minimalny lub zerowy. Implementacja tej logiki znajduje się w funkcji `CuttingStock.generateCuttingPatterns()`.
+Funkcja ta:
+1.  Pobiera aktualną długość surowca (`CuttingStock.currentLogLength`) oraz listę długości zamówionych elementów.
+2.  Wykorzystuje podejście rekurencyjne do przeszukiwania przestrzeni kombinacji cięć. Funkcja pomocnicza `generatePatterns(remaining, currentPattern, currentCounts, index)` iteruje przez dostępne rozmiary elementów, próbując umieścić od 0 do maksymalnej możliwej liczby sztuk danego rozmiaru w pozostałej długości surowca.
+3.  Dla każdego wygenerowanego poprawnego wzoru obliczana jest jego efektywność (wykorzystanie materiału) oraz wielkość odpadu.
+4.  Wynikiem działania jest lista obiektów, gdzie każdy obiekt reprezentuje jeden wzór cięcia, zawierający informacje o liczbie poszczególnych elementów wchodzących w jego skład, całkowitym odpadzie oraz efektywności.
+
+### 4.2.3 Modelowanie i Rozwiązywanie Problemu Optymalizacyjnego
+
+Po wygenerowaniu potencjalnych wzorów cięcia, problem optymalizacyjny jest formułowany jako zadanie programowania liniowego całkowitoliczbowego. Celem jest minimalizacja liczby zużytych jednostek surowca (lub zdefiniowanej funkcji łączącej liczbę kłód i odpad), przy jednoczesnym spełnieniu zapotrzebowania na wszystkie zamówione elementy. Ta część logiki realizowana jest w funkcji `CuttingStock.solveCuttingStock()`.
+1.  Funkcja najpierw wywołuje `CuttingStock.generateCuttingPatterns()` w celu uzyskania listy możliwych wzorów.
+2.  Następnie, na podstawie opcji `exactCuts`, przygotowywany jest model dla biblioteki `solver.js`:
+    *   **Zmienne decyzyjne:** Liczba użyć każdego z wygenerowanych wzorów cięcia.
+    *   **Funkcja celu:** Minimalizacja całkowitej liczby użytych jednostek surowca (`numLogs`) lub złożonej metryki (`score`) uwzględniającej także odpad, w zależności od wybranej opcji.
+    *   **Ograniczenia:** Dla każdego typu zamawianego elementu tworzone jest ograniczenie zapewniające, że łączna liczba wyprodukowanych elementów danego typu (sumowana po wszystkich użytych wzorach) będzie równa (dla `exactCuts`) lub nie mniejsza (w przeciwnym razie) od zapotrzebowania.
+3.  Przygotowany model jest przekazywany do funkcji `solver.Solve()`, która zwraca optymalne rozwiązanie – czyli ile razy należy użyć każdego ze wzorów cięcia.
+4.  Wyniki są następnie przetwarzane w celu prezentacji użytkownikowi.
+
+### 4.2.4 Wizualizacja Schematów Cięcia
+
+Moduł oferuje również graficzną prezentację wybranych, optymalnych schematów cięcia. Za tę funkcjonalność odpowiada funkcja `CuttingStock.displayVisualization(pattern)`.
+1.  Funkcja dynamicznie generuje w kontenerze HTML (`cuttingStockVisualization`) wizualizację pojedynczej jednostki surowca.
+2.  Na tle reprezentującym całą długość surowca, rysowane są prostokąty odpowiadające poszczególnym elementom uzyskanym z danego wzoru cięcia, z zachowaniem proporcji ich długości. Odpady również mogą być wizualizowane.
+3.  Wykorzystywana jest skala (`scale`) do przeliczenia rzeczywistych długości na wymiary w pikselach, co zapewnia czytelną reprezentację na ekranie.
+
+## 4.3 Moduł Optymalizacji Produkcji
+
+Moduł Optymalizacji Produkcji został stworzony w celu wspomagania użytkowników w rozwiązywaniu klasycznych problemów programowania liniowego, typowych dla planowania produkcji, takich jak maksymalizacja zysku lub minimalizacja kosztów przy ograniczonych zasobach.
+
+### 4.3.1 Interfejs Definiowania Problemów Optymalizacyjnych
+
+Interfejs użytkownika tego modułu umożliwia precyzyjne zdefiniowanie struktury problemu optymalizacyjnego:
+*   **Liczba zmiennych decyzyjnych:** Użytkownik określa, ile różnych produktów lub działań będzie branych pod uwagę w modelu. Zmiana tej wartości (pole `numVars`) dynamicznie aktualizuje pozostałe części formularza dzięki logice zawartej w funkcji `ProductionOpt.updateObjectiveFunction()` oraz podobnych funkcjach dla ograniczeń.
+*   **Funkcja celu:**
+    *   Użytkownik wybiera typ optymalizacji: maksymalizacja (np. zysku) lub minimalizacja (np. kosztów) za pomocą pola `optimizationType`.
+    *   Dla każdej zmiennej decyzyjnej wprowadzany jest współczynnik funkcji celu (np. zysk jednostkowy lub koszt jednostkowy) w dynamicznie generowanych polach (np. `obj-coeff-i`).
+*   **Ograniczenia:**
+    *   Użytkownik może zdefiniować wiele ograniczeń liniowych. Dla każdego ograniczenia wprowadza współczynniki przy poszczególnych zmiennych decyzyjnych, typ nierówności (≤, =, ≥) oraz wartość prawej strony ograniczenia (np. dostępna ilość surowca, limit czasu maszynowego).
+    *   Dodawanie i usuwanie ograniczeń odbywa się dynamicznie.
+*   **Ograniczenia dolne i górne dla zmiennych:** Zaimplementowano możliwość definiowania minimalnych i maksymalnych wartości dla poszczególnych zmiennych decyzyjnych (pola `minQuantity` i `maxQuantity`), co odpowiada dodaniu dodatkowych ograniczeń typu \(x_i \geq \text{min}_i\) oraz \(x_i \leq \text{max}_i\). Logika ta została uwzględniona m.in. w funkcji `ProductionOpt.loadSampleData` oraz przy budowie modelu.
+
+### 4.3.2 Implementacja Algorytmu Optymalizacji
+
+Rdzeniem modułu jest proces formułowania problemu jako modelu programowania liniowego, a następnie jego rozwiązania przy użyciu biblioteki `solver.js`.
+*   **Przygotowanie Modelu (`ProductionOpt.prepareModel()`):**
+    1.  Odczytywane są współczynniki funkcji celu oraz typ optymalizacji.
+    2.  Definiowane są zmienne decyzyjne dla solvera.
+    3.  Iteratywnie odczytywane są wszystkie zdefiniowane przez użytkownika ograniczenia (współczynniki, typy nierówności, prawe strony) i konwertowane na format wymagany przez `solver.js`.
+    4.  Dodawane są ograniczenia wynikające z minimalnych i maksymalnych ilości dla poszczególnych produktów.
+    5.  Tworzony jest obiekt modelu zawierający funkcję celu (`optimize`, `opType`), listę ograniczeń (`constraints`) oraz definicje zmiennych (`variables`).
+*   **Rozwiązanie Problemu (`ProductionOpt.calculate()`):**
+    1.  Wywoływana jest funkcja `ProductionOpt.prepareModel()` w celu uzyskania gotowego modelu.
+    2.  Model przekazywany jest do funkcji `solver.Solve(model)`.
+    3.  Zwrócone przez solver rozwiązanie (zawierające status optymalności, wartości zmiennych decyzyjnych oraz wartość funkcji celu) jest następnie przekazywane do funkcji `ProductionOpt.displayResults()` w celu prezentacji.
+    4.  Obsługiwane są ewentualne błędy zgłaszane przez solver lub wynikające z niepoprawnie zdefiniowanego modelu.
+*   **Sanityzacja danych:** Przed przekazaniem do solvera, nazwy zmiennych i ograniczeń są przetwarzane przez funkcję `Utils.sanitizeForSolver` w celu usunięcia niedozwolonych znaków.
+
+### 4.3.3 Prezentacja i Wizualizacja Wyników Optymalizacji
+
+Wyniki optymalizacji są prezentowane użytkownikowi w kilku formach:
+*   **Wyniki Tabelaryczne i Tekstowe:** W dedykowanym kontenerze (`productionOptResults`) wyświetlane są:
+    *   Optymalna wartość funkcji celu.
+    *   Optymalne wartości poszczególnych zmiennych decyzyjnych.
+    *   Informacja o wykorzystaniu zasobów (wartości lewych stron ograniczeń).
+*   **Wizualizacja Graficzna (`ProductionOpt.visualizeResults(solution)`):**
+    *   Dla problemów obejmujących dokładnie dwie zmienne decyzyjne, moduł generuje wykres 2D przy użyciu `Plotly.js`.
+    *   Na wykresie wizualizowane są:
+        *   Linie reprezentujące poszczególne ograniczenia.
+        *   Obszar rozwiązań dopuszczalnych (choć jego jawne wypełnienie może być złożone i nie zostało w pełni zaimplementowane, linie ograniczeń wyznaczają jego granice).
+        *   Punkt optymalny, zaznaczony wyróżniającym się маркером.
+        *   Opcjonalnie, linia reprezentująca funkcję celu (iso-profit lub iso-koszt).
+    *   Zakresy osi wykresu są dynamicznie dostosowywane do wartości optymalnych i ograniczeń.
+*   **Wskaźnik ładowania:** Podczas obliczeń wyświetlany jest wskaźnik `productionOptLoadingIndicator`, który jest ukrywany po zakończeniu analizy.
+
+## 4.4 Implementacja Systemu Pomocy Użytkownikowi i Aspekty Użyteczności
+
+Ważnym aspektem każdej aplikacji interaktywnej jest zapewnienie użytkownikowi odpowiedniego wsparcia oraz dbałość o ogólną użyteczność interfejsu. Chociaż dedykowany, rozbudowany system pomocy (np. w formie tutoriali krok po kroku czy dynamicznych podpowiedzi kontekstowych) nie był głównym celem tej fazy projektu, zaimplementowano kilka mechanizmów wspierających użytkownika oraz podnoszących komfort pracy z aplikacją.
+
+### 4.4.1 Komunikaty Zwrotne i Notyfikacje
+
+W celu informowania użytkownika o stanie aplikacji, wynikach operacji lub ewentualnych błędach, wykorzystano system krótkich komunikatów (tzw. "toast notifications"). Zostały one zaimplementowane w pliku `utils.js` w ramach funkcji `Utils.showToast()`. Komunikaty te pojawiają się na krótki czas w widocznym miejscu ekranu, dostarczając zwięzłych informacji, np. o pomyślnym załadowaniu danych z linku, błędzie walidacji danych wejściowych czy zakończeniu obliczeń. Taki sposób komunikacji jest nieinwazyjny i pozwala użytkownikowi na bieżąco śledzić postęp wykonywanych działań bez przerywania głównego przepływu pracy.
+
+### 4.4.2 System Logowania jako Narzędzie Diagnostyczne
+
+W toku prac nad aplikacją wprowadzono dedykowany system logowania (`Logger.js`), który zastąpił standardowe wywołania `console.log()`. Głównym celem tego systemu było ułatwienie procesu deweloperskiego i diagnostyki, jednak pełni on również rolę pośredniego systemu pomocy dla zaawansowanych użytkowników lub w sytuacjach problematycznych. Logi, zawierające informacje o przebiegu kluczowych operacji, stanie zmiennych czy wykrytych anomaliach (np. z prefiksem `[AHP DEBUG]` w module AHP), mogą być pobrane przez użytkownika w formie pliku `.txt` bezpośrednio z interfejsu aplikacji. Umożliwia to zgłaszanie bardziej precyzyjnych raportów o błędach lub samodzielną analizę nietypowych zachowań systemu. Dostępna jest również funkcja czyszczenia zgromadzonych logów.
+
+### 4.4.3 Dynamiczne Dostosowywanie Interfejsu
+
+W wielu miejscach aplikacji interfejs użytkownika dynamicznie reaguje na działania użytkownika, co przyczynia się do jego użyteczności. Przykłady takich zachowań to:
+*   **Automatyczna aktualizacja liczby pól wejściowych:** W module AHP zmiana wartości w polu określającym liczbę opcji (`ahpNumOptions`) natychmiast skutkuje dostosowaniem liczby wyświetlanych pól do wprowadzania nazw tych opcji. Podobnie, w module Optymalizacji Produkcji, zmiana liczby zmiennych decyzyjnych (`numVars`) dynamicznie rekonfiguruje formularze funkcji celu i ograniczeń.
+*   **Automatyczne uzupełnianie wartości:** W trybie macierzowym modułu AHP, wprowadzenie oceny w jednej komórce macierzy porównań parzystych automatycznie uzupełnia wartość odwrotną w komórce symetrycznej.
+*   **Wskaźniki ładowania:** Dla operacji mogących zająć więcej czasu (np. obliczenia w module Optymalizacji Produkcji) wyświetlane są wskaźniki ładowania (np. `productionOptLoadingIndicator`), informujące użytkownika, że system przetwarza dane.
+
+### 4.4.4 Aspekty Responsywności i Dostępności
+
+Chociaż pełna optymalizacja pod kątem responsywnego designu (RWD) dla szerokiego spektrum urządzeń mobilnych nie była priorytetem, starano się zachować czytelność i funkcjonalność interfejsu na standardowych ekranach komputerów stacjonarnych i laptopów. Wykorzystanie standardowych elementów HTML i CSS, wraz z elastycznymi kontenerami (np. flexbox w niektórych komponentach), sprzyja pewnemu stopniowi adaptacji do różnych rozdzielczości. Dalsze prace mogłyby obejmować bardziej szczegółowe testy i implementację dedykowanych reguł CSS (media queries) w celu zapewnienia pełnej responsywności.
+
+Podsumowując, zaimplementowane mechanizmy, takie jak komunikaty zwrotne, system logowania oraz dynamiczne reakcje interfejsu, stanowią podstawę systemu wsparcia użytkownika i przyczyniają się do lepszej użyteczności aplikacji. 

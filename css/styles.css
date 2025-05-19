@@ -367,113 +367,36 @@ button:hover {
 /* Media queries dla responsywności */
 @media (max-width: 992px) {
     .app-sidebar:not(.sidebar-minimized) {
-        width: 75%;
-        max-width: 350px;
-        transform: none !important;
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        z-index: 1000;
+        width: 250px;
     }
-    
+
     .sidebar-toggle {
-        width: 25px;
-        height: 25px;
-        z-index: 1001;
+        left: 250px;
     }
 }
 
 @media (max-width: 768px) {
-    .container {
-        max-width: 100%;
-        margin: 0;
-        padding: 10px;
-        border-radius: 0;
-        box-shadow: none;
-    }
-
-    .app-header h1 {
-        font-size: 1.5rem;
-        padding: 0 10px;
-    }
-
-    .app-nav ul {
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 5px;
-        padding: 5px;
-    }
-
-    .app-nav button {
-        width: auto;
-        padding: 8px 10px;
-        margin: 0;
-        font-size: 0.9rem;
-    }
-
-    .input-row {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    input[type="number"],
-    input[type="text"],
-    select {
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-
-    button {
-        padding: 12px 20px;
-        margin: 5px 0;
-        min-height: 44px;
-        touch-action: manipulation;
-        width: 100%;
-    }
-
-    .results {
-        font-size: 14px;
-        white-space: normal;
-    }
-
-    pre {
-        white-space: pre-wrap;
-        word-wrap: break-word;
+    .app-sidebar {
+        /* Zachowujemy logikę działania sidebara na mobile */
     }
 
     .app-sidebar:not(.sidebar-minimized) {
-        width: 80%;
-        transform: none !important;
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        z-index: 1000;
+        width: 260px; /* Stała szerokość na mobile, aby nie zajmował całości */
     }
-    
-    /* Zapobiegaj interakcji z nawą podczas klikania w elementy interfejsu */
-    .app-main {
-        pointer-events: auto;
-        margin-left: 0;
-        width: 100%;
-    }
-    
-    .app-sidebar {
-        pointer-events: auto;
-    }
-    
-    .app-sidebar > * {
-        pointer-items: auto;
-    }
-    
+
     .sidebar-toggle {
-        pointer-events: auto;
-        z-index: 1001;
+        left: 230px; /* 260px (szerokość sidebara) - 30px (szerokość przycisku) */
+        z-index: 1001; 
+        /* Można rozważyć dostosowanie 'top' już tutaj, jeśli jest potrzeba */
+        /* top: 18vh; */ 
     }
+
+    .help-button {
+        /* Można rozważyć dostosowanie 'top' już tutaj */
+        /* top: 28vh !important; */
+    }
+
+    /* Kiedy sidebar jest zminimalizowany, reguła .sidebar-minimized + .sidebar-toggle { left: 0; } powinna nadal działać poprawnie */
 }
 
 @media (max-width: 480px) {
@@ -492,6 +415,16 @@ button:hover {
 
     .app-footer {
         padding: 8px 0;
+    }
+
+    /* Precyzyjniejsze dostosowanie pozycji przycisków na bardzo wąskich ekranach */
+    .sidebar-toggle {
+        top: 18vh; /* Przycisk nawy wyżej */
+    }
+
+    .help-button {
+        top: 28vh !important; /* Przycisk pomocy niżej, !important by nadpisać styl inline lub globalny */
+        right: 15px !important; /* Lekkie przesunięcie w lewo, aby nie był zbyt na krawędzi */
     }
 }
 

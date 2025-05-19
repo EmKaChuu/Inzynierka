@@ -70,6 +70,7 @@ AHP.createSimplifiedInterface = () => {
                     const idx = parseInt(option.getAttribute('data-k'));
                     const value = values[idx];
                     AHP.updateSimplifiedComparisonValue(i, j, value);
+                    AHP.calculate();
                 };
                 
                 scaleOptions.appendChild(option);
@@ -195,6 +196,7 @@ AHP.createSimplifiedInterface = () => {
                         const idx = parseInt(option.getAttribute('data-k'));
                         const value = values[idx];
                         AHP.updateSimplifiedOptionComparisonValue(criterion, optI, optJ, value);
+                        AHP.calculate();
                     };
                     scaleOptions.appendChild(option);
                 }
@@ -250,27 +252,33 @@ AHP.createCriteriaComparisonMatrix = () => {
             const td = document.createElement('td');
             if (i === j) {
                 td.textContent = '1';
-            } else if (i < j) {
-                const select = document.createElement('select');
-                select.id = `criteria-comp-${i}-${j}`;
-                select.onchange = () => AHP.updateCriteriaComparisonValue(i, j);
-                
-                const values = [9, 8, 7, 6, 5, 4, 3, 2, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9];
-                const labels = ["9", "8", "7", "6", "5", "4", "3", "2", "1", "1/2", "1/3", "1/4", "1/5", "1/6", "1/7", "1/8", "1/9"];
-                
-                for (let k = 0; k < values.length; k++) {
-                    const option = document.createElement('option');
-                    option.value = values[k];
-                    option.textContent = labels[k];
-                    if (values[k] === 1) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                }
-                td.appendChild(select);
             } else {
-                td.id = `criteria-comp-value-${i}-${j}`;
-                td.textContent = '1';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = (1/9).toFixed(2);
+                input.max = '9';
+                input.step = '0.01'; // Pozwala na bardziej precyzyjne wartości
+                input.value = (AHP.criteriaComparisonMatrix[i] && AHP.criteriaComparisonMatrix[i][j] !== undefined) ? AHP.criteriaComparisonMatrix[i][j].toFixed(2) : '1.00';
+                input.id = `criteria-matrix-${i}-${j}`;
+                input.disabled = j < i; // Wyłącz pola poniżej diagonali dla spójności (wartości są obliczane)
+
+                if (j > i) { // Tylko dla pól powyżej diagonali
+                    input.oninput = () => {
+                        const val = parseFloat(input.value);
+                        if (!isNaN(val) && val > 0 && val >= (1/9) && val <= 9) {
+                            AHP.criteriaComparisonMatrix[i][j] = val;
+                            AHP.criteriaComparisonMatrix[j][i] = 1 / val;
+                            const inverseInput = document.getElementById(`criteria-matrix-${j}-${i}`);
+                            if (inverseInput) inverseInput.value = (1 / val).toFixed(2);
+                            Logger.log(`[AHP UI Matrix] Criteria matrix [${i}][${j}] updated to ${val}`);
+                            AHP.calculate(); // Dodano wywołanie obliczeń
+                        } else {
+                            Logger.log(`[AHP UI Matrix] Invalid input for criteria matrix [${i}][${j}]: ${input.value}`);
+                            // Można dodać tu informację zwrotną dla użytkownika, np. przywrócenie poprzedniej wartości
+                        }
+                    };
+                }
+                td.appendChild(input);
             }
             row.appendChild(td);
         }
@@ -957,4 +965,28 @@ AHP.exportToPython = () => {
     modalContent.appendChild(copyButton);
     exportModal.appendChild(modalContent);
     document.body.appendChild(exportModal);
+};
+
+AHP.updateSimplifiedComparisonValue = (i, j, value) => {
+    if (AHP.criteriaComparisonMatrix && AHP.criteriaComparisonMatrix[i] && AHP.criteriaComparisonMatrix[j] !== undefined) {
+        AHP.criteriaComparisonMatrix[i][j] = parseFloat(value);
+        AHP.criteriaComparisonMatrix[j][i] = 1 / parseFloat(value);
+        Logger.log(`[AHP UI Simplified] Updated criteria comparison matrix [${i}][${j}] = ${value}, [${j}][${i}] = ${1/value}`);
+        AHP.calculate();
+    } else {
+        Logger.log(`[AHP UI Simplified] Error updating criteriaComparisonMatrix for [${i}][${j}] - matrix or indices invalid.`);
+    }
+};
+
+AHP.updateSimplifiedOptionComparisonValue = (criterion, optI, optJ, value) => {
+    if (AHP.optionComparisonMatrices && AHP.optionComparisonMatrices[criterion] && 
+        AHP.optionComparisonMatrices[criterion][optI] !== undefined && AHP.optionComparisonMatrices[criterion][optJ] !== undefined) {
+        
+        AHP.optionComparisonMatrices[criterion][optI][optJ] = parseFloat(value);
+        AHP.optionComparisonMatrices[criterion][optJ][optI] = 1 / parseFloat(value);
+        Logger.log(`[AHP UI Simplified] Updated option comparison matrix for criterion ${criterion} [${optI}][${optJ}] = ${value}, [${optJ}][${optI}] = ${1/value}`);
+        AHP.calculate();
+    } else {
+        Logger.log(`[AHP UI Simplified] Error updating optionComparisonMatrices for criterion ${criterion}, [${optI}][${optJ}] - matrix or indices invalid.`);
+    }
 };

@@ -12,6 +12,7 @@ const AHP = {
     RI: { 2: 0, 3: 0.52, 4: 0.89, 5: 1.11, 6: 1.25, 7: 1.35, 8: 1.40, 9: 1.45, 10: 1.49 },
     interfaceMode: 'simplified', // Nowy parametr - tryb interfejsu: 'matrix' lub 'simplified'
     comparisonValues: [9, 8, 7, 6, 5, 4, 3, 2, 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9], // Tablica wartości porównań
+    isInitialising: false, // Dodano flagę inicjalizacji
     
     // Funkcja tworząca macierz jednostkową o podanym rozmiarze
     createIdentityMatrix: (size) => {
@@ -28,30 +29,61 @@ const AHP = {
     init: () => {
         Logger.log("Executing AHP.init()");
         Utils.hideElement('ahpResults');
+        Utils.clearElement('ahpVisualization');
+        AHP.isInitialising = true;
         
-        // Inicjalizacja początkowa macierzy
-        AHP.numCriteria = parseInt(document.getElementById('ahpNumCriteria').value) || 3;
+        const currentNumCriteria = parseInt(document.getElementById('ahpNumCriteria').value) || 3;
+        const currentNumOptions = parseInt(document.getElementById('ahpNumOptions').value) || 3;
+
+        // Sprawdź, czy liczba kryteriów lub opcji się zmieniła, lub czy dane nie zostały jeszcze zainicjowane
+        const dimensionsChanged = AHP.numCriteria !== currentNumCriteria || AHP.numOptions !== currentNumOptions;
+        const notInitialized = !AHP.criteriaComparisonMatrix || !AHP.optionComparisonMatrices;
+
+        AHP.numCriteria = currentNumCriteria;
+        AHP.numOptions = currentNumOptions;
         
-        // Pobierz wartość numOptions z dodanego pola
-        const optionsInput = document.getElementById('ahpNumOptions');
-        AHP.numOptions = optionsInput ? parseInt(optionsInput.value) || 3 : 3; // Domyślna wartość 3
-        
-        // Inicjalizacja macierzy porównań
-        AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
-        AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
-            Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
-        );
-        
-        // Inicjalizacja nazw kryteriów i opcji tylko jeśli tablice są puste
-        if (!AHP.criteriaNames || AHP.criteriaNames.length === 0) {
-            AHP.criteriaNames = Array(AHP.numCriteria).fill().map((_, i) => `Kryterium ${i+1}`);
+        // Inicjalizacja nazw kryteriów - tylko jeśli puste lub zmieniła się liczba
+        if (!AHP.criteriaNames || AHP.criteriaNames.length !== AHP.numCriteria) {
+            const oldNames = AHP.criteriaNames || [];
+            AHP.criteriaNames = Array(AHP.numCriteria).fill('').map((_, i) => {
+                return (i < oldNames.length && oldNames[i] && !oldNames[i].startsWith('Kryterium ')) ? oldNames[i] : `Kryterium ${i+1}`;
+            });
         }
         
-        if (!AHP.optionNames || AHP.optionNames.length === 0) {
-            AHP.optionNames = Array(AHP.numOptions).fill().map((_, i) => `Opcja ${i+1}`);
+        // Inicjalizacja nazw opcji - tylko jeśli puste lub zmieniła się liczba
+        if (!AHP.optionNames || AHP.optionNames.length !== AHP.numOptions) {
+            const oldNames = AHP.optionNames || [];
+            AHP.optionNames = Array(AHP.numOptions).fill('').map((_, i) => {
+                return (i < oldNames.length && oldNames[i] && !oldNames[i].startsWith('Opcja ')) ? oldNames[i] : `Opcja ${i+1}`;
+            });
         }
         
-        // Ustawienie przycisków w interfejsie
+        // Inicjalizacja macierzy porównań kryteriów - tylko jeśli nie istnieje, lub zmieniły się wymiary
+        if (notInitialized || dimensionsChanged || !AHP.criteriaComparisonMatrix[0] || AHP.criteriaComparisonMatrix.length !== AHP.numCriteria || AHP.criteriaComparisonMatrix[0].length !== AHP.numCriteria ) {
+            Logger.log("[AHP Init] Re-initializing criteriaComparisonMatrix due to dimension change or first init.");
+            AHP.criteriaComparisonMatrix = Array(AHP.numCriteria).fill().map(() => Array(AHP.numCriteria).fill(1));
+        } else {
+            Logger.log("[AHP Init] Preserving existing criteriaComparisonMatrix.");
+        }
+        
+        // Inicjalizacja macierzy porównań opcji - tylko jeśli nie istnieje, lub zmieniły się wymiary
+        if (notInitialized || dimensionsChanged || AHP.optionComparisonMatrices.length !== AHP.numCriteria) {
+            Logger.log("[AHP Init] Re-initializing optionComparisonMatrices structure due to dimension change or first init.");
+            AHP.optionComparisonMatrices = Array(AHP.numCriteria).fill().map(() => 
+                Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1))
+            );
+        } else {
+            // Jeśli liczba kryteriów jest taka sama, sprawdź każdą podmacierz opcji
+            Logger.log("[AHP Init] Preserving main structure of optionComparisonMatrices. Verifying sub-matrices.");
+            for (let c = 0; c < AHP.numCriteria; c++) {
+                if (!AHP.optionComparisonMatrices[c] || AHP.optionComparisonMatrices[c].length !== AHP.numOptions || 
+                    (AHP.numOptions > 0 && (!AHP.optionComparisonMatrices[c][0] || AHP.optionComparisonMatrices[c][0].length !== AHP.numOptions))) {
+                    Logger.log(`[AHP Init] Re-initializing optionComparisonMatrices[${c}] for options.`);
+                    AHP.optionComparisonMatrices[c] = Array(AHP.numOptions).fill().map(() => Array(AHP.numOptions).fill(1));
+                }
+            }
+        }
+        
         AHP.setupInterfaceButtons();
         
         // Dodanie nasłuchiwania zmian w polach liczby kryteriów dla dynamicznej aktualizacji
@@ -66,7 +98,7 @@ const AHP = {
         oldCriteriaInput.addEventListener('change', AHP.setupInputs);
         
         // Również dodajemy listenery do pola liczby opcji, jeśli zostało już dodane przez App.initialize()
-        if (optionsInput) {
+        if (document.getElementById('ahpNumOptions')) {
             // Dodanie listenerów do pola numOptions odbywa się w script.js podczas tworzenia pola
             // Jeśli mielibyśmy tworzyć je tutaj, byłoby to zduplikowane
             Logger.log("NumOptions field already exists, skipping event listener setup (should be done in App.initialize)");
@@ -89,6 +121,9 @@ const AHP = {
         
         // Automatyczne tworzenie interfejsu bez konieczności klikania przycisków
         AHP.setupInputs();
+        // AHP.calculate(); // To wywołanie pozostaje usunięte/zakomentowane
+
+        AHP.isInitialising = false; // Zresetuj flagę inicjalizacji po zakończeniu setupInputs
     },
     
     setupInterfaceButtons: () => {
@@ -238,6 +273,9 @@ const AHP = {
         
         // Od razu wyświetl sekcje porównań kryteriów
         AHP.updateComparisonInterface();
+        if (!AHP.isInitialising) { // Wykonaj obliczenia tylko jeśli nie jesteśmy w trakcie inicjalizacji
+            AHP.calculate();
+        }
         
         // Przygotuj pola na nazwy opcji
         AHP.setupOptions();
@@ -550,17 +588,19 @@ const AHP = {
             if (AHP.interfaceMode === 'matrix') {
             for (let i = 0; i < AHP.numCriteria; i++) {
                     for (let j = i + 1; j < AHP.numCriteria; j++) {
-                        const select = document.getElementById(`criteria-comp-${i}-${j}`);
-                        if (select && select.value !== undefined) {
-                            const value = parseFloat(select.value);
-                            if (!isNaN(value)) {
-                            AHP.criteriaComparisonMatrix[i][j] = value;
-                            AHP.criteriaComparisonMatrix[j][i] = 1 / value;
+                        const inputElement = document.getElementById(`criteria-matrix-${i}-${j}`); // Zmieniono z select na inputElement i ID
+                        if (inputElement && inputElement.value !== undefined) { // Sprawdzanie inputElement zamiast select
+                            const value = parseFloat(inputElement.value);
+                            if (!isNaN(value) && value > 0 && value <=9 && value >= 1/9) { // Dodano walidację zakresu wartości
+                                AHP.criteriaComparisonMatrix[i][j] = value;
+                                AHP.criteriaComparisonMatrix[j][i] = 1 / value;
                             } else {
-                                AHP.criteriaComparisonMatrix[i][j] = 1; // Default on NaN
+                                Logger.log(`[AHP Save] Invalid value or out of range for criteria-matrix-${i}-${j}: ${inputElement.value}. Defaulting to 1.`);
+                                AHP.criteriaComparisonMatrix[i][j] = 1; // Domyślna wartość przy błędzie
                                 AHP.criteriaComparisonMatrix[j][i] = 1;
                             }
-                        } else { // Default if select not found or no value
+                        } else { // Domyślna wartość, jeśli element nie istnieje lub nie ma wartości
+                            Logger.log(`[AHP Save] Input element criteria-matrix-${i}-${j} not found or has no value. Defaulting to 1.`);
                             AHP.criteriaComparisonMatrix[i][j] = 1;
                             AHP.criteriaComparisonMatrix[j][i] = 1;
                         }
@@ -580,7 +620,9 @@ const AHP = {
                                 break;
                             }
                         }
-                        if (!found) { // Default if no radio checked
+                        if (!found) {
+                                // Pozostaw domyślną wartość 1 (ustawioną podczas inicjalizacji)
+                                // console.warn(`[AHP DEBUG] Save (Simplified): No radio checked for options-comp-${c}-${i}-${j}. Defaulting to 1.`);
                             AHP.criteriaComparisonMatrix[i][j] = 1;
                             AHP.criteriaComparisonMatrix[j][i] = 1;
                         }
